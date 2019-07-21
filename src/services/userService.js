@@ -2,13 +2,14 @@ import fetch from 'node-fetch';
 import { NEEDS_MANAGER_SIGN_IN_ERROR, NEEDS_SIGN_IN_ERROR, getCannotBeEmptyError } from '../utils/errors';
 import { MANAGER_PERM } from '../utils/auth';
 import { getCardService } from './cardService';
+import { activeConfig } from '../config';
 export const USER_INDEX = 'users';
 export const USER_TYPE = 'user';
 
 let auth0ManagementToken = null;
 let tokenType = null;
 
-const AUTH0_DOMAIN = 'https://foodflick.auth0.com'
+const AUTH0_DOMAIN = activeConfig.auth.domain;
 const MANAGEMENT_URL = AUTH0_DOMAIN + '/api/v2/';
 
 const autoSetAuth0ManagementToken = async () => {
@@ -19,8 +20,8 @@ const autoSetAuth0ManagementToken = async () => {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        client_id: 'y0E8fClZz85Q52CNAP0L2YJcwm2TmQTQ',
-        client_secret: 'tFL4OYINV_s8sBaq-NLzhrN6z-mJIDQW8rw9uZxd3idKkfSADjBllWl5wYWnsvbi',
+        client_id: activeConfig.auth.clientId,
+        client_secret: activeConfig.auth.AUTH_CLIENT_SECRET,
         audience: MANAGEMENT_URL,
         grant_type: 'client_credentials',
       }),

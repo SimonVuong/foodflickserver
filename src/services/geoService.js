@@ -1,7 +1,8 @@
 import fetch from 'node-fetch';
+import { activeConfig } from '../config';
 const querystring = require('querystring');
 
-const API_KEY = 'aac6c9e99ace965acca74262a495294a6995c49';
+const API_KEY = activeConfig.geo.GEO_KEY;
 
 class GeoService {
   async getGeocode(street, city, state, zip) {
