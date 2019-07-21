@@ -1,2 +1,2 @@
 // how to start web server in heroku
-web: node index.jsgit 
+web: node src/index.jsgit 
