@@ -1,0 +1,29 @@
+{
+  /*
+  * this index is used for tracking user's flicks.
+  */
+  "users": {
+    "mappings": {
+      "user": {
+        "properties": {
+          "flicks": {
+            "properties": {
+              "createdDate": {
+                "type": "date"
+              },
+              "flick": {
+                "type": "text",
+                "fields": {
+                  "keyword": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

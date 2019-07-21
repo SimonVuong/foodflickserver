@@ -1,0 +1,39 @@
+mutation addRestManager($restId: ID!, $managerEmail: String!) {
+  addRestManager(restId: $restId, managerEmail: $managerEmail) {
+    ...restFragment
+  }
+}
+        
+fragment restFragment on Rest {
+  _id
+  profile {
+    name
+    phone
+    description
+  }
+  address {
+    address1
+    address2
+    city
+    state
+    zip
+  }
+  owner {
+    _id
+    email
+  }
+  managers {
+    _id
+    email
+  }
+  menu {
+    name
+    description
+    items {
+      name
+      price
+      description
+      flick
+    }
+  }
+}

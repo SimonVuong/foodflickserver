@@ -1,0 +1,39 @@
+mutation updateCategory($restId: ID!, $categoryName: String!, $newCategory: NewCategoryInput!) {
+  updateCategory(restId: $restId, categoryName: $categoryName, newCategory: $newCategory) {
+    ...restFragment
+  }
+}
+        
+fragment restFragment on Rest {
+  _id
+  profile {
+    name
+    phone
+    description
+  }
+  address {
+    address1
+    address2
+    city
+    state
+    zip
+  }
+  owner {
+    _id
+    email
+  }
+  managers {
+    _id
+    email
+  }
+  menu {
+    name
+    description
+    items {
+      name
+      price
+      description
+      flick
+    }
+  }
+}

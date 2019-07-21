@@ -1,0 +1,481 @@
+{
+  "rests": {
+    "mappings": {
+      "rest": {
+        "properties": {
+          "banking": {
+            "properties": {
+              "stripeId": {
+                "type": "text",
+                "fields": {
+                  "keyword": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                  }
+                }
+              }
+            }
+          },
+          "createdDate": {
+            "type": "date",
+            "format": "epoch_millis"
+          },
+          "favorites": {
+            "properties": {
+              /*
+              * running count of all users who have ever favorited since the beginning of time. it goes down when an 
+              * active user unfavorites. it goes up when an active user favorites. it stays the same when a user
+              * deletes their account. this makes sense because the goal here is to track all "how many times has this 
+              * rest been favorited?"
+              */
+              "count": {
+                "type": "integer"
+              },
+              /*
+              * an array of active users who currently favorited this rest. yes, i considered how long this list could
+              * get, but for now this is the best. if we don't do this, we have to store favorites for each user in 
+              * a user doc within the user index. (cannot store in auth0 meta data. see link below). using a separate
+              * doc is fine, but it's slower because now i need to do 2 queries to display + favorite/unfavorite a rest
+              * there is no "joins". (there kinda are but there's restrictions on when you can use, and they are slow)
+              *
+              * 1) find the rest
+              * 2) query the user index to find if signed in user favorited the rest
+              *
+              * with the big array, it's 1 query. and to make things finds faster (happens way more than updates) we
+              * we insert alphabetically into the list
+              *
+              * also consider these scenarios
+              *
+              * - User gets deleted
+              *   - big array = we delete the user from the list + delete doc
+              *   - user doc = we delete the doc
+              *   - conclusion = tie. theres no need for speed on user deletion as all that can happen in background
+              *
+              * - Rest gets deleted
+              *   - big array = do nothing
+              *   - user doc = update user doc
+              *   - conclusion = user doc wins because if im viewing my favorites, i'll see that one of them got deleted.
+              *     whereas for big array, the favorited rest just "disappeared"
+              *
+              * - User wants to see his/her favorites
+              *   - big array = find all rests containing user
+              *   - user doc = find all rests in doc. then search for all rests you found.
+              *   - conclusion = big array wins because it's 1 query
+              *
+              *
+              * overall, we go with big array because it's 1 query vs 2. i'll take the big list risk. if the list gets
+              * too big, then we'll make changes. but for now this is the best. to give some perspective, if we get as
+              * popular as youtube and hit millions of favorites/likes, then that's a good thing.
+              *
+              * https://discuss.elastic.co/t/what-are-the-limitations-of-array-size-in-elastic-search/108413
+              * https://en.wikipedia.org/wiki/List_of_most-liked_YouTube_videos
+              * https://auth0.com/docs/user-profile/user-data-storage#why-shouldn-t-i-put-all-my-application-s-data-in-the-auth0-data-store-
+              */
+              "users": { // an array
+                "properties": {
+                  "createdDate": {
+                    "type": "date",
+                    "format": "epoch_millis"
+                  },
+                  "userId": {
+                    "type": "text",
+                    "fields": {
+                      "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "feedback": { // an array
+            "properties": {
+              "createdDate": {
+                "type": "date",
+                "format": "epoch_millis"
+              },
+              "feedback": {
+                "type": "text",
+                "fields": {
+                  "keyword": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                  }
+                }
+              },
+              "userId": {
+                "type": "text",
+                "fields": {
+                  "keyword": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                  }
+                }
+              }
+            }
+          },
+          "location": {
+            "properties": {
+              "address": {
+                "properties": {
+                  "address1": {
+                    "type": "text",
+                    "fields": {
+                      "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                      }
+                    }
+                  },
+                  "address2": {
+                    "type": "text",
+                    "fields": {
+                      "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                      }
+                    }
+                  },
+                  "city": {
+                    "type": "text",
+                    "fields": {
+                      "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                      }
+                    }
+                  },
+                  "state": {
+                    "type": "text",
+                    "fields": {
+                      "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                      }
+                    }
+                  },
+                  "zip": {
+                    "type": "text",
+                    "fields": {
+                      "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                      }
+                    }
+                  }
+                }
+              },
+              "geo": {
+                "type": "geo_point"
+              }
+            }
+          },
+          "managers": {
+            "properties": {
+              "email": {
+                "type": "text",
+                "fields": {
+                  "keyword": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                  }
+                }
+              },
+              "userId": {
+                "type": "text",
+                "fields": {
+                  "keyword": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                  }
+                }
+              }
+            }
+          },
+          "menu": {
+            "properties": {
+              "description": {
+                "type": "text",
+                "fields": {
+                  "keyword": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                  },
+                  "suggest": {
+                    "type": "completion",
+                    "analyzer": "simple",
+                    "preserve_separators": true,
+                    "preserve_position_increments": true,
+                    "max_input_length": 50,
+                    "contexts": [
+                      {
+                        "name": "location",
+                        "type": "GEO",
+                        "precision": 6,
+                        "path": "location.geo"
+                      }
+                    ]
+                  }
+                }
+              },
+              "items": {
+                "properties": {
+                  "description": {
+                    "type": "text",
+                    "fields": {
+                      "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                      },
+                      "suggest": {
+                        "type": "completion",
+                        "analyzer": "simple",
+                        "preserve_separators": true,
+                        "preserve_position_increments": true,
+                        "max_input_length": 50,
+                        "contexts": [
+                          {
+                            "name": "location",
+                            "type": "GEO",
+                            "precision": 6,
+                            "path": "location.geo"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  "flick": {
+                    "type": "text",
+                    "fields": {
+                      "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                      }
+                    }
+                  },
+                  "likes": { //an array. see favorites. it's the same
+                    "properties": {
+                      "count": {
+                        "type": "integer"
+                      },
+                      "users": {
+                        "properties": {
+                          "createdDate": {
+                            "type": "date",
+                            "format": "epoch_millis"
+                          },
+                          "userId": {
+                            "type": "text",
+                            "fields": {
+                              "keyword": {
+                                "type": "keyword",
+                                "ignore_above": 256
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "name": {
+                    "type": "text",
+                    "fields": {
+                      "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                      },
+                      "suggest": {
+                        "type": "completion",
+                        "analyzer": "simple",
+                        "preserve_separators": true,
+                        "preserve_position_increments": true,
+                        "max_input_length": 50,
+                        "contexts": [
+                          {
+                            "name": "location",
+                            "type": "GEO",
+                            "precision": 6,
+                            "path": "location.geo"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  "optionGroups": { // an array
+                    "properties": {
+                      "options": {
+                        "properties": {
+                          "name": {
+                            "type": "text",
+                            "fields": {
+                              "keyword": {
+                                "type": "keyword",
+                                "ignore_above": 256
+                              }
+                            }
+                          },
+                          "price": {
+                            "type": "float"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "prices": { // an array
+                    "properties": {
+                      "value": {
+                        "type": "float"
+                      },
+                      "label": {
+                        "type": "text",
+                        "fields": {
+                          "keyword": {
+                            "type": "keyword",
+                            "ignore_above": 256
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "name": {
+                "type": "text",
+                "fields": {
+                  "keyword": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                  },
+                  "suggest": {
+                    "type": "completion",
+                    "analyzer": "simple",
+                    "preserve_separators": true,
+                    "preserve_position_increments": true,
+                    "max_input_length": 50,
+                    "contexts": [
+                      {
+                        "name": "location",
+                        "type": "GEO",
+                        "precision": 6,
+                        "path": "location.geo"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "owner": {
+            "properties": {
+              "email": {
+                "type": "text",
+                "fields": {
+                  "keyword": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                  }
+                }
+              },
+              "userId": {
+                "type": "text",
+                "fields": {
+                  "keyword": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                  }
+                }
+              }
+            }
+          },
+          "profile": {
+            "properties": {
+              "description": {
+                "type": "text",
+                "fields": {
+                  "keyword": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                  },
+                  "suggest": {
+                    "type": "completion",
+                    "analyzer": "simple",
+                    "preserve_separators": true,
+                    "preserve_position_increments": true,
+                    "max_input_length": 50,
+                    "contexts": [
+                      {
+                        "name": "location",
+                        "type": "GEO",
+                        "precision": 6,
+                        "path": "location.geo"
+                      }
+                    ]
+                  }
+                }
+              },
+              "name": {
+                "type": "text",
+                "fields": {
+                  "keyword": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                  },
+                  "suggest": {
+                    "type": "completion",
+                    "analyzer": "simple",
+                    "preserve_separators": true,
+                    "preserve_position_increments": true,
+                    "max_input_length": 50,
+                    "contexts": [
+                      {
+                        "name": "location",
+                        "type": "GEO",
+                        "precision": 6,
+                        "path": "location.geo"
+                      }
+                    ]
+                  }
+                }
+              },
+              "phone": {
+                "type": "text",
+                "fields": {
+                  "keyword": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                  }
+                }
+              },
+              "tags": {
+                "type": "text",
+                "fields": {
+                  "keyword": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                  },
+                  "suggest": {
+                    "type": "completion",
+                    "analyzer": "simple",
+                    "preserve_separators": true,
+                    "preserve_position_increments": true,
+                    "max_input_length": 50,
+                    "contexts": [
+                      {
+                        "name": "location",
+                        "type": "GEO",
+                        "precision": 6,
+                        "path": "location.geo"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

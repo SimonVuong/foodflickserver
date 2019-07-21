@@ -1,0 +1,41 @@
+query getRestSearchSuggestions($query: String!) {
+  getRestSearchSuggestions(query: $query) {
+    ...restFragment
+  }
+}
+        
+fragment restFragment on Rest {
+  _id
+  profile {
+    name
+    phone
+    description
+  }
+  location {
+    address {
+      address1
+      address2
+      city
+      state
+      zip
+  	}
+	}
+  owner {
+    _id
+    email
+  }
+  managers {
+    _id
+    email
+  }
+  menu {
+    name
+    description
+    items {
+      name
+      price
+      description
+      flick
+    }
+  }
+}

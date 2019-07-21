@@ -1,0 +1,42 @@
+mutation updateRestProfile($restId: ID!, $newProfile: ProfileInput!) {
+  updateRestProfile(restId: $restId, newProfile: $newProfile) {
+    ...restFragment
+  }
+}
+        
+fragment restFragment on Rest {
+  _id
+  profile {
+    name
+    phone
+    description
+    tags
+  }
+  location {
+    address {
+      address1
+      address2
+      city
+      state
+      zip
+    }
+  }
+  owner {
+    userId
+    email
+  }
+  managers {
+    userId
+    email
+  }
+  menu {
+    name
+    description
+    items {
+      name
+      price
+      description
+      flick
+    }
+  }
+}

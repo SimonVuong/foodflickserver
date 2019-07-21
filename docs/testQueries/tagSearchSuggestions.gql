@@ -1,0 +1,11 @@
+query tagSearchSuggestions($query: String!) {
+  tagSearchSuggestions(query: $query) {
+    ...tagFragment
+  }
+}
+        
+fragment tagFragment on Tag {
+  _id
+  name
+  count
+}
