@@ -47,7 +47,7 @@ GHvfjzAiLDRjG8pWVA==
 
 const production = {
   app: {
-    port: 8080,
+    port: process.env.PORT || 8080,
   },
   auth: {
     domain: 'https://foodflick.auth0.com',
