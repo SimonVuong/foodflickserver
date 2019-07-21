@@ -47,7 +47,7 @@ const development = {
 
 const production = {
   app: {
-    port: process.env.PORT,
+    port: 8080,
   },
   auth: {
     domain: 'https://foodflick.auth0.com',
