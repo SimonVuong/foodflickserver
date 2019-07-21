@@ -1,5 +1,5 @@
 export const TagQueryResolvers = {
-  tagSearchSuggestions: async (root, { query }, { signedInUser, TagService }) => {
-    return await TagService.getTagSearchSuggestions(signedInUser, query);
+  tagSearchSuggestions: async (root, { query }, { TagService }) => {
+    return await TagService.getTagSearchSuggestions(query);
   },
 }

@@ -43,8 +43,7 @@ class TagService {
     });
   }
 
-  async getTagSearchSuggestions (signedInUser, prefix) {
-    if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
+  async getTagSearchSuggestions (prefix) {
     const suggestionName = 'tags';
     const res = await this.elastic.search({
       index: TAG_INDEX,

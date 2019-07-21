@@ -9,6 +9,7 @@ class BankingService {
     const options = {
       type: 'custom',
       business_name: restId,
+      requested_capabilities: ['platform_payments'],
     };
     if (accountNumber && routingNumber) {
       options.external_account = {

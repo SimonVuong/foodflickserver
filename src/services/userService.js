@@ -1,4 +1,5 @@
 import fetch from 'node-fetch';
+import jwtUtil from 'jsonwebtoken';
 import { NEEDS_MANAGER_SIGN_IN_ERROR, NEEDS_SIGN_IN_ERROR, getCannotBeEmptyError } from '../utils/errors';
 import { MANAGER_PERM } from '../utils/auth';
 import { getCardService } from './cardService';
@@ -63,7 +64,7 @@ const waitForNewAuth0ManagementToken = () => {
 }
 
 //*1000 because exp is in seconds and Date.now() is in miliseconds
-const isTokenValid = () => auth0ManagementToken && jwtUtil.decode(auth0ManagementToken).exp * 1000 < Date.now();
+const isTokenValid = () => auth0ManagementToken && jwtUtil.decode(auth0ManagementToken).exp * 1000 > Date.now();
 
 const getAuth0ManagementToken = () => new Promise (async (resolve, reject) => {
   if (isTokenValid()) {
@@ -142,9 +143,9 @@ class UserService {
 
   async doesUserExist(email) {
     try {
-      const managers = await this.getUsersByEmail(email);
-      if (managers.length === 1) return true;
-      if (managers.length === 0) return false;
+      const users = await this.getUsersByEmail(email);
+      if (users.length === 1) return true;
+      if (users.length === 0) return false;
     } catch (e) {
       console.error(e);
       throw new Error(`Internal server error. Could not verify if email already exists in FoodFlick.`);
