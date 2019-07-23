@@ -53,9 +53,9 @@ const start = async () => {
   }));
 
   // this is a workaround for https://github.com/react-native-community/react-native-webview/issues/428
-  // app.get('/card', function(req, res) {
-  //   res.sendFile(path.join(__dirname + '/src/urls/card.html'));
-  // });
+  app.get('/card', function(req, res) {
+    res.sendFile(path.join(__dirname + activeConfig.stripe.cardPath));
+  });
 
   // this is a workaround for https://github.com/react-native-community/react-native-webview/issues/428
   app.use(express.static(path.join(__dirname, 'public')));

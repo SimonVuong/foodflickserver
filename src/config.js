@@ -42,6 +42,9 @@ epyFwipmzDlomPEjrmWn+Z2BOVtPtux1W7w8RDZLasCDKdbWGSAHn6ExAanAkPVx
 GHvfjzAiLDRjG8pWVA==
 -----END CERTIFICATE-----
 ` // key to verify access token
+  },
+  stripe: {
+    cardPath: '/endpoints/devCard.html', 
   }
 };
 
@@ -73,6 +76,9 @@ HH5LD0RE9irb3gEn+BFMOd2JyMbddf2HiFIiPErw+LhDoWr2jpmFc6tIieDm8Fcj
 CAXO0dg=
 -----END CERTIFICATE-----
 `
+  },
+  stripe: {
+    cardPath: '/endpoints/prodCard.html', 
   }
 };
 
