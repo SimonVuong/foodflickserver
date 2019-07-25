@@ -17,7 +17,7 @@ class OrderService {
 
   async placeOrder (signedInUser, cart) {
     const { restId, items } = cart;
-    const rest = await getRestService().getRest(restId, ['menu.items.name', 'menu.items.prices', 'banking']);
+    const rest = await getRestService().getRest(restId);
     for (let i = 0; i < items.length; i++) {
       const orderItem = items[i];
       const { itemIndex, categoryIndex, selectedPrice } = orderItem;
