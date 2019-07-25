@@ -184,7 +184,8 @@ class RestService {
     let stripeRes;
     try {
       stripeRes = await getBankingService().signupRestBanking(
-        newRest._id,
+        newRest.profile.name,
+        signedInUser.ip,
         newRest.banking ? newRest.banking.accountNumber : undefined,
         newRest.banking ? newRest.banking.routingNumber : undefined,
       )
