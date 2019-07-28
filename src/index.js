@@ -58,7 +58,7 @@ const start = async () => {
   // });
 
   // this is a workaround for https://github.com/react-native-community/react-native-webview/issues/428
-  app.use(express.static(path.join(__dirname, 'public')));
+  app.use("/public", express.static(path.join(__dirname, 'public')));
 
   const server = createServer(app)
   const PORT = activeConfig.app.port;
