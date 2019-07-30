@@ -23,6 +23,7 @@ import { getBankingService } from './services/bankingService';
 import { getCardService } from './services/cardService';
 import { getOrderService } from './services/orderService';
 import { activeConfig } from './config';
+import { readFileSync } from 'fs';
 
 const STRIPE_KEY = activeConfig.stripe.STRIPE_KEY;
 
@@ -48,6 +49,11 @@ const start = async () => {
     schema
   })));
 
+  app.all('*', (req, res, next) => {
+    if (req.headers['x-forwarded-proto'] === 'https') return next();
+    res.redirect('https://' + req.hostname + req.url);
+  });
+
   app.use('/graphiql', graphiqlExpress({
     endpointURL: '/graphql',
   }));
@@ -60,7 +66,12 @@ const start = async () => {
   // this is a workaround for https://github.com/react-native-community/react-native-webview/issues/428
   app.use(express.static(path.join(__dirname, 'public')));
 
-  const server = createServer(app)
+  const server = createServer({
+    ca: readFileSync(path.join(__dirname, 'foodflick_co.ca-bundle')),
+    cert: readFileSync(path.join(__dirname, 'foodflick_co.crt')),
+    key: readFileSync(path.join(__dirname, 'foodflickco.key')),
+  }, app)
+
   const PORT = activeConfig.app.port;
   
   server.listen(PORT, () => {
