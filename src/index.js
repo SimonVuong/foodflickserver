@@ -72,10 +72,10 @@ const start = async () => {
     key: readFileSync(path.join(__dirname, 'foodflickco.key')),
   }, app)
 
-  const HTTPS_PORT = activeConfig.app.httpsPort;
+  const port = activeConfig.app.port;
   
-  secureServer.listen(HTTPS_PORT, () => {
-    console.log(`API Server is now running on port ${HTTPS_PORT}`)
+  secureServer.listen(port, () => {
+    console.log(`API Server is now running on port ${port}`)
   });
 
   // const insecureServer = httpServer(app);

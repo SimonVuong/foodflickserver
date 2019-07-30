@@ -16,8 +16,7 @@ const secrets = {
 
 const development = {
   app: {
-    httpsPort: 8443,
-    httpPort: 8080
+    port: 8443,
   },
   auth: {
     domain: 'https://foodflick-dev.auth0.com', // domain of auth management api
@@ -51,8 +50,7 @@ GHvfjzAiLDRjG8pWVA==
 
 const production = {
   app: {
-    httpsPort: process.env.HTTPS_PORT || 8443,
-    httpPort: process.env.HTTP_PORT || 8080
+    port: process.env.PORT || 8443,
   },
   auth: {
     domain: 'https://foodflick.auth0.com',
