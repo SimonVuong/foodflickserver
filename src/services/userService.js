@@ -28,7 +28,7 @@ const autoSetAuth0ManagementToken = async () => {
       }),
     });
 
-    if (!authRes.ok) throw(new Error('auth0 server auth failed'));      
+    if (!authRes.ok) throw(new Error(`auth0 server auth failed, ${JSON.stringify(await authRes.json())}`));      
 
     const {access_token, expires_in: expirationInSeconds, token_type} = await authRes.json();
 

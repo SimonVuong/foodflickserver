@@ -43,6 +43,13 @@ GHvfjzAiLDRjG8pWVA==
 -----END CERTIFICATE-----
 ` // key to verify access token
   },
+  elastic: {
+    node: 'localhost:9200',
+    auth: {
+      username: undefined,
+      password: undefined,
+    }
+  },
   stripe: {
     cardPath: '/endpoints/devCard.html', 
   }
@@ -76,6 +83,13 @@ HH5LD0RE9irb3gEn+BFMOd2JyMbddf2HiFIiPErw+LhDoWr2jpmFc6tIieDm8Fcj
 CAXO0dg=
 -----END CERTIFICATE-----
 `
+  },
+  elastic: {
+    node: 'https://a153191553584841a3c930b758f559c6.us-east-1.aws.found.io:9243',
+    auth: {
+      username: 'elastic',
+      password: process.env.ELASTIC_PASS,
+    }
   },
   stripe: {
     cardPath: '/endpoints/prodCard.html', 

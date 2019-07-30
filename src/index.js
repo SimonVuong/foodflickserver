@@ -4,8 +4,7 @@ import express from 'express';
 import path  from 'path';
 import cors from 'cors';
 import bodyParser from 'body-parser';
-import { createServer as httpsServer } from 'https';
-import { createServer as httpServer } from 'http';
+import { createServer } from 'https';
 import { graphqlExpress, graphiqlExpress } from 'graphql-server-express';
 // Subs
 import { execute, subscribe } from 'graphql'
@@ -30,10 +29,6 @@ const STRIPE_KEY = activeConfig.stripe.STRIPE_KEY;
 
 const start = async () => {
   const app = express();
-  app.all('*', (req, res, next) => {
-    if (req.headers['x-forwarded-proto'] === 'https') return next();
-    res.redirect('https://' + req.hostname + req.url);
-  });
   app.use(cors());
   app.use(bodyParser.urlencoded({ extended: true }));
   app.use(bodyParser.json());
@@ -62,11 +57,10 @@ const start = async () => {
   app.get('/card', function(req, res) {
     res.sendFile(path.join(__dirname + activeConfig.stripe.cardPath));
   });
-
-  // this is a workaround for https://github.com/react-native-community/react-native-webview/issues/428
   app.use(express.static(path.join(__dirname, 'public')));
 
-  const secureServer = httpsServer({
+
+  const secureServer = createServer({
     ca: readFileSync(path.join(__dirname, 'foodflick_co.ca-bundle')),
     cert: readFileSync(path.join(__dirname, 'foodflick_co.crt')),
     key: readFileSync(path.join(__dirname, 'foodflickco.key')),
@@ -77,9 +71,6 @@ const start = async () => {
   secureServer.listen(port, () => {
     console.log(`API Server is now running on port ${port}`)
   });
-
-  // const insecureServer = httpServer(app);
-  // insecureServer.listen(activeConfig.app.httpPort);
 
   // Subs
   // const SUBSCRIPTIONS_PATH = '/subscriptions';
