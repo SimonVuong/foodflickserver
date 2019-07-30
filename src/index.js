@@ -4,7 +4,7 @@ import express from 'express';
 import path  from 'path';
 import cors from 'cors';
 import bodyParser from 'body-parser';
-import { createServer } from 'https';
+import { createServer } from 'http';
 import { graphqlExpress, graphiqlExpress } from 'graphql-server-express';
 // Subs
 import { execute, subscribe } from 'graphql'
@@ -60,11 +60,14 @@ const start = async () => {
   app.use(express.static(path.join(__dirname, 'public')));
 
 
-  const secureServer = createServer({
-    ca: readFileSync(path.join(__dirname, 'foodflick_co.ca-bundle')),
-    cert: readFileSync(path.join(__dirname, 'foodflick_co.crt')),
-    key: readFileSync(path.join(__dirname, 'foodflickco.key')),
-  }, app)
+  // const secureServer = createServer({
+  //   ca: readFileSync(path.join(__dirname, 'foodflick_co.ca-bundle')),
+  //   cert: readFileSync(path.join(__dirname, 'foodflick_co.crt')),
+  //   key: readFileSync(path.join(__dirname, 'foodflickco.key')),
+  // }, app)
+  // must use http.createServer instead of https.createServer because
+  // https://stackoverflow.com/questions/41488602/heroku-connection-closed-code-h13
+  const secureServer = createServer(app);
 
   const port = activeConfig.app.port;
   
