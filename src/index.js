@@ -78,8 +78,8 @@ const start = async () => {
     console.log(`API Server is now running on port ${HTTPS_PORT}`)
   });
 
-  const insecureServer = httpServer(app);
-  insecureServer.listen(activeConfig.app.httpPort);
+  // const insecureServer = httpServer(app);
+  // insecureServer.listen(activeConfig.app.httpPort);
 
   // Subs
   // const SUBSCRIPTIONS_PATH = '/subscriptions';
