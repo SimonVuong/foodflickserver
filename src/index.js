@@ -4,7 +4,8 @@ import express from 'express';
 import path  from 'path';
 import cors from 'cors';
 import bodyParser from 'body-parser';
-import { createServer } from 'http';
+import { createServer as httpsServer } from 'https';
+import { createServer as httpServer } from 'http';
 import { graphqlExpress, graphiqlExpress } from 'graphql-server-express';
 // Subs
 import { execute, subscribe } from 'graphql'
@@ -28,7 +29,11 @@ import { readFileSync } from 'fs';
 const STRIPE_KEY = activeConfig.stripe.STRIPE_KEY;
 
 const start = async () => {
-  var app = express();
+  const app = express();
+  app.all('*', (req, res, next) => {
+    if (req.headers['x-forwarded-proto'] === 'https') return next();
+    res.redirect('https://' + req.hostname + req.url);
+  });
   app.use(cors());
   app.use(bodyParser.urlencoded({ extended: true }));
   app.use(bodyParser.json());
@@ -49,11 +54,6 @@ const start = async () => {
     schema
   })));
 
-  app.all('*', (req, res, next) => {
-    if (req.headers['x-forwarded-proto'] === 'https') return next();
-    res.redirect('https://' + req.hostname + req.url);
-  });
-
   app.use('/graphiql', graphiqlExpress({
     endpointURL: '/graphql',
   }));
@@ -66,18 +66,20 @@ const start = async () => {
   // this is a workaround for https://github.com/react-native-community/react-native-webview/issues/428
   app.use(express.static(path.join(__dirname, 'public')));
 
-  const server = createServer({
+  const secureServer = httpsServer({
     ca: readFileSync(path.join(__dirname, 'foodflick_co.ca-bundle')),
     cert: readFileSync(path.join(__dirname, 'foodflick_co.crt')),
     key: readFileSync(path.join(__dirname, 'foodflickco.key')),
   }, app)
 
-  const PORT = activeConfig.app.port;
+  const HTTPS_PORT = activeConfig.app.httpsPort;
   
-  server.listen(PORT, () => {
-    console.log(`API Server is now running on ${PORT}/graphql`)
-    // console.log(`API Subscriptions server is now running on ws://localhost:${PORT}${SUBSCRIPTIONS_PATH}`)
+  secureServer.listen(HTTPS_PORT, () => {
+    console.log(`API Server is now running on port ${HTTPS_PORT}`)
   });
+
+  const insecureServer = httpServer(app);
+  insecureServer.listen(activeConfig.app.httpPort);
 
   // Subs
   // const SUBSCRIPTIONS_PATH = '/subscriptions';
@@ -95,3 +97,7 @@ const start = async () => {
 };
 
 start();
+
+// const fs = require('fs');
+// const https = require('https');
+// const express = require('')
