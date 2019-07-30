@@ -75,7 +75,7 @@ const start = async () => {
   const PORT = activeConfig.app.port;
   
   server.listen(PORT, () => {
-    console.log(`API Server is now running on http://localhost:${PORT}/graphql`)
+    console.log(`API Server is now running on ${PORT}/graphql`)
     // console.log(`API Subscriptions server is now running on ws://localhost:${PORT}${SUBSCRIPTIONS_PATH}`)
   });
 
