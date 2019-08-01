@@ -1,2 +1,2 @@
 // how to start web server in heroku
-web: npm start
+web: node ./dist/server.js
