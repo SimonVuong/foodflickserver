@@ -16,7 +16,7 @@ const secrets = {
 
 const development = {
   app: {
-    port: 8080
+    port: process.env.PORT || 8080
   },
   auth: {
     domain: 'https://foodflick-dev.auth0.com', // domain of auth management api
