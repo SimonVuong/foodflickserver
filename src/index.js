@@ -53,11 +53,19 @@ const start = async () => {
     endpointURL: '/graphql',
   }));
 
+
+  app.use(express.static(path.join(__dirname, '/app')))
+  app.get('*', function(request, response){
+    console.log("Hello", __dirname);
+    response.sendFile(path.join(__dirname, '/index.html'))
+  })
+
   // this is a workaround for https://github.com/react-native-community/react-native-webview/issues/428
-  app.get('/card', function(req, res) {
-    res.sendFile(path.join(__dirname + activeConfig.stripe.cardPath));
-  });
-  app.use(express.static(path.join(__dirname, 'public')));
+  // app.get('/card', function(req, res) {
+  //   res.sendFile(path.join(__dirname + activeConfig.stripe.cardPath));
+  // });
+  // app.use(express.static(path.join(__dirname, 'public')));
+
 
 
   // const secureServer = createServer({
