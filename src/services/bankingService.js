@@ -5,11 +5,22 @@ class BankingService {
 
   getStripeRestAccount = stripeId => this.stripe.accounts.retrieve(stripeId);
 
-  signupRestBanking = (restId, accountNumber, routingNumber) => {
+  // in local dev, there is no ip
+  signupRestBanking = (restName, ip = '127.0.0.1', accountNumber, routingNumber) => {
     const options = {
       type: 'custom',
-      business_name: restId,
+      business_profile: {
+        product_description: restName,
+      },
+      business_type: 'company',
+      company: {
+        name: restName,
+      },
       requested_capabilities: ['platform_payments'],
+      tos_acceptance: {
+        date: Math.floor(Date.now() / 1000),
+        ip,
+      },
     };
     if (accountNumber && routingNumber) {
       options.external_account = {

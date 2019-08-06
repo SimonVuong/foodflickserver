@@ -28,7 +28,7 @@ class GeoService {
       const firstRes = jsonData.results[0];
       const { accuracy, accuracy_type } = firstRes;
       // only store the geo code if we are able to find an exact coordinate
-      if (accuracy === 1 && (accuracy_type === 'rooftop' || accuracy_type === 'range_interpolation' || accuracy_type === 'point')) {
+      if (accuracy > 0.7 && (accuracy_type === 'rooftop' || accuracy_type === 'range_interpolation' || accuracy_type === 'point')) {
         const { lat, lng } = firstRes.location;
         return {
           lat,
@@ -37,7 +37,7 @@ class GeoService {
       }
       console.warn('Found estimate geocode', firstRes);
     }
-    throw new Error(`Could not find exact coordinates for '${street} ${city} ${state}, ${zip}'. Check your address and try again`);
+    throw new Error(`Could not find coordinates for '${street} ${city} ${state}, ${zip}'. Check your address and try again`);
   }
 }
 

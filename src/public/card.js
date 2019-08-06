@@ -1,7 +1,5 @@
 'use strict';
 
-var stripe = Stripe('pk_test_6pRNASCoBOKtIshFeQd4XMUh');
-
 function submit() {
   var submit = document.createElement('input');
   submit.type = 'submit';
@@ -110,7 +108,7 @@ function registerElements(elements) {
       if (result.token) {
         // If we received a token, show the token ID.
         console.log(result.token.id);
-        window.postMessage(result.token.id);
+        window.ReactNativeWebView.postMessage(result.token.id);
         // formContainer.classList.add('submitted');
       } else {
         // Otherwise, un-disable inputs.

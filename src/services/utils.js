@@ -94,9 +94,9 @@ export const getRestUpdateOptions = (restId, signedInUser, script, params) => {
               }
             }
           }
-          void throwIfCategoryNameIsDuplicate(def newCategoryName, def currCategories) {
+          void throwIfCategoryNameIsDuplicate(def newCategoryName, def oldCategoryName, def currCategories) {
             for (int i = 0; i < currCategories.length; i++) {
-              if (currCategories[i].name.equals(newCategoryName)) {
+              if (currCategories[i].name.equals(newCategoryName) && !currCategories[i].name.equals(oldCategoryName)) {
                 throw new Exception("'" + newCategoryName + "' already exists. Please try again with a different name.");
               }
             }   

@@ -36,7 +36,7 @@ class MenuService {
       signedInUser,
       `
         def menu = ctx._source.menu;
-        throwIfCategoryNameIsDuplicate(params.newCategory.name, menu);
+        throwIfCategoryNameIsDuplicate(params.newCategory.name, null, menu);
         menu.add(params.newCategory);
       `,
       { newCategory }
@@ -54,7 +54,7 @@ class MenuService {
       signedInUser,
       `
         def menu = ctx._source.menu;
-        throwIfCategoryNameIsDuplicate(params.newCategory.name, menu);
+        throwIfCategoryNameIsDuplicate(params.newCategory.name, params.categoryName, menu);
         boolean updated = false;
         for (int i = 0; i < menu.length; i++) {
           if (menu[i].name.equals(params.categoryName)) {

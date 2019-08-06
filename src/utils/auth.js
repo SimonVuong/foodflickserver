@@ -7,7 +7,9 @@ const audience = activeConfig.auth.audience;
 
 export const MANAGER_PERM = 'write:rests';
 
-export const getSignedInUser = ({headers: { authorization }}) => {
+export const getSignedInUser = req => {
+  const ip = req.headers['x-forwarded-for'];
+  const authorization = req.headers.authorization;
   if (!authorization || authorization === 'undefined') {
     return null;
   }
@@ -25,6 +27,7 @@ export const getSignedInUser = ({headers: { authorization }}) => {
     user = {
       //remove identity provider because auth0 id does't include it
       _id: claims.sub,
+      ip,
       email: claims[namespace + 'email'],
       stripeId: claims[namespace + 'stripeId'],
       perms: claims.scope.includes(MANAGER_PERM) ? [MANAGER_PERM] : []

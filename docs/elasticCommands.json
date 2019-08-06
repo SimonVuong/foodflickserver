@@ -132,7 +132,7 @@ POST _reindex
   }
 }
 
-#POST _bulk
+POST _bulk
 { "index" : { "_index" : "tags", "_type" : "tag", "_id": "italian" } }
 { "name" : "Italian", "count": 0 }
 { "index" : { "_index" : "tags", "_type" : "tag", "_id": "french" } }
@@ -600,7 +600,7 @@ PUT rests/_mapping/rest
   }
 }
 
-PUT restscopy
+PUT rests
 {
   "mappings": {
     "rest": {

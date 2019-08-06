@@ -23,11 +23,12 @@ import { getBankingService } from './services/bankingService';
 import { getCardService } from './services/cardService';
 import { getOrderService } from './services/orderService';
 import { activeConfig } from './config';
+import { readFileSync } from 'fs';
 
 const STRIPE_KEY = activeConfig.stripe.STRIPE_KEY;
 
 const start = async () => {
-  var app = express();
+  const app = express();
   app.use(cors());
   app.use(bodyParser.urlencoded({ extended: true }));
   app.use(bodyParser.json());
@@ -52,18 +53,34 @@ const start = async () => {
     endpointURL: '/graphql',
   }));
 
+
   app.use(express.static(path.join(__dirname, '/app')))
   app.get('*', function(request, response){
     console.log("Hello", __dirname);
     response.sendFile(path.join(__dirname, '/index.html'))
   })
 
-  const server = createServer(app)
-  const PORT = activeConfig.app.port;
+  // this is a workaround for https://github.com/react-native-community/react-native-webview/issues/428
+  // app.get('/card', function(req, res) {
+  //   res.sendFile(path.join(__dirname + activeConfig.stripe.cardPath));
+  // });
+  // app.use(express.static(path.join(__dirname, 'public')));
+
+
+
+  // const secureServer = createServer({
+  //   ca: readFileSync(path.join(__dirname, 'foodflick_co.ca-bundle')),
+  //   cert: readFileSync(path.join(__dirname, 'foodflick_co.crt')),
+  //   key: readFileSync(path.join(__dirname, 'foodflickco.key')),
+  // }, app)
+  // must use http.createServer instead of https.createServer because
+  // https://stackoverflow.com/questions/41488602/heroku-connection-closed-code-h13
+  const secureServer = createServer(app);
+
+  const port = activeConfig.app.port;
   
-  server.listen(PORT, () => {
-    console.log(`API Server is now running on http://localhost:${PORT}/graphql`)
-    // console.log(`API Subscriptions server is now running on ws://localhost:${PORT}${SUBSCRIPTIONS_PATH}`)
+  secureServer.listen(port, () => {
+    console.log(`API Server is now running on port ${port}`)
   });
 
   // Subs
@@ -82,3 +99,7 @@ const start = async () => {
 };
 
 start();
+
+// const fs = require('fs');
+// const https = require('https');
+// const express = require('')
