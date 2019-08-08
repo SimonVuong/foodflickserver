@@ -33,7 +33,7 @@ const mutation = `
     deleteCategory(restId: ID!, categoryName: String!): Rest!
     deleteItem(restId: ID!, categoryName: String!, itemName: String!): Rest!
     deleteRestManager(restId: ID!, managerEmail: String!): Rest!
-    deleteRestPrinter(restId: ID!, pinterName: String!): Rest!
+    deleteRestPrinter(restId: ID!, printerName: String!): Rest!
     getRest(restId: ID!): Rest!
     giveRestFeedback(restId: ID!, feedback: String!): Boolean!
     placeOrder(cart: CartInput!): Boolean!

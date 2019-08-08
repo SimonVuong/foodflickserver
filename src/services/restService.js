@@ -256,7 +256,29 @@ class RestService {
   }
 
   async deleteRestPrinter(signedInUser, restId, printerName) {
-    
+    if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
+    if (!printerName) throw new Error(getCannotBeEmptyError(`Printer name`));
+
+    const res = await callElasticWithErrorHandler(options => this.elastic.update(options), getRestUpdateOptions(
+      restId,
+      signedInUser,
+      `
+        boolean foundPrinter = false;
+        for (int i = 0; i < ctx._source.printers.length; i++) { 
+          if (ctx._source.printers[i].name.equals(params.printerName)) {
+            foundPrinter = true;
+            ctx._source.printers.remove(i);
+          }
+        }
+        
+        if (!foundPrinter) {
+          throw new Exception ("Could not find printer '" + params.printerName + "'. Please try again with an existing printer");
+        }
+      `,
+      { printerName }
+    ));
+
+    return getUpdatedRestWithId(res, restId);
   }
 
   async updateRestPrinter(signedInUser, restId, newPrinter) {

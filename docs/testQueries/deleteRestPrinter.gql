@@ -1,0 +1,62 @@
+mutation deleteRestPrinter($restId: ID!, $printerName: String!) {
+  deleteRestPrinter(restId: $restId, printerName: $printerName) {
+    ...restFragment
+  }
+}
+
+fragment restFragment on Rest {
+  _id
+  profile {
+    name
+    phone
+    description
+  }
+  location{
+    address {
+      address1
+      address2
+      city
+      state
+      zip
+    }    
+  }
+  owner {
+    userId
+    email
+  }
+  managers {
+    userId
+    email
+  }
+  printers {
+    name
+    ip
+    port
+    type
+  }
+  menu {
+    name
+    description
+    items {
+      name
+      prices {
+       value
+        label
+      }
+      printers {
+        name
+        ip
+        port
+        type
+      }
+      description
+      flick
+    }
+  }
+}
+
+
+{
+  "restId": "D71rFmwB0QaGhfaOS2Jp",
+  "printerName": "kitchen2"
+}

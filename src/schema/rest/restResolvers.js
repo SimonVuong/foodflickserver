@@ -17,7 +17,7 @@ export const RestMutationResolvers = {
   },
 
   deleteRestPrinter: async (root, { restId, printerName }, { signedInUser, RestService }) => {
-    return await RestService.deleteRestManager(signedInUser, restId, printerName);  
+    return await RestService.deleteRestPrinter(signedInUser, restId, printerName);  
   },
 
   giveRestFeedback: async (root, { restId, feedback }, { signedInUser, RestService }) => {
