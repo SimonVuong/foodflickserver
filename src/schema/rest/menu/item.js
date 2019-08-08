@@ -1,12 +1,14 @@
 import Likes from './likes';
 import Price from './price';
 import OptionGroup from './optionGroup';
+import Printer from '../printer';
 
 const Item = `
   type Item {
     name: String!
     prices: [Price!]!
     description: String
+    printers: [Printer!]!
     #todo 1: not actually sure what type to make this yet...
     flick: String
     likes: Likes!
@@ -14,4 +16,4 @@ const Item = `
   }
 `
 
-export default () => [Item, Likes, Price, OptionGroup];
+export default () => [Item, Likes, Price, OptionGroup, Printer];

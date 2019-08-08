@@ -46,9 +46,41 @@ const _BankingInput = `
   }
 `
 
+const PrinterTypeInput = `
+  enum PrinterTypeInput {
+    epson
+    star
+  }
+`
+
+const _PrinterInput = `
+  input PrinterInput {
+    name: String!
+    ip: String!
+    port: String!
+    type: PrinterTypeInput!
+  }
+`
+
+const UpdatePrinterInput = `
+  input UpdatePrinterInput {
+    index: Int!
+    printer: PrinterInput!
+  }
+`
+
 //export a function to prevent top level schema from including a type (ex: user) mulitple times.
 //including all of rest dependencies in the return so that the toplevel schema, doesnt have to know about internal
 //rest details.
-export const NewRestInput = () => [_NewRestInput, ProfileInput, LocationInput, AddressInput, _BankingInput];
+const NewRestInput = () => [_NewRestInput, ProfileInput, LocationInput, AddressInput, _BankingInput];
 
-export const ManagerInput = () => [_ManagerInput];
+const ManagerInput = () => [_ManagerInput];
+
+const PrinterInput = () => [_PrinterInput, PrinterTypeInput]
+
+export {
+  NewRestInput,
+  ManagerInput,
+  PrinterInput,
+  UpdatePrinterInput
+}

@@ -23,7 +23,6 @@ import { getBankingService } from './services/bankingService';
 import { getCardService } from './services/cardService';
 import { getOrderService } from './services/orderService';
 import { activeConfig } from './config';
-import { readFileSync } from 'fs';
 
 const STRIPE_KEY = activeConfig.stripe.STRIPE_KEY;
 

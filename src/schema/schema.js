@@ -11,7 +11,7 @@ import Tag from './tag/tag';
 import { RestMutationResolvers, RestQueryResolvers } from './rest/restResolvers';
 import { MenuMutationResolvers } from './rest/menu/menuResolvers';
 import { UserMutationResolvers, UserQueryResolvers } from './user/userResolvers';
-import { NewRestInput, ManagerInput } from './rest/restInputs';
+import { NewRestInput, ManagerInput, PrinterInput, UpdatePrinterInput } from './rest/restInputs';
 import { NewCategoryInput, NewItemInput, UpdateItemInput } from './rest/menu/menuInputs';
 import { TagQueryResolvers } from './tag/tagResolvers';
 import { OrderMutationResolvers } from './order/orderResolver';
@@ -28,10 +28,12 @@ const mutation = `
     addItems(restId: ID!, categoryName: String!, items: [NewItemInput!]!): Rest!
     addRest(newRest: NewRestInput!): Rest!
     addRestManager(restId: ID!, managerEmail: String!): Rest!
+    addRestPrinter(restId: ID!, newPrinter: PrinterInput!): Rest!
     addUserFlicks(urls: [String!]!): Boolean!
     deleteCategory(restId: ID!, categoryName: String!): Rest!
     deleteItem(restId: ID!, categoryName: String!, itemName: String!): Rest!
     deleteRestManager(restId: ID!, managerEmail: String!): Rest!
+    deleteRestPrinter(restId: ID!, pinterName: String!): Rest!
     getRest(restId: ID!): Rest!
     giveRestFeedback(restId: ID!, feedback: String!): Boolean!
     placeOrder(cart: CartInput!): Boolean!
@@ -43,6 +45,7 @@ const mutation = `
     updateItemOrder(restId: ID!, categoryName: String!, newOrder: [Int!]!): Rest!
     updateRestBanking(restId: ID!, newBanking: BankingInput!): Rest!
     updateRestLocation(restId: ID!, newLocation: LocationInput!): Rest!
+    updateRestPrinter(restId: ID!, newPrinter: UpdatePrinterInput!): Rest!
     updateRestProfile(restId: ID!, newProfile: ProfileInput!): Rest!
     updateUserCard(cardToken: ID!): Card!
     updateUserEmail(newEmail: String!): Boolean!
@@ -87,6 +90,8 @@ const typeDefs = [
   UpdateItemInput,
   ManagerInput,
   CartInput,
+  UpdatePrinterInput,
+  PrinterInput,
   query,
   mutation,
   schema

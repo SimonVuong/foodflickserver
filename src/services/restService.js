@@ -202,6 +202,7 @@ class RestService {
     newRest.menu = [];
     newRest.managers = [];
     newRest.feedback = [];
+    newRest.printers = [];
     newRest.favorites = {
       count: 0,
       users: [],
@@ -225,6 +226,51 @@ class RestService {
       // getTagService().incramentAndAddTags(newRest.profile.tags).catch(e => console.error('failed to incramentAndAddTags tags', e));
       throw e;
     }
+  }
+
+  async addRestPrinter(signedInUser, restId, newPrinter) {
+    if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
+    if (!newPrinter.name) throw new Error(getCannotBeEmptyError(`Printer name`));
+    if (!newPrinter.ip) throw new Error(getCannotBeEmptyError(`Printer ip`));
+    if (!newPrinter.port) throw new Error(getCannotBeEmptyError(`Printer port`));
+    // shouldn't happen since it's an graphql enum
+    if (!newPrinter.type) throw new Error(getCannotBeEmptyError(`Printer type`));
+
+    const res = await callElasticWithErrorHandler(options => this.elastic.update(options), getRestUpdateOptions(
+      restId,
+      signedInUser,
+      `
+        for (printer in ctx._source.printers) {
+          if (printer.name.equals(params.newPrinter.name)) {
+            throw new Exception("'" + params.newPrinter.name + "' already exists. Please try again with a different name");
+          }
+          if (printer.ip.equals(params.newPrinter.ip)) {
+            throw new Exception("'" + params.newPrinter.ip + "' already exists. Please try again with a different ip");
+          }
+        }
+        ctx._source.printers.add(params.newPrinter);
+      `,
+      { newPrinter }
+    ));
+    return getUpdatedRestWithId(res, restId);
+  }
+
+  async deleteRestPrinter(signedInUser, restId, printerName) {
+    
+  }
+
+  async updateRestPrinter(signedInUser, restId, newPrinter) {
+    /** newPrinter
+     *    index: Int!
+          printer: {
+            name: String!
+            ip: String!
+            port: String!
+            type: String!
+          }
+     */
+    // when you find the doc, use context.source to grab the existing printer with [index]. then loop through all
+    // items and find the uses. and update them. then update the rest.printers[index].
   }
 
   async getRest(restId, fields) {

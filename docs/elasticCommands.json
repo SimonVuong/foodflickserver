@@ -39,7 +39,8 @@ PUT /_snapshot/foodflick/rests?wait_for_completion=true
 
 # restore rest index with data from rests snapshot
 POST /_snapshot/foodflick/rests/_restore
-POST /_snapshot/foodflick/rests-copy/_restore
+POST /_snapshot/foodflick/rests-copy/
+POST /_snapshot/foodflick/all/_restore
 #POST /_snapshot/foodflick/rest-mapping-only/_restore
 
 GET /_snapshot/foodflick/_all
@@ -48,6 +49,8 @@ GET /_snapshot/foodflick/rests
 GET /_snapshot/foodflick/
 # delete a snapshot
 DELETE /_snapshot/foodflick/rests
+DELETE /_snapshot/foodflick/users
+DELETE /_snapshot/foodflick/tags
 DELETE /_snapshot/foodflick/rests-copy
 
 
@@ -132,7 +135,7 @@ POST _reindex
   }
 }
 
-POST _bulk
+#POST _bulk
 { "index" : { "_index" : "tags", "_type" : "tag", "_id": "italian" } }
 { "name" : "Italian", "count": 0 }
 { "index" : { "_index" : "tags", "_type" : "tag", "_id": "french" } }
@@ -318,8 +321,8 @@ POST rests/_delete_by_query
 }
 
 DELETE rests
-DELETE restscopy
-#DELETE users
+DELETE restcopy
+DELETE users
 #DELETE tags
 
 DELETE rests/rest/rohuLWkBVBQEqv1uHn-S
@@ -384,6 +387,7 @@ POST rests/_delete_by_query
   }
 }
 
+
 POST rests/_update_by_query?conflicts=proceed
 {
     "script": {
@@ -415,6 +419,49 @@ POST rests/_update_by_query?conflicts=proceed
 {
     "script": {
       "source": """
+        def menu = ctx._source.menu;
+        if (menu != null) {
+          for (int i = 0 ; i < menu.length; i++) {
+            def items = menu[i].items;
+            if (items != null) {
+              for (int j = 0; j < items.length; j++) {
+                def item = items[j];
+                item.printers = params.printers;
+              } 
+            }
+          }
+        }
+      """,
+      "lang": "painless",
+      "params": {
+        "printers": []
+      }
+    },
+    "query" : {
+        "match_all" : {}
+    }
+}
+
+POST rests/_update_by_query?conflicts=proceed
+{
+    "script": {
+      "source": """
+        ctx._source.printers = params.printers;
+      """,
+      "params": {
+        "printers": []
+      }
+    },
+    "query" : {
+        "match_all" : {}
+    }
+}
+
+
+POST rests/_update_by_query?conflicts=proceed
+{
+    "script": {
+      "source": """
         ctx._source.favorites = params.favorite;
       """,
       "params": {
@@ -428,6 +475,7 @@ POST rests/_update_by_query?conflicts=proceed
         "match_all" : {}
     }
 }
+
 
 #POST /rests/rest/slngmmQB9nHU-Kj-F4A7/_update
 {
@@ -457,7 +505,8 @@ POST rests/_update_by_query?conflicts=proceed
   "_source": true
 }
 
-POST /rests/rest/slngmmQB9nHU-Kj-F4A7/_update
+
+POST rests/_update_by_query?conflicts=proceed
 {
   "script": {
     "source": """
@@ -477,7 +526,7 @@ POST /rests/rest/slngmmQB9nHU-Kj-F4A7/_update
   "_source": true
 }
 
-#POST tags/_update_by_query?conflicts=proceed
+POST tags/_update_by_query?conflicts=proceed
 {
     "script": {
       "source": """
@@ -552,6 +601,42 @@ POST rests/_search?pretty
 ########## mappings ##########
 GET /rests/_mapping/rest
 GET /newrests/_mapping/rest
+
+
+PUT rests/_mapping/rest
+{
+  "properties": {
+    "printers": {
+      "properties": {
+        "name" : {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "ip": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "port" : {
+          "type": "text"
+        },
+        "type": {
+          "type": "text"
+        }
+      }
+    }
+  }
+}
+
 
 PUT rests/_mapping/rest
 {
@@ -771,6 +856,34 @@ PUT rests
         },
         "menu": {
           "properties": {
+            "printers": {
+              "properties": {
+                "name" : {
+                  "type": "text",
+                  "fields": {
+                    "keyword": {
+                      "type": "keyword",
+                      "ignore_above": 256
+                    }
+                  }
+                },
+                "ip": {
+                  "type": "text",
+                  "fields": {
+                    "keyword": {
+                      "type": "keyword",
+                      "ignore_above": 256
+                    }
+                  }
+                },
+                "port" : {
+                  "type": "text"
+                },
+                "type": {
+                  "type": "text"
+                }
+              }
+            },
             "description": {
               "type": "text",
               "fields": {
@@ -964,6 +1077,34 @@ PUT rests
             }
           }
         },
+        "printers": {
+          "properties": {
+            "name" : {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "ip": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "port" : {
+              "type": "text"
+            },
+            "type": {
+              "type": "text"
+            }
+          }
+        },
         "profile": {
           "properties": {
             "description": {
@@ -1069,6 +1210,7 @@ PUT rests
     }
   }
 }
+
 
 
 PUT users
