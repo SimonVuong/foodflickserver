@@ -1,3 +1,5 @@
+import { PrinterInput } from '../restInputs';
+
 export const _PriceInput = `
   input PriceInput {
     value: Float!
@@ -22,6 +24,7 @@ const _NewItemInput = `
   input NewItemInput {
     name: String!
     prices: [PriceInput!]!
+    printers: [PrinterInput!]!
     description: String
     #todo 1: not actually sure what type to make this yet...
     flick: String
@@ -45,6 +48,6 @@ const _NewCategoryInput = `
 
 export const NewCategoryInput = () => [_NewCategoryInput];
 
-export const NewItemInput = () => [_NewItemInput, _PriceInput, OptionInput, OptionGroupInput];
+export const NewItemInput = () => [_NewItemInput, _PriceInput, OptionInput, OptionGroupInput, PrinterInput];
 
 export const UpdateItemInput = () => [_UpdateItemInput];

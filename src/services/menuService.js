@@ -227,6 +227,7 @@ class MenuService {
               dbItem.prices = updatedItem.item.prices;
               dbItem.name = updatedItem.item.name;
               dbItem.description = updatedItem.item.description;
+              dbItem.printers = updatedItem.item.printers;
               dbItem.flick = updatedItem.item.flick;
               dbItem.optionGroups = updatedItem.item.optionGroups;
             }

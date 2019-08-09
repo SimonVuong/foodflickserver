@@ -11,19 +11,21 @@ fragment restFragment on Rest {
     phone
     description
   }
-  address {
-    address1
-    address2
-    city
-    state
-    zip
+  location {
+    address {
+      address1
+      address2
+      city
+      state
+      zip
+    }
   }
   owner {
-    _id
+    userId
     email
   }
   managers {
-    _id
+    userId
     email
   }
   menu {
@@ -31,9 +33,35 @@ fragment restFragment on Rest {
     description
     items {
       name
-      price
+      prices {
+        value
+        label
+      }
+      printers {
+        name
+        ip
+        port
+        type
+      }
       description
       flick
     }
   }
+}
+
+{
+  "restId": "D71rFmwB0QaGhfaOS2Jp",
+  "categoryName": "Noodles",
+  "items": [
+    {
+      "name": "printer test",
+      "prices": [
+        {
+          "value": 4
+        }
+      ],
+      "optionGroups": [],
+      "printers": []
+    }
+  ]
 }

@@ -11,19 +11,21 @@ fragment restFragment on Rest {
     phone
     description
   }
-  address {
-    address1
-    address2
-    city
-    state
-    zip
+  location {
+    address {
+      address1
+      address2
+      city
+      state
+      zip 
+    }
   }
   owner {
-    _id
+    userId
     email
   }
   managers {
-    _id
+    userId
     email
   }
   menu {
@@ -31,9 +33,46 @@ fragment restFragment on Rest {
     description
     items {
       name
-      price
+      prices {
+        value
+        label
+      }
+      printers {
+        name
+        ip
+        port
+        type
+      }
       description
       flick
     }
   }
+}
+
+{
+  "restId": "D71rFmwB0QaGhfaOS2Jp",
+  "categoryName": "Noodles",
+  "items": [
+   	{
+      "index": 4,
+      "item": {
+        "name": "printer test",
+        "prices": [
+          {
+            "value": 10
+          }
+        ],
+        "flick": "https://firebasestorage.googleapis.com/v0/b/food-flick.appspot.com/o/D71rFmwB0QaGhfaOS2Jp%2FNoodles%2Fspicy%20seafood%20noodle%20soup?alt=media&token=74e21636-cc7c-47bc-a617-c5cc4929d649",
+        "optionGroups": [],
+        "printers": [
+          {
+            "name": "kitchen2",
+            "ip": "192.168.123.102",
+            "port": "9100",
+            "type": "epson"   
+          }
+        ]
+      }
+    }
+  ]
 }
