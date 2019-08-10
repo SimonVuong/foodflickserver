@@ -49,3 +49,9 @@ export const MenuMutationResolvers = {
     return await MenuService.updateItemOrder(signedInUser, restId, categoryName, newOrder);
   },
 };
+
+export const MenuQueryResolvers = {
+  itemsWithPrinter: async (root, { restId, printerName }, { signedInUser, MenuService }) => {
+    return await MenuService.getItemsWithPrinter(signedInUser, restId, printerName);
+  },
+}

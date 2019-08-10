@@ -9,7 +9,9 @@ import {
   getUpdatedRestWithId,
   cleanCustomerRest,
   injectFindUserOrderedIndexMethod,
-  callElasticWithErrorHandler
+  callElasticWithErrorHandler,
+  REST_INDEX,
+  REST_TYPE
 } from './utils';
 
 const throwIfInvalidReorder = newOrder => {
@@ -200,6 +202,26 @@ class MenuService {
     return getUpdatedRestWithId(res, restId);
   }
 
+  async getItemsWithPrinter(signedInUser, restId, printerName) {
+    if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
+    const res = await this.elastic.get({
+      index: REST_INDEX,
+      type: REST_TYPE,
+      id: restId,
+      _sourceInclude: [ 'owner', 'managers', 'menu', 'profile' ]
+    });
+    const rest = res._source;
+    if (rest.owner.userId != signedInUser._id || (rest.managers.length > 0 && rest.managers.findIndex(manager => manager.userId === signedInUser._id) === -1)) {
+      throw new Error(`Unauthorized. ${signedInUser.email} is not a owner/manager of ${rest.profile.name}`);
+    }
+    return rest.menu.reduce((acc, category) => {
+      const items = category.items
+        .filter(({ printers }) => printers.find(printer => printer.name === printerName))
+        .map(({ name }) => name);
+      return acc.concat(items);
+    }, []);
+  }
+
   //todo 1: surround item details in details object for graphql and elastic
   async updateItems(signedInUser, restId, categoryName, items) {
     if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
@@ -223,6 +245,24 @@ class MenuService {
                 throw new Exception("Can't update index " + updatedItem.index + " for category of length " + menu[i].items.length);
               }
               throwIfItemNameIsDuplicate(updatedItem.item.name, updatedItem.index, menu[i].items);
+              for (def itemPrinter : updatedItem.item.printers) {
+                for (int j = 0; j < ctx._source.printers.length; j++) {
+                  def storedPrinter = ctx._source.printers[j];
+                  def storedName = storedPrinter.name;
+                  def storedIp = storedPrinter.ip;
+                  def storedPort = storedPrinter.port;
+                  def storedType = storedPrinter.type;
+
+                  def itemPrinterName = itemPrinter.name;
+                  def itemPrinterIp = itemPrinter.ip;
+                  def itemPrinterPort = itemPrinter.port;
+                  def itemPrinterType = itemPrinter.type;
+
+                  if (!itemPrinterName.equals(storedName) || !itemPrinterIp.equals(storedIp) || !itemPrinterPort.equals(storedPort) || !itemPrinterType.equals(storedType)) {
+                    throw new Exception("Printer with name'" + itemPrinterName + "' doesn't exist. If name is correct then ip, port, or type may be wrong. Please choose an existing printer");
+                  }
+                }
+              }
               def dbItem = menu[i].items[updatedItem.index];
               dbItem.prices = updatedItem.item.prices;
               dbItem.name = updatedItem.item.name;

@@ -12,10 +12,10 @@ import {
   cleanCustomerRest,
   injectFindUserOrderedIndexMethod,
   callElasticWithErrorHandler,
-  getRestReadOptions
+  getRestReadOptions,
+  QUERY_SIZE
 } from './utils';
-
-const QUERY_SIZE = 1000; //number of hits to include in query. arbutarialy large size to include all.
+import { throwIfInvalidPrinter } from '../schema/rest/printer';
 
 const findDuplicate = list => {
   const seen = new Set();
@@ -230,11 +230,7 @@ class RestService {
 
   async addRestPrinter(signedInUser, restId, newPrinter) {
     if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
-    if (!newPrinter.name) throw new Error(getCannotBeEmptyError(`Printer name`));
-    if (!newPrinter.ip) throw new Error(getCannotBeEmptyError(`Printer ip`));
-    if (!newPrinter.port) throw new Error(getCannotBeEmptyError(`Printer port`));
-    // shouldn't happen since it's an graphql enum
-    if (!newPrinter.type) throw new Error(getCannotBeEmptyError(`Printer type`));
+    throwIfInvalidPrinter(newPrinter);
 
     const res = await callElasticWithErrorHandler(options => this.elastic.update(options), getRestUpdateOptions(
       restId,
@@ -272,6 +268,7 @@ class RestService {
                 item.printers.removeIf(printer -> printer.name.equals(params.printerName))
               }
             }
+            break;
           }
         }
         
@@ -297,6 +294,31 @@ class RestService {
      */
     // when you find the doc, use context.source to grab the existing printer with [index]. then loop through all
     // items and find the uses. and update them. then update the rest.printers[index].
+    if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
+    throwIfInvalidPrinter(newPrinter.printer);
+
+    const res = await callElasticWithErrorHandler(options => this.elastic.update(options), getRestUpdateOptions(
+      restId,
+      signedInUser,
+      `
+        def targetPrinterIndex = params.newPrinter.index;
+        def restPrinters = ctx._source.printers;
+        def originalPrinter = restPrinters[targetPrinterIndex];
+        restPrinters[targetPrinterIndex] = params.newPrinter.printer;
+        for (category in ctx._source.menu) {
+          for (item in category.items) {
+            for (int i = 0; i < item.printers.length; i++) {
+              if (item.printers[i].name.equals(originalPrinter.name)) {
+                item.printers[i] = params.newPrinter.printer;
+              }
+            }
+          }
+        }
+      `,
+      { newPrinter }
+    ));
+
+    return getUpdatedRestWithId(res, restId);
   }
 
   async getRest(restId, fields) {

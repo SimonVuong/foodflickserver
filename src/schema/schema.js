@@ -9,7 +9,7 @@ import Flick from './user/flick';
 import Rest from './rest/rest';
 import Tag from './tag/tag';
 import { RestMutationResolvers, RestQueryResolvers } from './rest/restResolvers';
-import { MenuMutationResolvers } from './rest/menu/menuResolvers';
+import { MenuMutationResolvers, MenuQueryResolvers } from './rest/menu/menuResolvers';
 import { UserMutationResolvers, UserQueryResolvers } from './user/userResolvers';
 import { NewRestInput, ManagerInput, PrinterInput, UpdatePrinterInput } from './rest/restInputs';
 import { NewCategoryInput, NewItemInput, UpdateItemInput } from './rest/menu/menuInputs';
@@ -61,6 +61,7 @@ const mutation = `
 const query = `
   type Query {
     doesUserExist(email: String!): Boolean!
+    itemsWithPrinter(restId: ID!, printerName: String!): [String!]!
     myCard: Card
     myRests: [Rest!]!
     restWithBanking(restId: String!): Rest!
@@ -98,7 +99,7 @@ const typeDefs = [
 ];
 
 const resolvers = {
-  Query: merge(RestQueryResolvers, UserQueryResolvers, TagQueryResolvers),
+  Query: merge(RestQueryResolvers, MenuQueryResolvers, UserQueryResolvers, TagQueryResolvers),
   Mutation: merge(RestMutationResolvers, MenuMutationResolvers, UserMutationResolvers, OrderMutationResolvers)
   // Subscription: {
   //   tagAdded: {

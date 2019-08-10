@@ -6,6 +6,8 @@ export const REST_TYPE = 'rest';
 export const TAG_INDEX = 'tags';
 export const TAG_TYPE = 'tag';
 
+export const QUERY_SIZE = 1000; //number of hits to include in query. arbutarialy large size to include all.
+
 export const getUpdatedRestWithId = (res, restId) => {
   const rest = res.get._source;
   rest._id = restId;
