@@ -283,17 +283,6 @@ class RestService {
   }
 
   async updateRestPrinter(signedInUser, restId, newPrinter) {
-    /** newPrinter
-     *    index: Int!
-          printer: {
-            name: String!
-            ip: String!
-            port: String!
-            type: String!
-          }
-     */
-    // when you find the doc, use context.source to grab the existing printer with [index]. then loop through all
-    // items and find the uses. and update them. then update the rest.printers[index].
     if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
     throwIfInvalidPrinter(newPrinter.printer);
 
@@ -333,6 +322,21 @@ class RestService {
       console.error(`failed to get stripeId for rest ${restId}`, e);
       throw e;
     }
+  }
+
+  async getRestPrinters(signedInUser, restId) {
+    if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
+    const res = await this.elastic.get({
+      index: REST_INDEX,
+      type: REST_TYPE,
+      id: restId,
+      _sourceInclude: [ 'owner', 'managers', 'menu', 'profile', 'printers']
+    });
+    const rest = res._source;
+    if (rest.owner.userId != signedInUser._id || (rest.managers.length > 0 && rest.managers.findIndex(manager => manager.userId === signedInUser._id) === -1)) {
+      throw new Error(`Unauthorized. ${signedInUser.email} is not a owner/manager of ${rest.profile.name}`);
+    }
+    return rest.printers;
   }
 
   async getRestWithBanking (signedInUser, restId) {

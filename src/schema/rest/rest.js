@@ -16,7 +16,7 @@ const Rest = `
     banking: Banking!
     feedback: [Feedback!]
     favorites: Favorites!
-    printers: [Printer!]!
+    printers: [Printer!]
     profile: Profile!
     location: Location!
     owner: Manager

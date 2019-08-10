@@ -34,7 +34,6 @@ const mutation = `
     deleteItem(restId: ID!, categoryName: String!, itemName: String!): Rest!
     deleteRestManager(restId: ID!, managerEmail: String!): Rest!
     deleteRestPrinter(restId: ID!, printerName: String!): Rest!
-    getRest(restId: ID!): Rest!
     giveRestFeedback(restId: ID!, feedback: String!): Boolean!
     placeOrder(cart: CartInput!): Boolean!
     toggleItemLike(restId: ID!, categoryName: String!, itemName: String!): Rest!
@@ -64,6 +63,7 @@ const query = `
     itemsWithPrinter(restId: ID!, printerName: String!): [String!]!
     myCard: Card
     myRests: [Rest!]!
+    restPrinters: [Printer!]!
     restWithBanking(restId: String!): Rest!
     restSearchSuggestions(query: String!, location: String): [Rest!]
     tagSearchSuggestions(query: String!): [Tag!]

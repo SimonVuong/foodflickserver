@@ -59,6 +59,7 @@ const _PrinterInput = `
     ip: String!
     port: String!
     type: PrinterTypeInput!
+    isReceipt: Boolean!
   }
 `
 
@@ -82,5 +83,6 @@ export {
   NewRestInput,
   ManagerInput,
   PrinterInput,
+  PrinterTypeInput,
   UpdatePrinterInput
 }

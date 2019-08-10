@@ -1,9 +1,18 @@
-import { PrinterInput } from '../restInputs';
+import { PrinterTypeInput } from '../restInputs';
 
 export const _PriceInput = `
   input PriceInput {
     value: Float!
     label: String
+  }
+`
+
+export const ItemPrinterInput = `
+  input ItemPrinterInput {
+    name: String!
+    ip: String!
+    port: String!
+    type: PrinterTypeInput!
   }
 `
 
@@ -24,7 +33,7 @@ const _NewItemInput = `
   input NewItemInput {
     name: String!
     prices: [PriceInput!]!
-    printers: [PrinterInput!]!
+    printers: [ItemPrinterInput!]!
     description: String
     #todo 1: not actually sure what type to make this yet...
     flick: String
@@ -48,6 +57,6 @@ const _NewCategoryInput = `
 
 export const NewCategoryInput = () => [_NewCategoryInput];
 
-export const NewItemInput = () => [_NewItemInput, _PriceInput, OptionInput, OptionGroupInput, PrinterInput];
+export const NewItemInput = () => [_NewItemInput, _PriceInput, OptionInput, OptionGroupInput, ItemPrinterInput];
 
 export const UpdateItemInput = () => [_UpdateItemInput];
