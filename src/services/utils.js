@@ -105,6 +105,18 @@ export const getRestUpdateOptions = (restId, signedInUser, script, params) => {
               }
             }   
           }
+          void throwIfPrinterNameOrIpIsDuplicate(def newPrinter, def oldPrinters, int originalPrinterIndex) {
+            for (int i = 0; i < oldPrinters.length; i++) {
+              if (i == originalPrinterIndex) continue;
+              def oldPrinter = oldPrinters[i];
+              if (oldPrinter.name.equals(newPrinter.name)) {
+                throw new Exception("'" + newPrinter.name + "' already exists at index " + i + ". Please try again with a different name");
+              }
+              if (oldPrinter.ip.equals(newPrinter.ip)) {
+                throw new Exception("'" + newPrinter.ip + "' already exists at index " + i + ". Please try again with a different ip");
+              }
+            } 
+          }
           boolean containsManager(def managers, def id) {
             for (manager in managers) {
               if (manager.userId.equals(id)) {

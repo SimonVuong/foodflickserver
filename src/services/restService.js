@@ -231,19 +231,11 @@ class RestService {
   async addRestPrinter(signedInUser, restId, newPrinter) {
     if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
     throwIfInvalidPrinter(newPrinter);
-
     const res = await callElasticWithErrorHandler(options => this.elastic.update(options), getRestUpdateOptions(
       restId,
       signedInUser,
       `
-        for (printer in ctx._source.printers) {
-          if (printer.name.equals(params.newPrinter.name)) {
-            throw new Exception("'" + params.newPrinter.name + "' already exists. Please try again with a different name");
-          }
-          if (printer.ip.equals(params.newPrinter.ip)) {
-            throw new Exception("'" + params.newPrinter.ip + "' already exists. Please try again with a different ip");
-          }
-        }
+        throwIfPrinterNameOrIpIsDuplicate(params.newPrinter, ctx._source.printers, -1);
         ctx._source.printers.add(params.newPrinter);
       `,
       { newPrinter }
@@ -285,12 +277,12 @@ class RestService {
   async updateRestPrinter(signedInUser, restId, newPrinter) {
     if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
     throwIfInvalidPrinter(newPrinter.printer);
-
     const res = await callElasticWithErrorHandler(options => this.elastic.update(options), getRestUpdateOptions(
       restId,
       signedInUser,
       `
         def targetPrinterIndex = params.newPrinter.index;
+        throwIfPrinterNameOrIpIsDuplicate(params.newPrinter.printer, ctx._source.printers, targetPrinterIndex);
         def restPrinters = ctx._source.printers;
         def originalPrinter = restPrinters[targetPrinterIndex];
         restPrinters[targetPrinterIndex] = params.newPrinter.printer;
