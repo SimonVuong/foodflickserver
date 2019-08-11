@@ -246,28 +246,28 @@ class MenuService {
               }
               throwIfItemNameIsDuplicate(updatedItem.item.name, updatedItem.index, menu[i].items);
               for (def itemPrinter : updatedItem.item.printers) {
+                boolean foundStoredPrinter = false;
+
+                def itemPrinterName = itemPrinter.name;
+                def itemPrinterIp = itemPrinter.ip;
+                def itemPrinterPort = itemPrinter.port;
+                def itemPrinterType = itemPrinter.type;
+
                 for (int j = 0; j < ctx._source.printers.length; j++) {
                   def storedPrinter = ctx._source.printers[j];
                   def storedName = storedPrinter.name;
                   def storedIp = storedPrinter.ip;
                   def storedPort = storedPrinter.port;
                   def storedType = storedPrinter.type;
-                  def storedReceipt = storedPrinter.isReceipt;
 
-                  def itemPrinterName = itemPrinter.name;
-                  def itemPrinterIp = itemPrinter.ip;
-                  def itemPrinterPort = itemPrinter.port;
-                  def itemPrinterType = itemPrinter.type;
-                  def itemPrinterReceipt = itemPrinter.isReceipt
-                  
-                  if (!itemPrinterName.equals(storedName)
-                  || !itemPrinterIp.equals(storedIp)
-                  || !itemPrinterPort.equals(storedPort)
-                  || !itemPrinterType.equals(storedType)
-                  || !itemPrinterReceipt == storedReceipt) {
-                    throw new Exception("Printer with name'" + itemPrinterName + "' doesn't exist. If name is correct "
-                    + "then ip, port, or type may be wrong. Please choose an existing printer or add it to the restaurant's list of printers");
+                  if (itemPrinterName.equals(storedName) && itemPrinterIp.equals(storedIp) && itemPrinterPort.equals(storedPort) && itemPrinterType.equals(storedType)) {
+                    foundStoredPrinter = true;
+                    break;
                   }
+                }
+                if (!foundStoredPrinter) {
+                  throw new Exception("Printer with name '" + itemPrinterName + "' doesn't exist. If name is correct "
+                  + "then ip, port, or type may be wrong. Please choose an existing printer or add it to the restaurant's list of printers");
                 }
               }
               def dbItem = menu[i].items[updatedItem.index];
