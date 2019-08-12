@@ -23,6 +23,7 @@ import { getBankingService } from './services/bankingService';
 import { getCardService } from './services/cardService';
 import { getOrderService } from './services/orderService';
 import { activeConfig } from './config';
+import { setupPrintForwarder } from './services/printerService';
 
 const STRIPE_KEY = activeConfig.stripe.STRIPE_KEY;
 
@@ -56,8 +57,10 @@ const start = async () => {
   app.get('/card', function(req, res) {
     res.sendFile(path.join(__dirname + activeConfig.stripe.cardPath));
   });
-  app.use(express.static(path.join(__dirname, 'public')));
 
+  setupPrintForwarder(app);
+
+  app.use(express.static(path.join(__dirname, 'public')));
 
   // const secureServer = createServer({
   //   ca: readFileSync(path.join(__dirname, 'foodflick_co.ca-bundle')),
@@ -67,7 +70,7 @@ const start = async () => {
   // must use http.createServer instead of https.createServer because
   // https://stackoverflow.com/questions/41488602/heroku-connection-closed-code-h13
   const secureServer = createServer(app);
-
+  secureServer.timeout = 0;
   const port = activeConfig.app.port;
   
   secureServer.listen(port, () => {

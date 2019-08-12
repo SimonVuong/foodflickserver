@@ -202,7 +202,9 @@ class RestService {
     newRest.menu = [];
     newRest.managers = [];
     newRest.feedback = [];
-    newRest.printers = [];
+    newRest.receiver = {
+      printers: [], 
+    }
     newRest.favorites = {
       count: 0,
       users: [],
@@ -235,8 +237,9 @@ class RestService {
       restId,
       signedInUser,
       `
-        throwIfPrinterNameOrIpIsDuplicate(params.newPrinter, ctx._source.printers, -1);
-        ctx._source.printers.add(params.newPrinter);
+        def printers = ctx._source.receiver.printers;
+        throwIfPrinterNameOrIpIsDuplicate(params.newPrinter, printers, -1);
+        printers.add(params.newPrinter);
       `,
       { newPrinter }
     ));
@@ -250,11 +253,12 @@ class RestService {
       restId,
       signedInUser,
       `
+        def printers = ctx._source.receiver.printers;
         boolean foundPrinter = false;
-        for (int i = 0; i < ctx._source.printers.length; i++) { 
-          if (ctx._source.printers[i].name.equals(params.printerName)) {
+        for (int i = 0; i < printers.length; i++) { 
+          if (printers[i].name.equals(params.printerName)) {
             foundPrinter = true;
-            ctx._source.printers.remove(i);
+            printers.remove(i);
             for (category in ctx._source.menu) {
               for (item in category.items) {
                 item.printers.removeIf(printer -> printer.name.equals(params.printerName))
@@ -282,8 +286,8 @@ class RestService {
       signedInUser,
       `
         def targetPrinterIndex = params.newPrinter.index;
-        throwIfPrinterNameOrIpIsDuplicate(params.newPrinter.printer, ctx._source.printers, targetPrinterIndex);
-        def restPrinters = ctx._source.printers;
+        def restPrinters = ctx._source.receiver.printers;
+        throwIfPrinterNameOrIpIsDuplicate(params.newPrinter.printer, restPrinters, targetPrinterIndex);
         def originalPrinter = restPrinters[targetPrinterIndex];
         restPrinters[targetPrinterIndex] = params.newPrinter.printer;
         for (category in ctx._source.menu) {
@@ -300,6 +304,24 @@ class RestService {
     ));
 
     return getUpdatedRestWithId(res, restId);
+  }
+
+  async addRestReceiver(signedInUser, restId, receiverId) {
+    if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
+    if (!receiverId) throw new Error(getCannotBeEmptyError(`Receiver id`));
+    const res = await callElasticWithErrorHandler(options => this.elastic.update(options), getRestUpdateOptions(
+      restId,
+      signedInUser,
+      `
+        ctx._source.receiver.receiverId = params.receiverId;
+      `,
+      { receiverId }
+    ));
+    return getUpdatedRestWithId(res, restId);
+  }
+
+  async updateRestReceiver(signedInUser, restId, receiverId) {
+    return await this.addRestReceiver(signedInUser, restId, receiverId);
   }
 
   async getRest(restId, fields) {

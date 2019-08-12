@@ -1,5 +1,3 @@
-import { PrinterTypeInput } from '../restInputs';
-
 export const _PriceInput = `
   input PriceInput {
     value: Float!

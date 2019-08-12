@@ -17,10 +17,10 @@ PUT /_snapshot/foodflick/rest-mapping-only?wait_for_completion=true
   "include_global_state": false
 }
 
-#create snapshot called rests-copy with data
-PUT /_snapshot/foodflick/rests-copy?wait_for_completion=true
+#create snapshot called rests2 with data
+PUT /_snapshot/foodflick/rests2wait_for_completion=true
 {
-  "indices": "rests",
+  "indices": "rests2",
   "ignore_unavailable": true,
   "include_global_state": false
 }
@@ -29,6 +29,13 @@ PUT /_snapshot/foodflick/rests-copy?wait_for_completion=true
 PUT /_snapshot/foodflick/rests?wait_for_completion=true
 {
   "indices": "rests",
+  "ignore_unavailable": true,
+  "include_global_state": false
+}
+
+PUT /_snapshot/foodflick/2?wait_for_completion=true
+{
+  "indices": "rests2",
   "ignore_unavailable": true,
   "include_global_state": false
 }
@@ -128,12 +135,29 @@ POST _reindex
 POST _reindex
 {
   "source": {
-    "index": "restscopy"
+    "index": "rests"
   },
   "dest": {
-    "index": "rests"
+    "index": "rests2"
   }
 }
+
+POST _reindex
+{
+  "source": {
+    "index": "rests",
+    "_source": {
+      "excludes": [
+        "printers",
+        "menu.items.printers"
+      ]
+    }
+  },
+  "dest": {
+    "index": "rests2"
+  }
+}
+
 
 #POST _bulk
 { "index" : { "_index" : "tags", "_type" : "tag", "_id": "italian" } }
@@ -272,7 +296,7 @@ GET /rests/_search?
     }
 }
 
-GET /new_rests/_search?
+GET /rests2/_search?
 {
     "query" : {
         "match_all" : {}
@@ -321,8 +345,8 @@ POST rests/_delete_by_query
 }
 
 DELETE rests
-DELETE restcopy
-DELETE users
+DELETE rests2
+#DELETE users
 #DELETE tags
 
 DELETE rests/rest/rohuLWkBVBQEqv1uHn-S
@@ -338,7 +362,7 @@ DELETE rests/rest/rohuLWkBVBQEqv1uHn-S
 POST rests/_delete_by_query
  {
   "query": { 
-    "terms": { "profile.name.keyword": [ "bank"]}
+    "terms": { "profile.name.keyword": [ "banking"]}
   }
 }
 
@@ -431,10 +455,14 @@ POST rests/_update_by_query?conflicts=proceed
             }
           }
         }
+        ctx._source.receiver = params.receiver
       """,
       "lang": "painless",
       "params": {
-        "printers": []
+        "printers": [],
+        "receiver": {
+          "printers": []
+        }
       }
     },
     "query" : {
@@ -446,10 +474,18 @@ POST rests/_update_by_query?conflicts=proceed
 {
     "script": {
       "source": """
-        ctx._source.printers = params.printers;
+        ctx._source.receiver.printers = params.printers;
       """,
       "params": {
-        "printers": []
+        "printers": [
+          {
+            "port": "9100",
+            "ip": "192.168.123.102",
+            "name": "kitchen2",
+            "type": "epson",
+            "isReceipt": false
+          }
+        ]
       }
     },
     "query" : {
@@ -470,6 +506,19 @@ POST rests/_update_by_query?conflicts=proceed
           "users": []
         }
       }
+    },
+    "query" : {
+        "match_all" : {}
+    }
+}
+
+
+POST rests/_update_by_query?conflicts=proceed
+{
+    "script": {
+      "source": """
+        ctx._source.receiver.receiverId = null;
+      """
     },
     "query" : {
         "match_all" : {}
@@ -519,7 +568,7 @@ POST rests/_update_by_query?conflicts=proceed
     """,
     "lang": "painless",
     "params": {
-      "categoryName": "Noodle Corner",
+      "categoryName": "Appetizers",
       "items": []
     }
   },
@@ -538,12 +587,17 @@ POST tags/_update_by_query?conflicts=proceed
     }
 }
 
-#POST /rests/rest/eVpbBmcBu4xW7khTaw6n/_update
+POST /rests/rest/D71rFmwB0QaGhfaOS2Jp/_update
 {
   "script": {
     "source": """
-        ctx._source.profile.tags = [];
-    """
+        ctx._source.owner.email = params.email;
+        ctx._source.banking.stripeId = params.stripe;
+    """,
+    "params": {
+      "email": "owner1.foodflick@gmail.com",
+      "stripe": "acct_1Ezwz7KshzLpXQdX"
+    }
   },
   "_source": true
 }
@@ -600,37 +654,66 @@ POST rests/_search?pretty
 
 ########## mappings ##########
 GET /rests/_mapping/rest
-GET /newrests/_mapping/rest
+GET /rests2/_mapping/rest
 
+
+PUT rests/_mapping/rest
+{
+  "properties": {
+    "receiver": {
+      "properties": {
+        "receiverId" : {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "printers": {
+          "properties": {
+            "name": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "ip": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "port": {
+              "type": "text"
+            },
+            "type": {
+              "type": "text"
+            },
+            "isReceipt": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    }
+  }
+}
 
 PUT rests/_mapping/rest
 {
   "properties": {
     "printers": {
       "properties": {
-        "name" : {
-          "type": "text",
-          "fields": {
-            "keyword": {
-              "type": "keyword",
-              "ignore_above": 256
-            }
-          }
-        },
-        "ip": {
-          "type": "text",
-          "fields": {
-            "keyword": {
-              "type": "keyword",
-              "ignore_above": 256
-            }
-          }
-        },
-        "port" : {
-          "type": "text"
-        },
-        "type": {
-          "type": "text"
+        "isReceipt" : {
+          "type": "boolean"
         }
       }
     }
@@ -653,24 +736,6 @@ PUT rests/_mapping/rest
   "properties": {
     "banking": {
       "properties": {
-        "accountNumber": {
-          "type": "text",
-          "fields": {
-            "keyword": {
-              "type": "keyword",
-              "ignore_above": 256
-            }
-          }
-        },
-        "routingNumber": {
-          "type": "text",
-          "fields": {
-            "keyword": {
-              "type": "keyword",
-              "ignore_above": 256
-            }
-          }
-        },
         "stripeId": {
           "type": "text",
           "fields": {
@@ -693,24 +758,6 @@ PUT rests
       "properties": {
         "banking": {
           "properties": {
-            "accountNumber": {
-              "type": "text",
-              "fields": {
-                "keyword": {
-                  "type": "keyword",
-                  "ignore_above": 256
-                }
-              }
-            },
-            "routingNumber": {
-              "type": "text",
-              "fields": {
-                "keyword": {
-                  "type": "keyword",
-                  "ignore_above": 256
-                }
-              }
-            },
             "stripeId": {
               "type": "text",
               "fields": {
@@ -856,34 +903,6 @@ PUT rests
         },
         "menu": {
           "properties": {
-            "printers": {
-              "properties": {
-                "name" : {
-                  "type": "text",
-                  "fields": {
-                    "keyword": {
-                      "type": "keyword",
-                      "ignore_above": 256
-                    }
-                  }
-                },
-                "ip": {
-                  "type": "text",
-                  "fields": {
-                    "keyword": {
-                      "type": "keyword",
-                      "ignore_above": 256
-                    }
-                  }
-                },
-                "port" : {
-                  "type": "text"
-                },
-                "type": {
-                  "type": "text"
-                }
-              }
-            },
             "description": {
               "type": "text",
               "fields": {
@@ -931,6 +950,34 @@ PUT rests
                           "path": "location.geo"
                         }
                       ]
+                    }
+                  }
+                },
+                "printers": {
+                  "properties": {
+                    "name" : {
+                      "type": "text",
+                      "fields": {
+                        "keyword": {
+                          "type": "keyword",
+                          "ignore_above": 256
+                        }
+                      }
+                    },
+                    "ip": {
+                      "type": "text",
+                      "fields": {
+                        "keyword": {
+                          "type": "keyword",
+                          "ignore_above": 256
+                        }
+                      }
+                    },
+                    "port" : {
+                      "type": "text"
+                    },
+                    "type": {
+                      "type": "text"
                     }
                   }
                 },
@@ -1077,34 +1124,6 @@ PUT rests
             }
           }
         },
-        "printers": {
-          "properties": {
-            "name" : {
-              "type": "text",
-              "fields": {
-                "keyword": {
-                  "type": "keyword",
-                  "ignore_above": 256
-                }
-              }
-            },
-            "ip": {
-              "type": "text",
-              "fields": {
-                "keyword": {
-                  "type": "keyword",
-                  "ignore_above": 256
-                }
-              }
-            },
-            "port" : {
-              "type": "text"
-            },
-            "type": {
-              "type": "text"
-            }
-          }
-        },
         "profile": {
           "properties": {
             "description": {
@@ -1185,6 +1204,50 @@ PUT rests
                       "path": "location.geo"
                     }
                   ]
+                }
+              }
+            }
+          }
+        },
+        "receiver": {
+          "properties": {
+            "receiverId" : {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "printers": {
+              "properties": {
+                "name": {
+                  "type": "text",
+                  "fields": {
+                    "keyword": {
+                      "type": "keyword",
+                      "ignore_above": 256
+                    }
+                  }
+                },
+                "ip": {
+                  "type": "text",
+                  "fields": {
+                    "keyword": {
+                      "type": "keyword",
+                      "ignore_above": 256
+                    }
+                  }
+                },
+                "port": {
+                  "type": "text"
+                },
+                "type": {
+                  "type": "text"
+                },
+                "isReceipt": {
+                  "type": "boolean"
                 }
               }
             }

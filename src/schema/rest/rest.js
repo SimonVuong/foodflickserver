@@ -6,7 +6,7 @@ import State from './state';
 import Favorites from './favorites';
 import Feedback from './feedback';
 import Banking from './banking';
-import Printer from './printer';
+import Receiver from './receiver';
 
 // todo 1: add dates to rest, and menus and categories?
 
@@ -16,7 +16,7 @@ const Rest = `
     banking: Banking!
     feedback: [Feedback!]
     favorites: Favorites!
-    printers: [Printer!]
+    receiver: Receiver!
     profile: Profile!
     location: Location!
     owner: Manager
@@ -31,4 +31,4 @@ const Rest = `
 //export a function to prevent top level schema from including a type (ex: user) mulitple times.
 //including all of rest dependencies in the return so that the toplevel schema, doesnt have to know about internal
 //rest details.
-export default () => [Rest, Banking, Category, Manager, State, Profile, Location, Favorites, Feedback, Printer];
+export default () => [Rest, Banking, Category, Manager, State, Profile, Location, Favorites, Feedback, Receiver];

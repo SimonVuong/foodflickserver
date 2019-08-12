@@ -253,8 +253,9 @@ class MenuService {
                 def itemPrinterPort = itemPrinter.port;
                 def itemPrinterType = itemPrinter.type;
 
-                for (int j = 0; j < ctx._source.printers.length; j++) {
-                  def storedPrinter = ctx._source.printers[j];
+                def storedPrinters = ctx._source.receiver.printers;
+                for (int j = 0; j < storedPrinters.length; j++) {
+                  def storedPrinter = storedPrinters[j];
                   def storedName = storedPrinter.name;
                   def storedIp = storedPrinter.ip;
                   def storedPort = storedPrinter.port;

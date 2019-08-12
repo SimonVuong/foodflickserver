@@ -28,11 +28,15 @@ fragment restFragment on Rest {
     userId
     email
   }
-  printers {
-    name
-    ip
-    port
-    type
+  receiver {
+    receiverId
+    printers {
+      name
+      ip
+      port
+      type
+      isReceipt
+    }
   }
   menu {
     name

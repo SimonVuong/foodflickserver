@@ -11,7 +11,7 @@ import Tag from './tag/tag';
 import { RestMutationResolvers, RestQueryResolvers } from './rest/restResolvers';
 import { MenuMutationResolvers, MenuQueryResolvers } from './rest/menu/menuResolvers';
 import { UserMutationResolvers, UserQueryResolvers } from './user/userResolvers';
-import { NewRestInput, ManagerInput, PrinterInput, UpdatePrinterInput } from './rest/restInputs';
+import { NewRestInput, ManagerInput, PrinterInput, UpdatePrinterInput, ReceiverInput } from './rest/restInputs';
 import { NewCategoryInput, NewItemInput, UpdateItemInput } from './rest/menu/menuInputs';
 import { TagQueryResolvers } from './tag/tagResolvers';
 import { OrderMutationResolvers } from './order/orderResolver';
@@ -29,6 +29,7 @@ const mutation = `
     addRest(newRest: NewRestInput!): Rest!
     addRestManager(restId: ID!, managerEmail: String!): Rest!
     addRestPrinter(restId: ID!, newPrinter: PrinterInput!): Rest!
+    addRestReceiver(restId: ID!, receiverId: ID!): Rest!
     addUserFlicks(urls: [String!]!): Boolean!
     deleteCategory(restId: ID!, categoryName: String!): Rest!
     deleteItem(restId: ID!, categoryName: String!, itemName: String!): Rest!
@@ -46,6 +47,7 @@ const mutation = `
     updateRestLocation(restId: ID!, newLocation: LocationInput!): Rest!
     updateRestPrinter(restId: ID!, newPrinter: UpdatePrinterInput!): Rest!
     updateRestProfile(restId: ID!, newProfile: ProfileInput!): Rest!
+    updateRestReceiver(restId: ID!, receiverId: ID!): Rest!
     updateUserCard(cardToken: ID!): Card!
     updateUserEmail(newEmail: String!): Boolean!
   }
@@ -93,6 +95,7 @@ const typeDefs = [
   CartInput,
   UpdatePrinterInput,
   PrinterInput,
+  ReceiverInput,
   query,
   mutation,
   schema

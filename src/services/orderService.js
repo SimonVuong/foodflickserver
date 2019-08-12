@@ -16,6 +16,12 @@ class OrderService {
   }
 
   async placeOrder (signedInUser, cart) {
+
+    // app.get('/print', function(req, res) {
+    //   const restPrinter = printerService.getRestPrinter(req.query.recieverId);
+    //   restPrinter.print('oliver is a hai');
+    // });
+
     const { restId, items } = cart;
     const rest = await getRestService().getRest(restId);
     for (let i = 0; i < items.length; i++) {

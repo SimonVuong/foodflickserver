@@ -70,6 +70,12 @@ const UpdatePrinterInput = `
   }
 `
 
+const ReceiverInput = `
+  input ReceiverInput {
+    receiverId: String!
+  }
+`
+
 //export a function to prevent top level schema from including a type (ex: user) mulitple times.
 //including all of rest dependencies in the return so that the toplevel schema, doesnt have to know about internal
 //rest details.
@@ -84,5 +90,6 @@ export {
   ManagerInput,
   PrinterInput,
   PrinterTypeInput,
-  UpdatePrinterInput
+  UpdatePrinterInput,
+  ReceiverInput,
 }
