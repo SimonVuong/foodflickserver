@@ -50,6 +50,7 @@ export const cleanCustomerRest = (signedInUser, rest) => {
     category.items = category.items.filter(({ flick }) => flick).map(item => {
       item.likes.hasLiked = Boolean(signedInUser) && (binarySearch(item.likes.users, signedInUser._id) !== -1);
       item.optionGroups = item.optionGroups.filter(({ options }) => options.length > 0);
+      item.printers = null;
       // no need to remove internal item fields items because graphql will scrap these non-schema fields
       // delete item.likes.users;
       return item;

@@ -23,7 +23,7 @@ import { getBankingService } from './services/bankingService';
 import { getCardService } from './services/cardService';
 import { getOrderService } from './services/orderService';
 import { activeConfig } from './config';
-import { setupPrintForwarder } from './services/printerService';
+import { setupPrintForwarder, getPrinterService } from './services/printerService';
 
 const STRIPE_KEY = activeConfig.stripe.STRIPE_KEY;
 
@@ -32,6 +32,7 @@ const start = async () => {
   app.use(cors());
   app.use(bodyParser.urlencoded({ extended: true }));
   app.use(bodyParser.json());
+  const printerService = getPrinterService(app);
   const elastic = await getElastic();
   const stripe = new Stripe(STRIPE_KEY);
   app.use('/graphql', graphqlExpress(async (req) => ({
@@ -45,6 +46,7 @@ const start = async () => {
       UserService: getUserService(elastic),
       TagService: getTagService(elastic),
       GeoService: getGeoService(),
+      PrinterService: printerService,
     },
     schema
   })));
@@ -57,8 +59,6 @@ const start = async () => {
   app.get('/card', function(req, res) {
     res.sendFile(path.join(__dirname + activeConfig.stripe.cardPath));
   });
-
-  setupPrintForwarder(app);
 
   app.use(express.static(path.join(__dirname, 'public')));
 

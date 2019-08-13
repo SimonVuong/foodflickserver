@@ -1,5 +1,6 @@
 import { getCardService } from "./cardService";
 import { getRestService } from "./restService";
+import { getPrinterService } from './printerService';
 
 const containsPrice = ({ label, value }, prices) => {
   for (let i = 0; i < prices.length; i++) {
@@ -10,20 +11,15 @@ const containsPrice = ({ label, value }, prices) => {
   return false;
 }
 
+//https://stackoverflow.com/questions/11832914/round-to-at-most-2-decimal-places-only-if-necessary
+const round = num => +(Math.round(num + "e+2")  + "e-2");
+
 class OrderService {
   constructor(stripe) {
     this.stripe = stripe;
   }
 
-  async placeOrder (signedInUser, cart) {
-
-    // app.get('/print', function(req, res) {
-    //   const restPrinter = printerService.getRestPrinter(req.query.recieverId);
-    //   restPrinter.print('oliver is a hai');
-    // });
-
-    const { restId, items } = cart;
-    const rest = await getRestService().getRest(restId);
+  validatePrices (items, rest) {
     for (let i = 0; i < items.length; i++) {
       const orderItem = items[i];
       const { itemIndex, categoryIndex, selectedPrice } = orderItem;
@@ -36,13 +32,35 @@ class OrderService {
         throw new Error(`Invalid items in order ${JSON.stringify(orderItem)}`);
       }
     }
+  }
 
-    const itemTotal = cart.items.reduce((sum, item) => sum + item.selectedPrice.value * item.quantity, 0); 
-    const tax = itemTotal * 0.0625;
-    const tip = itemTotal * 0.15;
+  async placeOrder (signedInUser, cart) {
+    const { restId, items } = cart;
+    const rest = await getRestService().getRest(restId);
+    this.validatePrices(items, rest);
+
+    const itemTotal = round(cart.items.reduce((sum, item) => sum + item.selectedPrice.value * item.quantity, 0)); 
+    const tax = round(itemTotal * 0.0625);
+    const tip = round(itemTotal * 0.15);
     const total = itemTotal + tax + tip;
-    const centsTotal = (Math.round(total * 1e2 ) / 1e2) * 100;
-    return await this.makePayment(signedInUser, rest.banking.stripeId, centsTotal);
+    const centsTotal = total / 100;
+
+    getPrinterService().printOrder(
+      signedInUser,
+      rest.receiver,
+      cart.items.map(({ categoryIndex, itemIndex, ...others }) => ({
+        ...others,
+        printers: rest.menu[categoryIndex].items[itemIndex].printers,
+      })),
+      {
+        itemTotal,
+        tax,
+        tip,
+        total,
+      }
+    );
+    return true;   
+    // return await this.makePayment(signedInUser, rest.banking.stripeId, centsTotal);
   }
 
   async makePayment (signedInUser, restStripeId, cents) {
