@@ -11,9 +11,7 @@ class PrinterService {
       const receiverId = req.query.id;
       if (this.receivers[receiverId]) {
         const staleRes = this.receivers[receiverId];
-        staleRes.end(JSON.stringify({
-          message: `Received newer registration for ${receiverId}`,
-        }));
+        staleRes.end(`Received newer registration for ${receiverId}`);
         console.log(`Will update receiver ${receiverId}`)
       }
       res.status(200).set({
@@ -21,6 +19,20 @@ class PrinterService {
         'cache-control': 'no-cache',
         'content-type': 'application/json',
       });
+
+      const heartbeat = setInterval(() => {
+        res.write('heartbeat');
+      }, 25000) // 25 seconds because heroku timesout in 30 seconds
+
+      req.on('close', () => {
+        console.log(`${receiverId} req closed`);
+        clearInterval(heartbeat)
+      });
+      req.on('end', () => {
+        console.log(`${receiverId} req ended`);
+        clearInterval(heartbeat)
+      });
+
       this.receivers[receiverId] = res;
       console.log('Saved receiver', receiverId);
     });
@@ -39,8 +51,7 @@ class PrinterService {
   }
 
   getRegisteredReceiver (receiverId) {
-    const receiver = this.receivers[receiverId];
-    return receiver;
+    return this.receivers[receiverId];
   }
 }
 
