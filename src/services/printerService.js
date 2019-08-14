@@ -20,9 +20,14 @@ class PrinterService {
         'content-type': 'application/json',
       });
 
+      // empty write to 'solidify' connection.
+      // https://devcenter.heroku.com/articles/request-timeout#long-polling-and-streaming-responses
+      res.write('1');
+
+      // 50 seconds because heroku timesout in 55
       const heartbeat = setInterval(() => {
-        res.write('heartbeat');
-      }, 25000) // 25 seconds because heroku timesout in 30 seconds
+        res.write('1');
+      }, 50000) // 50 seconds because heroku timesout in 30 seconds
 
       req.on('close', () => {
         console.log(`${receiverId} req closed`);
