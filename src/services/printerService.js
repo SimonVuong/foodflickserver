@@ -30,6 +30,8 @@ class PrinterService {
       }, 50000) // 50 seconds because heroku timesout in 30 seconds
 
       req.on('close', () => {
+        // todo 0: think about how we should clear these from memory if it's NOT being replaced,
+        // ex: restaurant stops using ff and removes receiver
         console.log(`${receiverId} req closed`);
         clearInterval(heartbeat)
       });

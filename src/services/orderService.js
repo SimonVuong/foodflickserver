@@ -42,9 +42,8 @@ class OrderService {
     const itemTotal = round(cart.items.reduce((sum, item) => sum + item.selectedPrice.value * item.quantity, 0)); 
     const tax = round(itemTotal * 0.0625);
     const tip = round(itemTotal * 0.15);
-    const total = itemTotal + tax + tip;
+    const total = round(itemTotal + tax + tip);
     const centsTotal = total / 100;
-
     getPrinterService().printOrder(
       signedInUser,
       rest.receiver,
