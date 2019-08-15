@@ -14,6 +14,7 @@ const CartItemInput = `
 const _CartInput = `
   input CartInput {
     restId: String
+    tableNumber: String
     items: [CartItemInput!]!
   }
 `;

@@ -43,9 +43,11 @@ class OrderService {
     const tax = round(itemTotal * 0.0625);
     const tip = round(itemTotal * 0.15);
     const total = round(itemTotal + tax + tip);
-    const centsTotal = total / 100;
+    const centsTotal = Math.round(total * 100);
+
     getPrinterService().printOrder(
-      signedInUser,
+      signedInUser.name,
+      cart.tableNumber,
       rest.receiver,
       cart.items.map(({ categoryIndex, itemIndex, ...others }) => ({
         ...others,
@@ -58,11 +60,10 @@ class OrderService {
         total,
       }
     );
-    return true;   
-    // return await this.makePayment(signedInUser, rest.banking.stripeId, centsTotal);
+    return await this.makePayment(signedInUser, rest.banking.stripeId, rest.profile.name, centsTotal);
   }
 
-  async makePayment (signedInUser, restStripeId, cents) {
+  async makePayment (signedInUser, restStripeId, restName, cents) {
     try {
       const cardTok = await getCardService().getCardId(signedInUser.stripeId);
       const charge = await this.stripe.charges.create({
@@ -71,6 +72,7 @@ class OrderService {
         customer: signedInUser.stripeId,
         source: cardTok, // signedInUser.source
         receipt_email: signedInUser.email,
+        statement_descriptor: restName,
         transfer_data: {
           destination: restStripeId, //rest stripe id
         },
@@ -78,7 +80,7 @@ class OrderService {
       return charge.paid;
     } catch (e) {
       console.error(e);
-      throw new Error('Could not make payment');
+      throw new Error('Could not make payment', e);
     }
   }
 }
