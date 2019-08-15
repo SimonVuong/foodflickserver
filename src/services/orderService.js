@@ -1,6 +1,7 @@
 import { getCardService } from "./cardService";
 import { getRestService } from "./restService";
 import { getPrinterService } from './printerService';
+import { getCannotBeEmptyError } from '../utils/errors';
 
 const containsPrice = ({ label, value }, prices) => {
   for (let i = 0; i < prices.length; i++) {
@@ -35,7 +36,8 @@ class OrderService {
   }
 
   async placeOrder (signedInUser, cart) {
-    const { restId, items } = cart;
+    const { restId, items, tableNumber } = cart;
+    if (!tableNumber) throw new Error(getCannotBeEmptyError(`Printer name`));
     const rest = await getRestService().getRest(restId);
     this.validatePrices(items, rest);
 
@@ -50,7 +52,7 @@ class OrderService {
 
     getPrinterService().printOrder(
       signedInUser.name,
-      cart.tableNumber,
+      tableNumber,
       rest.receiver,
       cart.items.map(({ categoryIndex, itemIndex, ...others }) => ({
         ...others,
