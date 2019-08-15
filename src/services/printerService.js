@@ -47,7 +47,7 @@ class PrinterService {
 
   printOrder(signedInUserName, tableNumber, receiver, items, costs) {
     const registeredReceiver = this.getRegisteredReceiver(receiver.receiverId);
-    if (!registeredReceiver) throw new Error('Could not process order. Please verify with the manager that the receiver is properly setup');
+    if (!registeredReceiver) throw new Error('Please verify with the manager that the receiver is properly setup');
     registeredReceiver.write(JSON.stringify({
       receiptPrinters: receiver.printers.filter(printer => printer.isReceipt),
       data: {

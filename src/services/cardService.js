@@ -24,7 +24,9 @@ class CardService {
   getCardId = async stripeCustomerId => {
     const res = await this.stripe.customers.retrieve(stripeCustomerId);
     if (res.error) throw res.error;
-    return getCard(res).id
+    const card = getCard(res);
+    if (!card) return null;
+    return card.id
   }
 
   getUserCard = async stripeCustomerId => {

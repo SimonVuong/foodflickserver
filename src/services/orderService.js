@@ -45,6 +45,9 @@ class OrderService {
     const total = round(itemTotal + tax + tip);
     const centsTotal = Math.round(total * 100);
 
+    // todo 0: do something with failed paid
+    // const paid = await this.makePayment(signedInUser, rest.banking.stripeId, rest.profile.name, centsTotal);
+
     getPrinterService().printOrder(
       signedInUser.name,
       cart.tableNumber,
@@ -61,12 +64,12 @@ class OrderService {
       }
     );
     return true;
-    // return await this.makePayment(signedInUser, rest.banking.stripeId, rest.profile.name, centsTotal);
   }
 
   async makePayment (signedInUser, restStripeId, restName, cents) {
     try {
       const cardTok = await getCardService().getCardId(signedInUser.stripeId);
+      if (!cardTok) throw new Error('No payment card found. Please add a card in settings');
       const charge = await this.stripe.charges.create({
         amount: cents,
         currency: 'usd',
@@ -80,8 +83,7 @@ class OrderService {
       });
       return charge.paid;
     } catch (e) {
-      console.error(e);
-      throw new Error('Could not make payment', e);
+      throw new Error(`Failed to make payment. ${e.message}`);
     }
   }
 }
