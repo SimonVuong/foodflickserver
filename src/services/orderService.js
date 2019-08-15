@@ -60,7 +60,8 @@ class OrderService {
         total,
       }
     );
-    return await this.makePayment(signedInUser, rest.banking.stripeId, rest.profile.name, centsTotal);
+    return true;
+    // return await this.makePayment(signedInUser, rest.banking.stripeId, rest.profile.name, centsTotal);
   }
 
   async makePayment (signedInUser, restStripeId, restName, cents) {
