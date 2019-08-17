@@ -455,14 +455,17 @@ POST rests/_update_by_query?conflicts=proceed
             }
           }
         }
-        ctx._source.receiver = params.receiver
       """,
       "lang": "painless",
       "params": {
-        "printers": [],
-        "receiver": {
-          "printers": []
-        }
+        "printers": [
+          {
+            "port": "9100",
+            "ip": "192.168.123.100",
+            "name": "kitchen",
+            "type": "epson"
+          }
+        ]
       }
     },
     "query" : {
@@ -474,18 +477,21 @@ POST rests/_update_by_query?conflicts=proceed
 {
     "script": {
       "source": """
-        ctx._source.receiver.printers = params.printers;
+        ctx._source.receiver = params.receiver
       """,
       "params": {
-        "printers": [
-          {
-            "port": "9100",
-            "ip": "192.168.123.102",
-            "name": "kitchen2",
-            "type": "epson",
-            "isReceipt": false
-          }
-        ]
+        "receiver" : {
+          "printers": [
+            {
+              "port": "9100",
+              "ip": "192.168.123.100",
+              "name": "kitchen",
+              "type": "epson",
+              "isReceipt": true
+            }
+          ],
+          "receiverId": "test"
+        }
       }
     },
     "query" : {
@@ -1274,7 +1280,132 @@ PUT rests
   }
 }
 
-
+PUT orders
+{
+  "mappings": {
+    "order": {
+      "dynamic": "false",
+      "properties": {
+        "status": {
+          "type": "keyword"
+        },
+        "customer": {
+          "properties": {
+            "userId": {
+              "type": "keyword"
+            },
+            "nameDuring": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            }
+          }
+        },
+        "stripeChargeId": {
+          "type": "keyword"
+        },
+        "createdDate": {
+          "type": "date",
+          "format": "epoch_millis"
+        },
+        "items": {
+          "properties": {
+            "name": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "quantity": {
+              "type": "integer"
+            },
+            "price": {
+              "properties": {
+                "label": {
+                  "type": "text",
+                  "fields": {
+                    "keyword": {
+                      "type": "keyword",
+                      "ignore_above": 256
+                    }
+                  }
+                },
+                "value": {
+                  "type": "float"
+                }
+              }
+            },
+            "options": {
+              "properties": {
+                "name": {
+                  "type": "text",
+                  "fields": {
+                    "keyword": {
+                      "type": "keyword",
+                      "ignore_above": 256
+                    }
+                  }
+                },
+                "price": {
+                  "type": "float"
+                }
+              }
+            },
+            "specialRequests": {
+              "type": "text"
+            },
+            "refund": {
+              "properties": {
+                "stripeRefundId": {
+                  "type": "keyword"
+                },
+                "amount": {
+                  "type": "float"
+                }
+              }
+            }
+          }
+        },
+        "orderCosts": {
+          "properties": {
+            "tax": {
+              "type": "float"
+            },
+            "tip": {
+              "type": "float"
+            },
+            "itemTotal": {
+              "type": "float"
+            },
+            "percentFee": {
+              "type": "float"
+            },
+            "flatRateFee": {
+              "type": "float"
+            }
+          }
+        },
+        "customRefunds": {
+          "properties": {
+            "stripeRefundId": {
+              "type": "keyword"
+            },
+            "amount": {
+              "type": "float"
+            }
+          }
+        }
+      }
+    }
+  }
+}
 
 PUT users
 {

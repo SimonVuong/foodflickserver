@@ -1,0 +1,47 @@
+query completedOrders($restId: ID!) {
+  completedOrders(restId: $restId) {
+    ...orderFragment
+  }
+}
+
+fragment orderFragment on Order {
+  _id
+  restId
+  status
+  customer {
+    userId
+    nameDuring
+  }
+  createdDate
+  items {
+    name
+    selectedPrice {
+      label
+      value
+    }
+    selectedOptions {
+      name
+      price
+    }
+    specialRequests
+    refund {
+      stripeRefundId
+      amount
+    }
+  }
+  costs {
+    itemTotal
+    tip
+    tax
+    percentFee
+    flatRateFee
+  }
+  customRefunds {
+    stripeRefundId
+    amount
+  }
+}
+
+{
+  "restId": "D71rFmwB0QaGhfaOS2Jp"
+}

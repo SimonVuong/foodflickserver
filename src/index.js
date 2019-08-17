@@ -42,7 +42,7 @@ const start = async () => {
       CardService: getCardService(stripe),
       RestService: getRestService(elastic),
       MenuService: getMenuService(elastic),
-      OrderService: getOrderService(stripe),
+      OrderService: getOrderService(stripe, elastic),
       UserService: getUserService(elastic),
       TagService: getTagService(elastic),
       GeoService: getGeoService(),

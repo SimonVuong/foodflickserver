@@ -14,7 +14,8 @@ import { UserMutationResolvers, UserQueryResolvers } from './user/userResolvers'
 import { NewRestInput, ManagerInput, PrinterInput, UpdatePrinterInput, ReceiverInput } from './rest/restInputs';
 import { NewCategoryInput, NewItemInput, UpdateItemInput } from './rest/menu/menuInputs';
 import { TagQueryResolvers } from './tag/tagResolvers';
-import { OrderMutationResolvers } from './order/orderResolver';
+import { OrderMutationResolvers, OrderQueryResolvers } from './order/orderResolver';
+import { Order } from './order/order';
 import { CartInput } from './cart/cartInput';
 
 //todo 1: add mongo validation
@@ -65,6 +66,7 @@ const query = `
     itemsWithPrinter(restId: ID!, printerName: String!): [String!]!
     myCard: Card
     myRests: [Rest!]!
+    completedOrders(restId: ID!): [Order!]!
     restPrinters: [Printer!]!
     restWithBanking(restId: String!): Rest!
     restSearchSuggestions(query: String!, location: String): [Rest!]
@@ -87,6 +89,7 @@ const typeDefs = [
   Tag,
   Flick,
   Rest,
+  Order,
   NewRestInput,
   NewCategoryInput,
   NewItemInput,
@@ -102,7 +105,7 @@ const typeDefs = [
 ];
 
 const resolvers = {
-  Query: merge(RestQueryResolvers, MenuQueryResolvers, UserQueryResolvers, TagQueryResolvers),
+  Query: merge(RestQueryResolvers, MenuQueryResolvers, UserQueryResolvers, TagQueryResolvers, OrderQueryResolvers),
   Mutation: merge(RestMutationResolvers, MenuMutationResolvers, UserMutationResolvers, OrderMutationResolvers)
   // Subscription: {
   //   tagAdded: {

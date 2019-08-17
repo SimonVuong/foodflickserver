@@ -63,7 +63,7 @@ export const RestQueryResolvers = {
     return await RestService.getMyRests(signedInUser);
   },
 
-  restPrinters: async(root, { restId  }, { signedInUser, RestService }) => {
+  restPrinters: async(root, { restId }, { signedInUser, RestService }) => {
     return await RestService.getRestPrinters(signedInUser, restId);
   },
 

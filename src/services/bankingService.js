@@ -16,6 +16,7 @@ class BankingService {
       company: {
         name: restName,
       },
+      //platform_payments as it requires less data from the restaruant so we go with that
       requested_capabilities: ['platform_payments'],
       tos_acceptance: {
         date: Math.floor(Date.now() / 1000),

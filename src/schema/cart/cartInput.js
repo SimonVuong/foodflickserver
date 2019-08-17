@@ -5,7 +5,7 @@ const CartItemInput = `
     categoryIndex: Int!
     itemIndex: Int!
     selectedPrice: PriceInput!
-    selectedOptions: [OptionInput!]
+    selectedOptions: [OptionInput!]!
     quantity: Int!
     specialRequests: String
   }
