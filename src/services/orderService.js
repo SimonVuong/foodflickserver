@@ -48,8 +48,7 @@ class OrderService {
     if (!tableNumber) throw new Error(getCannotBeEmptyError(`Printer name`));
     const rest = await getRestService().getRest(restId);
     this.validatePrices(items, rest);
-
-    const itemTotal = round2(cart.items.reduce((sum, item) => sum + item.selectedPrice.value * item.quantity, 0)); 
+    const itemTotal = round2(items.reduce((sum, item) => sum + item.selectedPrice.value * item.quantity, 0)); 
     const tax = round2(itemTotal * 0.0625);
     const tip = round2(itemTotal * 0.15);
     const total = round2(itemTotal + tax + tip);
@@ -66,7 +65,7 @@ class OrderService {
       signedInUser.name,
       tableNumber,
       rest.receiver,
-      cart.items.map(({ categoryIndex, itemIndex, ...others }) => ({
+      items.map(({ categoryIndex, itemIndex, ...others }) => ({
         ...others,
         printers: rest.menu[categoryIndex].items[itemIndex].printers,
       })),
@@ -79,13 +78,20 @@ class OrderService {
     if (charge.paid) {
       // * 1000 because stripe stores in seconds past epoch, but elastic does milliseconds since epoch
       const createdDate = charge.created * 1000
-      // although items contains fields we don't want (categoryIndex, etc), that's okay since elastic will ignore them
+      // remove indicies so we don't store them in elastic
+      const itemsWithoutIndices = items.map(({ name, selectedPrice, selectedOptions, quantity, specialRequests }) => ({
+        name,
+        selectedPrice,
+        selectedOptions,
+        quantity,
+        specialRequests,
+      }));
       this.saveOrder(
         signedInUser,
         restId,
         charge.id,
         createdDate,
-        items,
+        itemsWithoutIndices,
         { ...costs, percentFee, flatRateFee }
       )
       return true;
