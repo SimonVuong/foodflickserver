@@ -62,16 +62,16 @@ class OrderService {
       tip,
     };
 
-    // getPrinterService().printOrder(
-    //   signedInUser.name,
-    //   tableNumber,
-    //   rest.receiver,
-    //   cart.items.map(({ categoryIndex, itemIndex, ...others }) => ({
-    //     ...others,
-    //     printers: rest.menu[categoryIndex].items[itemIndex].printers,
-    //   })),
-    //   { ...costs, total }
-    // );
+    getPrinterService().printOrder(
+      signedInUser.name,
+      tableNumber,
+      rest.receiver,
+      cart.items.map(({ categoryIndex, itemIndex, ...others }) => ({
+        ...others,
+        printers: rest.menu[categoryIndex].items[itemIndex].printers,
+      })),
+      { ...costs, total }
+    );
 
     const foodflickFee = Math.round(centsTotal * round3(percentFee) + flatRateFee * 100);
     // todo 0: do something with failed paid
