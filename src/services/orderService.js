@@ -145,11 +145,11 @@ class OrderService {
       reverse_transfer: true,
     });
 
-    callElasticWithErrorHandler(options => this.elastic.update(options), {
+    const orderRes = await callElasticWithErrorHandler(options => this.elastic.update(options), {
       index: ORDERS_INDEX,
       type: ORDER_TYPE,
       id: orderId,
-      _source: false,
+      _source: true,
       body: {
         script: {
           source: `
@@ -165,7 +165,9 @@ class OrderService {
         }
       }
     });
-    return true;
+    const newOrder = orderRes.get._source;
+    newOrder._id = orderId;
+    return newOrder;
   }
 
   saveOrder = async (signedInUser, restId, stripeChargeId, createdDate, items, costs) => {
