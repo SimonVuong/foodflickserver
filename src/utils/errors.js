@@ -4,7 +4,7 @@ const capitalize = string => string.charAt(0).toUpperCase() + string.slice(1)
 export const NEEDS_MANAGER_SIGN_IN_ERROR = 
   'Unauthorized. User must be signed in with a manager account. Please sign in with a manager account';
 
-export const getRestNotFoundError = (restId) => `Restaurant id '${restId}' not found. Please try again with a valid id`;
+export const getRestNotFoundError = id => `Document with id '${id}' not found. Please try again with a valid id`;
 
 export const NEEDS_SIGN_IN_ERROR = `Unauthorized. User must be signed in. Please sign in`;
 

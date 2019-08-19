@@ -21,6 +21,7 @@ const _Order = `
   type Order {
     _id: ID!
     restId: ID!
+    stripeChargeId: ID!
     status: OrderStatus!
     customer: Customer!
     createdDate: Float!

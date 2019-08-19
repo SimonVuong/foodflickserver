@@ -38,6 +38,7 @@ const mutation = `
     deleteRestPrinter(restId: ID!, printerName: String!): Rest!
     giveRestFeedback(restId: ID!, feedback: String!): Boolean!
     placeOrder(cart: CartInput!): Boolean!
+    refundOrder(restId: ID!, orderId: ID!, stripeChargeId: ID!, amount: Float!) : Boolean!
     toggleItemLike(restId: ID!, categoryName: String!, itemName: String!): Rest!
     toggleRestFavorite(restId: ID!): Rest!
     updateCategory(restId: ID!, categoryName: String!, newCategory: NewCategoryInput!): Rest!

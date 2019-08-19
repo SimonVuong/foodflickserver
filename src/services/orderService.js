@@ -3,7 +3,7 @@ import { getRestService } from "./restService";
 import { getPrinterService } from './printerService';
 import { getCannotBeEmptyError, NEEDS_MANAGER_SIGN_IN_ERROR } from '../utils/errors';
 import { OrderStatus } from '../schema/order/order';
-import { MANAGER_PERM } from '../utils/auth';
+import { MANAGER_PERM, throwIfNotRestOwnerOrManager } from '../utils/auth';
 import { QUERY_SIZE, callElasticWithErrorHandler } from './utils';
 
 const ORDERS_INDEX = 'orders';
@@ -72,7 +72,7 @@ class OrderService {
       { ...costs, total }
     );
 
-    const foodflickFee = Math.round(centsTotal * round3(percentFee) + flatRateFee * 100);
+    const foodflickFee = Math.round(centsTotal * round3(percentFee / 100) + flatRateFee * 100);
     // todo 0: do something with failed paid
     const charge = await this.makePayment(signedInUser, rest.banking.stripeId, rest.profile.name, centsTotal, foodflickFee);
     if (charge.paid) {
@@ -121,7 +121,53 @@ class OrderService {
     }
   }
 
-  // // left off here doe sthis work. also check if getCompletedOrders works
+  async refundOrder (signedInUser, restId, orderId, stripeChargeId, amount) {
+    if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
+    if (amount === 0) throw new Error('Refund amount cannot be 0. Please use a another amount');
+    const rest = await getRestService().getRest(restId, ['owner', 'managers']);
+    throwIfNotRestOwnerOrManager(signedInUser._id, rest.owner, rest.managers);
+
+    const order = await callElasticWithErrorHandler(options => this.elastic.getSource(options), {
+      index: ORDERS_INDEX,
+      type: ORDER_TYPE,
+      id: orderId,
+      _source: ['restId', 'stripeChargeId', 'customRefunds', 'costs'],
+    });
+    if (order.restId !== restId) throw new Error("The provided restId doesn't match the restId stored with the order. Please provide the correct restId");
+    if (order.stripeChargeId !== stripeChargeId) throw new Error("The provided stripeChargeId doesn't match the stripeChargeId stored with the order. Please provide the correct stripeChargeId");
+    const currRefund = round2(order.customRefunds.reduce((sum, refund) => sum + refund.amount, 0));
+    const orderTotal = round2(order.costs.itemTotal + order.costs.tax + order.costs.tip);
+    if (currRefund + amount > orderTotal) throw new Error('The provided amount exceeds the allowed remaining refund of ' + (orderTotal - currRefund) + '. Please reduce the amount');
+
+    const refundRes = await this.stripe.refunds.create({
+      charge: stripeChargeId,
+      amount:  Math.round(amount * 100),
+      reverse_transfer: true,
+    });
+
+    callElasticWithErrorHandler(options => this.elastic.update(options), {
+      index: ORDERS_INDEX,
+      type: ORDER_TYPE,
+      id: orderId,
+      _source: false,
+      body: {
+        script: {
+          source: `
+            ctx._source.customRefunds.add(params.refund);
+          `,
+          params: {
+            restId,
+            refund: {
+              stripeRefundId: refundRes.id,
+              amount,
+            },
+          }
+        }
+      }
+    });
+    return true;
+  }
+
   saveOrder = async (signedInUser, restId, stripeChargeId, createdDate, items, costs) => {
     const customer = {
       userId: signedInUser._id,
@@ -154,10 +200,19 @@ class OrderService {
 
   getCompletedOrders = async (signedInUser, restId) => {
     if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
+    const rest = await getRestService().getRest(restId, ['owner', 'managers']);
+    throwIfNotRestOwnerOrManager(signedInUser._id, rest.owner, rest.managers);
     const res = await callElasticWithErrorHandler(options => this.elastic.search(options), {
       index: ORDERS_INDEX,
       size: QUERY_SIZE,
       body: {
+        sort: [
+          {
+            createdDate: {
+              order: "desc",
+            }
+          }
+        ],
         query: {
           bool: {
             filter: {

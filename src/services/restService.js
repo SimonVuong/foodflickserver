@@ -3,7 +3,7 @@ import { getBankingService } from './bankingService';
 import { getUserService } from './userService';
 import { getTagService } from './tagService';
 import { getGeoService } from './geoService';
-import { MANAGER_PERM } from '../utils/auth';
+import { MANAGER_PERM, throwIfNotRestOwnerOrManager } from '../utils/auth';
 import {
   getRestUpdateOptions,
   getUpdatedRestWithId,
@@ -347,9 +347,7 @@ class RestService {
       _sourceInclude: [ 'owner', 'managers', 'menu', 'profile', 'printers']
     });
     const rest = res._source;
-    if (rest.owner.userId != signedInUser._id || (rest.managers.length > 0 && rest.managers.findIndex(manager => manager.userId === signedInUser._id) === -1)) {
-      throw new Error(`Unauthorized. ${signedInUser.email} is not a owner/manager of ${rest.profile.name}`);
-    }
+    throwIfNotRestOwnerOrManager(signedInUser._id, rest.owner, rest.managers);
     return rest.printers;
   }
 
