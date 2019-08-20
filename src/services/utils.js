@@ -33,7 +33,7 @@ const binarySearch = (users, userId) => {
 
 /**
  * Cleans up a rest for customer.
- * Adds isFavorite and hasLiked fields to the rest. Removes owner, manager, and feedback. Removes items without flicks.
+ * Adds isFavorite and hasLiked fields to the rest. Removes owner, manager, and feedback.
  * Removes optionGroups without options. Removes banking acc + routing numbers
  * Removes list of printers and item's printers
  * @param  {} signedInUser pass in if need to filter based on rest management
@@ -47,7 +47,7 @@ export const cleanCustomerRest = (signedInUser, rest) => {
   rest.printers = null;
   rest.favorites.isFavorite = Boolean(signedInUser) && binarySearch(rest.favorites.users, signedInUser._id) !== -1;
   rest.menu = rest.menu.map(category => {
-    category.items = category.items.filter(({ flick }) => flick).map(item => {
+    category.items = category.items.map(item => {
       item.likes.hasLiked = Boolean(signedInUser) && (binarySearch(item.likes.users, signedInUser._id) !== -1);
       item.optionGroups = item.optionGroups.filter(({ options }) => options.length > 0);
       item.printers = null;
