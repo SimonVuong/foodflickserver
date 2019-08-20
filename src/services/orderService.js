@@ -72,28 +72,28 @@ class OrderService {
       { ...costs, total }
     );
 
-    const foodflickFee = Math.round(centsTotal * round3(percentFee / 100) + flatRateFee * 100);
-    // todo 0: do something with failed paid
-    const charge = await this.makePayment(signedInUser, rest.banking.stripeId, rest.profile.name, centsTotal, foodflickFee);
-    if (charge.paid) {
-      // * 1000 because stripe stores in seconds past epoch, but elastic does milliseconds since epoch
-      const createdDate = charge.created * 1000
-      // remove indicies so we don't store them in elastic
-      const itemsWithoutIndices = items.map(({ name, selectedPrice, selectedOptions, quantity, specialRequests }) => ({
-        name,
-        selectedPrice,
-        selectedOptions,
-        quantity,
-        specialRequests,
-      }));
-      this.saveOrder(
-        signedInUser,
-        restId,
-        charge.id,
-        createdDate,
-        itemsWithoutIndices,
-        { ...costs, percentFee, flatRateFee }
-      )
+    // const foodflickFee = Math.round(centsTotal * round3(percentFee / 100) + flatRateFee * 100);
+    // // todo 0: do something with failed paid
+    // const charge = await this.makePayment(signedInUser, rest.banking.stripeId, rest.profile.name, centsTotal, foodflickFee);
+    // if (charge.paid) {
+    //   // * 1000 because stripe stores in seconds past epoch, but elastic does milliseconds since epoch
+    //   const createdDate = charge.created * 1000
+    //   // remove indicies so we don't store them in elastic
+    //   const itemsWithoutIndices = items.map(({ name, selectedPrice, selectedOptions, quantity, specialRequests }) => ({
+    //     name,
+    //     selectedPrice,
+    //     selectedOptions,
+    //     quantity,
+    //     specialRequests,
+    //   }));
+    //   this.saveOrder(
+    //     signedInUser,
+    //     restId,
+    //     charge.id,
+    //     createdDate,
+    //     itemsWithoutIndices,
+    //     { ...costs, percentFee, flatRateFee }
+    //   )
       return true;
     }
 

@@ -317,6 +317,13 @@ GET /users/_search?
     }
 }
 
+GET /orders/_search?
+{
+    "query" : {
+        "match_all" : {}
+    }
+}
+
 GET /tags/_search?
 {
     "query" : {
@@ -363,6 +370,13 @@ POST rests/_delete_by_query
  {
   "query": { 
     "terms": { "profile.name.keyword": [ "banking"]}
+  }
+}
+
+#POST orders/_delete_by_query
+ {
+  "query": { 
+    "match_all": {}
   }
 }
 
@@ -490,7 +504,7 @@ POST rests/_update_by_query?conflicts=proceed
               "isReceipt": true
             }
           ],
-          "receiverId": "test"
+          "receiverId": "testReceiver1"
         }
       }
     },
@@ -661,7 +675,7 @@ POST rests/_search?pretty
 ########## mappings ##########
 GET /rests/_mapping/rest
 GET /rests2/_mapping/rest
-
+GET /orders/_mapping/order
 
 PUT rests/_mapping/rest
 {
@@ -1286,6 +1300,9 @@ PUT orders
     "order": {
       "dynamic": "false",
       "properties": {
+        "restId": {
+          "type": "keyword"
+        },
         "status": {
           "type": "keyword"
         },
@@ -1373,7 +1390,7 @@ PUT orders
             }
           }
         },
-        "orderCosts": {
+        "costs": {
           "properties": {
             "tax": {
               "type": "float"
