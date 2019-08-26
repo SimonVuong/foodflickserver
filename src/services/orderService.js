@@ -11,7 +11,7 @@ const ORDER_TYPE = 'order';
 
 const containsPrice = ({ label, value }, prices) => {
   for (let i = 0; i < prices.length; i++) {
-  const dbValue = prices[i].value;
+    const dbValue = prices[i].value;
     const dbLabel = prices[i].label;
     if ((!dbLabel || label === dbLabel) && value === dbValue) return true;
   }
@@ -19,8 +19,8 @@ const containsPrice = ({ label, value }, prices) => {
 }
 
 //https://stackoverflow.com/questions/11832914/round-to-at-most-2-decimal-places-only-if-necessary
-const round2 = num => +(Math.round(num + "e+2")  + "e-2");
-const round3 = num => +(Math.round(num + "e+3")  + "e-3");
+const round2 = num => +(Math.round(num + "e+2") + "e-2");
+const round3 = num => +(Math.round(num + "e+3") + "e-3");
 
 class OrderService {
   constructor(stripe, elastic) {
@@ -28,7 +28,7 @@ class OrderService {
     this.elastic = elastic;
   }
 
-  validatePrices (items, rest) {
+  validatePrices(items, rest) {
     for (let i = 0; i < items.length; i++) {
       const orderItem = items[i];
       const { itemIndex, categoryIndex, selectedPrice } = orderItem;
@@ -43,12 +43,12 @@ class OrderService {
     }
   }
 
-  async placeOrder (signedInUser, cart) {
+  async placeOrder(signedInUser, cart) {
     const { restId, items, tableNumber } = cart;
     if (!tableNumber) throw new Error(getCannotBeEmptyError(`Printer name`));
     const rest = await getRestService().getRest(restId);
     this.validatePrices(items, rest);
-    const itemTotal = round2(items.reduce((sum, item) => sum + item.selectedPrice.value * item.quantity, 0)); 
+    const itemTotal = round2(items.reduce((sum, item) => sum + item.selectedPrice.value * item.quantity, 0));
     const tax = round2(itemTotal * 0.0625);
     const tip = round2(itemTotal * 0.15);
     const total = round2(itemTotal + tax + tip);
@@ -74,33 +74,50 @@ class OrderService {
 
     const foodflickFee = Math.round(centsTotal * round3(percentFee / 100) + flatRateFee * 100);
     // todo 0: do something with failed paid
-    // const charge = await this.makePayment(signedInUser, rest.banking.stripeId, rest.profile.name, centsTotal, foodflickFee);
-    // if (charge.paid) {
-    //   // * 1000 because stripe stores in seconds past epoch, but elastic does milliseconds since epoch
-    //   const createdDate = charge.created * 1000
-    //   // remove indicies so we don't store them in elastic
-    //   const itemsWithoutIndices = items.map(({ name, selectedPrice, selectedOptions, quantity, specialRequests }) => ({
-    //     name,
-    //     selectedPrice,
-    //     selectedOptions,
-    //     quantity,
-    //     specialRequests,
-    //   }));
-    //   this.saveOrder(
-    //     signedInUser,
-    //     restId,
-    //     charge.id,
-    //     createdDate,
-    //     itemsWithoutIndices,
-    //     { ...costs, percentFee, flatRateFee }
-    //   )
-    //   return true;
-    // }
-
+    // remove indicies so we don't store them in elastic
+    const itemsWithoutIndices = items.map(({ name, selectedPrice, selectedOptions, quantity, specialRequests }) => ({
+      name,
+      selectedPrice,
+      selectedOptions,
+      quantity,
+      specialRequests
+    }));
+    const order = await this.addOpenOrder(
+      signedInUser,
+      restId,
+      Date.now(), //milliseconds
+      itemsWithoutIndices,
+      { ...costs, percentFee, flatRateFee }
+    );
+    this.completeOrderAndPay(order._id, signedInUser, rest.banking.stripeId, rest.profile.name, centsTotal, foodflickFee)
     return true;
   }
-
-  async makePayment (signedInUser, restStripeId, restName, cents, foodflickFee) {
+  //after 5 seconds set orderStatus to copmlete and charge account
+  completeOrderAndPay(orderId, signedInUser, restStripeId, restName, centsTotal, foodflickFee) {
+    setTimeout(async (orderId) => {
+      const charge = await this.makePayment(signedInUser, restStripeId, restName, centsTotal, foodflickFee);
+      await callElasticWithErrorHandler(options => this.elastic.update(options),
+        {
+          index: ORDERS_INDEX,
+          type: ORDER_TYPE,
+          id: orderId,
+          _source: true,
+          body: {
+            script: {
+              source: `ctx._source.OrderStatus=params.status;
+                       ctx._source.stripeChargeId=params.chargeId;
+                       `,
+              params: {
+                status: 'COMPLETED',
+                chargeId: charge.id
+              }
+            }
+          }
+        }
+      );
+    }, 900000, orderId);
+  }
+  async makePayment(signedInUser, restStripeId, restName, cents, foodflickFee) {
     try {
       const cardTok = await getCardService().getCardId(signedInUser.stripeId);
       if (!cardTok) throw new Error('No payment card found. Please add a card in settings');
@@ -121,7 +138,7 @@ class OrderService {
     }
   }
 
-  async refundOrder (signedInUser, restId, orderId, stripeChargeId, amount) {
+  async refundOrder(signedInUser, restId, orderId, stripeChargeId, amount) {
     if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
     if (amount === 0) throw new Error('Refund amount cannot be 0. Please use a another amount');
     const rest = await getRestService().getRest(restId, ['owner', 'managers']);
@@ -141,7 +158,7 @@ class OrderService {
 
     const refundRes = await this.stripe.refunds.create({
       charge: stripeChargeId,
-      amount:  Math.round(amount * 100),
+      amount: Math.round(amount * 100),
       reverse_transfer: true,
     });
 
@@ -170,17 +187,16 @@ class OrderService {
     return newOrder;
   }
 
-  saveOrder = async (signedInUser, restId, stripeChargeId, createdDate, items, costs) => {
+  addOpenOrder = async (signedInUser, restId, createdDate, items, costs) => {
     const customer = {
       userId: signedInUser._id,
-      nameDuring: signedInUser.name, 
+      nameDuring: signedInUser.name,
     };
     const customRefunds = [];
     const order = {
       restId,
-      status: OrderStatus.COMPLETED,
+      status: OrderStatus.OPEN,
       customer,
-      stripeChargeId,
       createdDate,
       items,
       costs,
