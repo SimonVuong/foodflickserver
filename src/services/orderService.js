@@ -77,48 +77,31 @@ class OrderService {
       tip
     };
 
-    // getPrinterService().printOrder(
-    //   signedInUser.name,
-    //   tableNumber,
-    //   rest.receiver,
-    //   items.map(({ categoryIndex, itemIndex, ...others }) => ({
-    //     ...others,
-    //     printers: rest.menu[categoryIndex].items[itemIndex].printers
-    //   })),
-    //   { ...costs, total }
-    // );
+    getPrinterService().printOrder(
+      signedInUser.name,
+      tableNumber,
+      rest.receiver,
+      items.map(({ categoryIndex, itemIndex, ...others }) => ({
+        ...others,
+        printers: rest.menu[categoryIndex].items[itemIndex].printers
+      })),
+      { ...costs, total }
+    );
 
     const foodflickFee = Math.round(
       centsTotal * round3(percentFee / 100) + flatRateFee * 100
     );
 
     // todo 0: do something with failed paid
-    //  await this.makePayment(
-    //   signedInUser,
-    //   rest.banking.stripeId,
-    //   rest.profile.name,
-    //   centsTotal,
-    //   foodflickFee
-    // );
-    //if (charge.paid) {
-    // * 1000 because stripe stores in seconds past epoch, but elastic does milliseconds since epoch
-    //const createdDate = charge.created * 1000;
 
     // remove indicies so we don't store them in elastic
-    const itemsWithoutIndices = items.map(
-      ({
-        name,
-        selectedPrice,
-        selectedOptions,
-        quantity,
-        specialRequests
-      }) => ({
-        name,
-        selectedPrice,
-        selectedOptions,
-        quantity,
-        specialRequests
-      })
+    const itemsWithoutIndices = items.map(({ name, selectedPrice, selectedOptions, quantity, specialRequests }) => ({
+      name,
+      selectedPrice,
+      selectedOptions,
+      quantity,
+      specialRequests
+    })
     );
     const order = await this.saveOrder(
       signedInUser,
@@ -128,7 +111,6 @@ class OrderService {
       itemsWithoutIndices,
       { ...costs, percentFee, flatRateFee }
     );
-    console.log('test ' + order._id);
     //after 5 seconds set orderStatus to copmlete and charge account
     setTimeout(async (order) => {
       const orderId = order._id;
@@ -152,16 +134,11 @@ class OrderService {
           }
         }
       );
-
     }, 5000, order);
-    //return true;
-    //}
-
     return true;
   }
 
   async makePayment(signedInUser, restStripeId, restName, cents, foodflickFee) {
-    console.log(signedInUser.stripeId);
     try {
       const cardTok = await getCardService().getCardId(signedInUser.stripeId);
       if (!cardTok)
@@ -175,7 +152,7 @@ class OrderService {
         statement_descriptor_suffix: restName,
         application_fee_amount: foodflickFee,
         transfer_data: {
-          destination: "acct_1Ezwz7KshzLpXQdX" //rest stripe id
+          destination: restStripeId
         }
       });
     } catch (e) {
