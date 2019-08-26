@@ -115,7 +115,7 @@ class OrderService {
           }
         }
       );
-    }, 5000, orderId);
+    }, 900000, orderId);
   }
   async makePayment(signedInUser, restStripeId, restName, cents, foodflickFee) {
     try {
