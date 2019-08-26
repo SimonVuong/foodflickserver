@@ -81,21 +81,21 @@ class OrderService {
       selectedOptions,
       quantity,
       specialRequests
-    })
-    );
-    const order = await this.saveOrder(
+    }));
+    const order = await this.addOpenOrder(
       signedInUser,
       restId,
-      null, //charge.id
       Date.now(), //milliseconds
       itemsWithoutIndices,
       { ...costs, percentFee, flatRateFee }
     );
-    //after 5 seconds set orderStatus to copmlete and charge account
-    setTimeout(async (order) => {
-      const orderId = order._id;
-      console.log('orderID ' + orderId)
-      const charge = await this.makePayment(signedInUser, rest.banking.stripeId, rest.profile.name, centsTotal, foodflickFee);
+    this.completeOrderAndPay(order._id, signedInUser, rest.banking.stripeId, rest.profile.name, centsTotal, foodflickFee)
+    return true;
+  }
+  //after 5 seconds set orderStatus to copmlete and charge account
+  completeOrderAndPay(orderId, signedInUser, restStripeId, restName, centsTotal, foodflickFee) {
+    setTimeout(async (orderId) => {
+      const charge = await this.makePayment(signedInUser, restStripeId, restName, centsTotal, foodflickFee);
       await callElasticWithErrorHandler(options => this.elastic.update(options),
         {
           index: ORDERS_INDEX,
@@ -105,7 +105,8 @@ class OrderService {
           body: {
             script: {
               source: `ctx._source.OrderStatus=params.status;
-                     ctx._source.stripeChargeId=params.chargeId;`,
+                       ctx._source.stripeChargeId=params.chargeId;
+                       `,
               params: {
                 status: 'COMPLETED',
                 chargeId: charge.id
@@ -114,10 +115,8 @@ class OrderService {
           }
         }
       );
-    }, 5000, order);
-    return true;
+    }, 5000, orderId);
   }
-
   async makePayment(signedInUser, restStripeId, restName, cents, foodflickFee) {
     try {
       const cardTok = await getCardService().getCardId(signedInUser.stripeId);
@@ -188,7 +187,7 @@ class OrderService {
     return newOrder;
   }
 
-  saveOrder = async (signedInUser, restId, stripeChargeId, createdDate, items, costs) => {
+  addOpenOrder = async (signedInUser, restId, createdDate, items, costs) => {
     const customer = {
       userId: signedInUser._id,
       nameDuring: signedInUser.name,
@@ -198,7 +197,6 @@ class OrderService {
       restId,
       status: OrderStatus.OPEN,
       customer,
-      stripeChargeId,
       createdDate,
       items,
       costs,
