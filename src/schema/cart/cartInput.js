@@ -13,8 +13,9 @@ const CartItemInput = `
 
 const _CartInput = `
   input CartInput {
-    restId: String
-    tableNumber: String
+    restId: String!
+    tableNumber: String!
+    phoneNumber: String!
     items: [CartItemInput!]!
   }
 `;

@@ -18,6 +18,10 @@ const containsPrice = ({ label, value }, prices) => {
   return false;
 }
 
+const throwIfInvalidPhoneNumber = phoneNumber => {
+  if (!phoneNumber) throw new Error(getCannotBeEmptyError(`Phone Number`));
+};
+
 //https://stackoverflow.com/questions/11832914/round-to-at-most-2-decimal-places-only-if-necessary
 const round2 = num => +(Math.round(num + "e+2") + "e-2");
 const round3 = num => +(Math.round(num + "e+3") + "e-3");
@@ -44,8 +48,9 @@ class OrderService {
   }
 
   async placeOrder(signedInUser, cart) {
-    const { restId, items, tableNumber } = cart;
+    const { restId, items, tableNumber, phoneNumber } = cart;
     if (!tableNumber) throw new Error(getCannotBeEmptyError(`Printer name`));
+    throwIfInvalidPhoneNumber(phoneNumber);
     const rest = await getRestService().getRest(restId);
     this.validatePrices(items, rest);
     const itemTotal = round2(items.reduce((sum, item) => sum + item.selectedPrice.value * item.quantity, 0));
@@ -87,35 +92,34 @@ class OrderService {
       restId,
       Date.now(), //milliseconds
       itemsWithoutIndices,
-      { ...costs, percentFee, flatRateFee }
+      { ...costs, percentFee, flatRateFee },
+      phoneNumber
     );
-    this.completeOrderAndPay(order._id, signedInUser, rest.banking.stripeId, rest.profile.name, centsTotal, foodflickFee)
+    setTimeout(async () => { await this.completeOrderAndPay(order._id, signedInUser, rest.banking.stripeId, rest.profile.name, centsTotal, foodflickFee) }, 900000);
     return true;
   }
   //after 5 seconds set orderStatus to copmlete and charge account
-  completeOrderAndPay(orderId, signedInUser, restStripeId, restName, centsTotal, foodflickFee) {
-    setTimeout(async (orderId) => {
-      const charge = await this.makePayment(signedInUser, restStripeId, restName, centsTotal, foodflickFee);
-      await callElasticWithErrorHandler(options => this.elastic.update(options),
-        {
-          index: ORDERS_INDEX,
-          type: ORDER_TYPE,
-          id: orderId,
-          _source: true,
-          body: {
-            script: {
-              source: `ctx._source.OrderStatus=params.status;
+  async completeOrderAndPay(orderId, signedInUser, restStripeId, restName, centsTotal, foodflickFee) {
+    const charge = await this.makePayment(signedInUser, restStripeId, restName, centsTotal, foodflickFee);
+    await callElasticWithErrorHandler(options => this.elastic.update(options),
+      {
+        index: ORDERS_INDEX,
+        type: ORDER_TYPE,
+        id: orderId,
+        _source: true,
+        body: {
+          script: {
+            source: `ctx._source.status=params.status;
                        ctx._source.stripeChargeId=params.chargeId;
                        `,
-              params: {
-                status: 'COMPLETED',
-                chargeId: charge.id
-              }
+            params: {
+              status: 'COMPLETED',
+              chargeId: charge.id
             }
           }
         }
-      );
-    }, 900000, orderId);
+      }
+    );
   }
   async makePayment(signedInUser, restStripeId, restName, cents, foodflickFee) {
     try {
@@ -187,7 +191,7 @@ class OrderService {
     return newOrder;
   }
 
-  addOpenOrder = async (signedInUser, restId, createdDate, items, costs) => {
+  addOpenOrder = async (signedInUser, restId, createdDate, items, costs, phoneNumber) => {
     const customer = {
       userId: signedInUser._id,
       nameDuring: signedInUser.name,
@@ -195,6 +199,7 @@ class OrderService {
     const customRefunds = [];
     const order = {
       restId,
+      phoneNumber,
       status: OrderStatus.OPEN,
       customer,
       createdDate,
