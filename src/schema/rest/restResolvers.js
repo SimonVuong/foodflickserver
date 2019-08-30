@@ -52,6 +52,10 @@ export const RestMutationResolvers = {
   updateRestReceiver: async (root, { restId, receiverId }, { signedInUser, RestService }) => {
     return await RestService.updateRestReceiver(signedInUser, restId, receiverId);  
   },
+
+  updateRestUrl: async (root, { restId, url }, { signedInUser, RestService }) => {
+    return await RestService.updateRestUrl(signedInUser, restId, url);  
+  },
 };
 
 export const RestQueryResolvers = {
@@ -61,6 +65,10 @@ export const RestQueryResolvers = {
 
   myRests: async (root, args, { signedInUser, RestService }) => {
     return await RestService.getMyRests(signedInUser);
+  },
+
+  restByUrl: async (root, { url }, { signedInUser, RestService }) => {
+    return await RestService.getRestByUrl(signedInUser, url)
   },
 
   restPrinters: async(root, { restId }, { signedInUser, RestService }) => {

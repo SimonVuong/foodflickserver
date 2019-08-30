@@ -50,6 +50,7 @@ const mutation = `
     updateRestPrinter(restId: ID!, newPrinter: UpdatePrinterInput!): Rest!
     updateRestProfile(restId: ID!, newProfile: ProfileInput!): Rest!
     updateRestReceiver(restId: ID!, receiverId: ID!): Rest!
+    updateRestUrl(restId: ID!, url: String!): Rest!
     updateUserCard(cardToken: ID!): Card!
     updateUserEmail(newEmail: String!): Boolean!
   }
@@ -70,6 +71,7 @@ const query = `
     completedOrders(restId: ID!): [Order!]!
     restPrinters: [Printer!]!
     restWithBanking(restId: String!): Rest!
+    restByUrl(url: String!): Rest
     restSearchSuggestions(query: String!, location: String): [Rest!]
     tagSearchSuggestions(query: String!): [Tag!]
     myFavoriteRests: [Rest!]!

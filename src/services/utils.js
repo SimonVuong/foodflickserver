@@ -59,6 +59,8 @@ export const cleanCustomerRest = (signedInUser, rest) => {
   });
 }
 
+export const URLCharacters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890_-'
+
 /**
  * @param  {} restId
  * @param  {} signedInUser pass in if need to filter based on rest management

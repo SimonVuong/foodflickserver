@@ -25,6 +25,7 @@ const Rest = `
     #otherway arround because a restarunt MUST HAVE a manager while user does NOT NEED a restaruant. keeps data cleaner.   
     managers: [Manager!]
     menu: [Category!]!
+    url: String!
   }
 `;
 
