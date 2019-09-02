@@ -1819,16 +1819,26 @@ PUT orders
                 }
               }
             },
-            "phone": {
-              "type": "text",
-              "fields": {
-                "keyword": {
-                  "type": "keyword",
-                  "ignore_above": 256
-                }
-              }
-            },
           }
+        },
+        //top level because we wanna be able to support phone + cards that may not be tied to
+        // customers. ex. i wanna use a separate card or phone for this 1 order. however,
+        // frontend will default these values to the custom'ers stored phone + card
+        "phone": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "cardTok": {
+          "type": "keyword"
+        },
+        // CARRY_OUT or SIT_DOWN
+        "orderType": {
+          "type": "keyword"
         },
         "stripeChargeId": {
           "type": "keyword"
