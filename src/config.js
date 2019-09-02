@@ -11,6 +11,9 @@ const secrets = {
   },
   auth: {
     AUTH_CLIENT_SECRET: process.env.AUTH_CLIENT_SECRET,
+  },
+  twilio: {
+    TWILIO_KEY: process.env.TWILIO_KEY,
   }
 };
 
@@ -51,7 +54,7 @@ GHvfjzAiLDRjG8pWVA==
     }
   },
   stripe: {
-    cardPath: '/endpoints/devCard.html', 
+    cardPath: '/endpoints/devCard.html',
   }
 };
 
@@ -92,7 +95,10 @@ CAXO0dg=
     }
   },
   stripe: {
-    cardPath: '/endpoints/prodCard.html', 
+    cardPath: '/endpoints/prodCard.html',
+  },
+  twilio: {
+    account_sid: 'AC049b2876bcf1f6e12ee8cf74bb2cc6b4' //test account twilio SID
   }
 };
 

@@ -18,8 +18,8 @@ const containsPrice = ({ label, value }, prices) => {
   return false;
 }
 
-const throwIfInvalidPhoneNumber = phoneNumber => {
-  if (!phoneNumber) throw new Error(getCannotBeEmptyError(`Phone Number`));
+const throwIfInvalidPhone = phone => {
+  if (!phone) throw new Error(getCannotBeEmptyError(`Phone Number`));
 };
 
 //https://stackoverflow.com/questions/11832914/round-to-at-most-2-decimal-places-only-if-necessary
@@ -48,9 +48,9 @@ class OrderService {
   }
 
   async placeOrder(signedInUser, cart) {
-    const { restId, items, tableNumber, phoneNumber } = cart;
+    const { restId, items, tableNumber, phone } = cart;
     if (!tableNumber) throw new Error(getCannotBeEmptyError(`Printer name`));
-    throwIfInvalidPhoneNumber(phoneNumber);
+    throwIfInvalidPhone(phone);
     const rest = await getRestService().getRest(restId);
     this.validatePrices(items, rest);
     const itemTotal = round2(items.reduce((sum, item) => sum + item.selectedPrice.value * item.quantity, 0));
@@ -93,7 +93,7 @@ class OrderService {
       Date.now(), //milliseconds
       itemsWithoutIndices,
       { ...costs, percentFee, flatRateFee },
-      phoneNumber
+      phone
     );
     setTimeout(async () => { await this.completeOrderAndPay(order._id, signedInUser, rest.banking.stripeId, rest.profile.name, centsTotal, foodflickFee) }, 900000);
     return true;
@@ -110,8 +110,8 @@ class OrderService {
         body: {
           script: {
             source: `ctx._source.status=params.status;
-                       ctx._source.stripeChargeId=params.chargeId;
-                       `,
+                     ctx._source.stripeChargeId=params.chargeId;
+                    `,
             params: {
               status: 'COMPLETED',
               chargeId: charge.id
@@ -191,7 +191,7 @@ class OrderService {
     return newOrder;
   }
 
-  addOpenOrder = async (signedInUser, restId, createdDate, items, costs, phoneNumber) => {
+  addOpenOrder = async (signedInUser, restId, createdDate, items, costs, phone) => {
     const customer = {
       userId: signedInUser._id,
       nameDuring: signedInUser.name,
@@ -199,7 +199,7 @@ class OrderService {
     const customRefunds = [];
     const order = {
       restId,
-      phoneNumber,
+      customer: phone,
       status: OrderStatus.OPEN,
       customer,
       createdDate,
