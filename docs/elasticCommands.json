@@ -9,15 +9,7 @@ PUT /_snapshot/foodflick
     }
 }
 
-#create snapshot called rests2 with data
-PUT /_snapshot/foodflick/rests2wait_for_completion=true
-{
-  "indices": "rests2",
-  "ignore_unavailable": true,
-  "include_global_state": false
-}
-
-#create snapshot called rests with data
+#create snapshots
 PUT /_snapshot/foodflick/rests?wait_for_completion=true
 {
   "indices": "rests",
@@ -54,22 +46,17 @@ PUT /_snapshot/foodflick/tags?wait_for_completion=true
   "include_global_state": false
 }
 
-
-# restore to just rest mapping with no data
-#POST /_snapshot/foodflick/rest-mapping-only/_restore
-
 # restore rest index with data from rests snapshot
 POST /_snapshot/foodflick/rests/_restore
 POST /_snapshot/foodflick/rests2/_restore
-POST /_snapshot/foodflick/all/_restore
-#POST /_snapshot/foodflick/rest-mapping-only/_restore
 
-GET /_snapshot/foodflick/_all
-GET /_snapshot/foodflick/rest-mapping-only
+
+
 GET /_snapshot/foodflick/rests
 GET /_snapshot/foodflick/
 # delete a snapshot
 DELETE /_snapshot/foodflick/rests
+DELETE /_snapshot/foodflick/orders
 DELETE /_snapshot/foodflick/users
 DELETE /_snapshot/foodflick/tags
 DELETE /_snapshot/foodflick/rests2
