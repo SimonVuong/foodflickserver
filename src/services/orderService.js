@@ -9,6 +9,9 @@ import { QUERY_SIZE, callElasticWithErrorHandler } from './utils';
 const ORDERS_INDEX = 'orders';
 const ORDER_TYPE = 'order';
 
+const PERCENT_FEE = 2.9
+const FLAT_RATE_FEE = .30;
+
 const containsPrice = ({ label, value }, prices) => {
   for (let i = 0; i < prices.length; i++) {
     const dbValue = prices[i].value;
@@ -37,30 +40,29 @@ class OrderService {
         if (dbItem.name !== orderItem.name) throw new Error(`Item name and indicies mismatch ${JSON.stringify(orderItem)}`)
         if (!containsPrice(selectedPrice, dbItem.prices)) throw new Error(`Invalid price ${JSON.stringify(orderItem.selectedPrice)}`);
       } catch (e) {
-        console.error(e);
-        throw new Error(`Invalid items in order ${JSON.stringify(orderItem)}`);
+        console.error(e, JSON.stringify(orderItem));
+        throw e;
+        // throw new Error(`Invalid items in order ${JSON.stringify(orderItem)}`);
       }
     }
   }
 
   async placeOrder(signedInUser, cart) {
     const { restId, items, tableNumber } = cart;
-    if (!tableNumber) throw new Error(getCannotBeEmptyError(`Printer name`));
+    if (!tableNumber) throw new Error(getCannotBeEmptyError(`Table number`));
     const rest = await getRestService().getRest(restId);
     this.validatePrices(items, rest);
     const itemTotal = round2(items.reduce((sum, item) => sum + item.selectedPrice.value * item.quantity, 0));
     const tax = round2(itemTotal * 0.0625);
     const tip = round2(itemTotal * 0.15);
     const total = round2(itemTotal + tax + tip);
-    const percentFee = 2.9
-    const flatRateFee = .30;
     const centsTotal = Math.round(total * 100);
     const costs = {
       itemTotal,
       tax,
       tip,
     };
-
+    
     getPrinterService().printOrder(
       signedInUser.name,
       tableNumber,
@@ -72,7 +74,6 @@ class OrderService {
       { ...costs, total }
     );
 
-    const foodflickFee = Math.round(centsTotal * round3(percentFee / 100) + flatRateFee * 100);
     // todo 0: do something with failed paid
     // remove indicies so we don't store them in elastic
     const itemsWithoutIndices = items.map(({ name, selectedPrice, selectedOptions, quantity, specialRequests }) => ({
@@ -87,15 +88,15 @@ class OrderService {
       restId,
       Date.now(), //milliseconds
       itemsWithoutIndices,
-      { ...costs, percentFee, flatRateFee }
+      costs
     );
-    this.completeOrderAndPay(order._id, signedInUser, rest.banking.stripeId, rest.profile.name, centsTotal, foodflickFee)
+    this.completeOrderAndPay(order._id, signedInUser, rest.banking.stripeId, rest.profile.name, centsTotal)
     return true;
   }
   //after 5 seconds set orderStatus to copmlete and charge account
-  completeOrderAndPay(orderId, signedInUser, restStripeId, restName, centsTotal, foodflickFee) {
+  completeOrderAndPay(orderId, signedInUser, restStripeId, restName, centsTotal) {
     setTimeout(async (orderId) => {
-      const charge = await this.makePayment(signedInUser, restStripeId, restName, centsTotal, foodflickFee);
+      const charge = await this.makePayment(signedInUser, restStripeId, restName, centsTotal);
       await callElasticWithErrorHandler(options => this.elastic.update(options),
         {
           index: ORDERS_INDEX,
@@ -117,10 +118,11 @@ class OrderService {
       );
     }, 900000, orderId);
   }
-  async makePayment(signedInUser, restStripeId, restName, cents, foodflickFee) {
+  async makePayment(signedInUser, restStripeId, restName, cents) {
     try {
+      const foodflickFee = Math.round(cents * round3(PERCENT_FEE / 100) + FLAT_RATE_FEE * 100);
       const cardTok = await getCardService().getCardId(signedInUser.stripeId);
-      if (!cardTok) throw new Error('No payment card found. Please add a card in settings');
+      if (!cardTok) throw new Error('No payment card found. Please add a card');
       return await this.stripe.charges.create({
         amount: cents,
         currency: 'usd',
@@ -199,7 +201,7 @@ class OrderService {
       customer,
       createdDate,
       items,
-      costs,
+      costs: { ...costs, percentFee: PERCENT_FEE, flatRateFee: FLAT_RATE_FEE },
       customRefunds
     };
     try {

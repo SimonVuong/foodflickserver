@@ -8,8 +8,9 @@ const getCard = stripeCustomer => {
 const getCardData = stripeCustomer => {
   const card = getCard(stripeCustomer);
   if (!card) return null;
-  const { last4, exp_month, exp_year } = card;
+  const { id, last4, exp_month, exp_year } = card;
   return {
+    cardTok: id,
     last4,
     expMonth: exp_month,
     expYear: exp_year,

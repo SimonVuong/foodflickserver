@@ -95,7 +95,6 @@ class RestService {
         }
       }
     });
-    console.log('restbyurl', res);
     if (res.hits.total === 0) return null;
     const dbRest = res.hits.hits[0];
     const rest = dbRest._source;

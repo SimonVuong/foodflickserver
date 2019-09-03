@@ -1,3 +1,9 @@
+const OrderTypeInput = `
+  enum OrderTypeInput {
+    CARRY_OUT
+    SIT_DOWN
+  }
+`
 
 const CartItemInput = `
   input CartItemInput {
@@ -14,9 +20,12 @@ const CartItemInput = `
 const _CartInput = `
   input CartInput {
     restId: String
-    tableNumber: String
     items: [CartItemInput!]!
+    tableNumber: String!
+    cardTok: String!
+    phone: String!
+    orderType: OrderTypeInput!
   }
 `;
 
-export const CartInput = () => [_CartInput, CartItemInput];
+export const CartInput = () => [_CartInput, CartItemInput, OrderTypeInput];
