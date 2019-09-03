@@ -63,16 +63,16 @@ class OrderService {
       tip,
     };
     
-    // getPrinterService().printOrder(
-    //   signedInUser.name,
-    //   tableNumber,
-    //   rest.receiver,
-    //   items.map(({ categoryIndex, itemIndex, ...others }) => ({
-    //     ...others,
-    //     printers: rest.menu[categoryIndex].items[itemIndex].printers,
-    //   })),
-    //   { ...costs, total }
-    // );
+    getPrinterService().printOrder(
+      signedInUser.name,
+      tableNumber,
+      rest.receiver,
+      items.map(({ categoryIndex, itemIndex, ...others }) => ({
+        ...others,
+        printers: rest.menu[categoryIndex].items[itemIndex].printers,
+      })),
+      { ...costs, total }
+    );
 
     // todo 0: do something with failed paid
     // remove indicies so we don't store them in elastic
