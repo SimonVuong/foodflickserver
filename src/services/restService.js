@@ -360,7 +360,7 @@ class RestService {
       rest._id = restId;
       return rest;
     } catch (e) {
-      console.error(`failed to get stripeId for rest ${restId}`, e);
+      console.error(`failed to get rest for ${restId}`, e);
       throw e;
     }
   }

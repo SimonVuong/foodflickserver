@@ -236,7 +236,29 @@ class OrderService {
     }
   }
 
-  getCompletedOrders = async (signedInUser, restId) => {
+  getCartFromOrder = async(orderId) => {
+    try {
+      const order = await callElasticWithErrorHandler(options => this.elastic.getSource(options), {
+        index: ORDERS_INDEX,
+        type: ORDER_TYPE,
+        id: orderId,
+        _source: ['items', 'restId', 'orderType', 'tableNumber'],
+      });
+      order._id = orderId;
+      const rest = await getRestService().getRest(order.restId, ['menu', 'profile.name']);
+      order.items.forEach(item => {
+        item.flick = getMenuItemById(item.itemId, rest.menu).flick;
+      })
+      order.restName = rest.profile.name;
+      order.restMenu = rest.menu;
+      return order;
+    } catch (e) {
+      console.error(`failed to get order for order ${orderId}`, e);
+      throw e;
+    }
+  }
+
+  getCompletedOrders = async(signedInUser, restId) => {
     if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
     const rest = await getRestService().getRest(restId, ['owner', 'managers']);
     throwIfNotRestOwnerOrManager(signedInUser._id, rest.owner, rest.managers);

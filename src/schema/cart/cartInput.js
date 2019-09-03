@@ -11,7 +11,7 @@ const CartItemInput = `
 
 const _CartInput = `
   input CartInput {
-    restId: String!
+    restId: ID!
     items: [CartItemInput!]!
     tableNumber: String
     tip: Float!

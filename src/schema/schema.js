@@ -65,11 +65,12 @@ const mutation = `
 
 const query = `
   type Query {
+    cartFromOrder(orderId: ID!): Cart!
+    completedOrders(restId: ID!): [Order!]!
     doesUserExist(email: String!): Boolean!
     itemsWithPrinter(restId: ID!, printerName: String!): [String!]!
     myCard: Card
     myRests: [Rest!]!
-    completedOrders(restId: ID!): [Order!]!
     restPrinters: [Printer!]!
     restWithBanking(restId: String!): Rest!
     restByUrl(url: String!): Rest
@@ -90,6 +91,7 @@ const schema = `
 const typeDefs = [
   Cart,
   Card,
+  Cart,
   User,
   Tag,
   Flick,

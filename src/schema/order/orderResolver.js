@@ -10,7 +10,11 @@ export const OrderMutationResolvers = {
 };
 
 export const OrderQueryResolvers = {
-  completedOrders: async( root, { restId }, { signedInUser, OrderService }) => {
+  cartFromOrder: async(root, { orderId }, { OrderService }) => {
+    return await OrderService.getCartFromOrder(orderId);
+  },
+
+  completedOrders: async(root, { restId }, { signedInUser, OrderService }) => {
     return await OrderService.getCompletedOrders(signedInUser, restId)
   },
 }

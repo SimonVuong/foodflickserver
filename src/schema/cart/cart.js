@@ -14,6 +14,7 @@ const CartItem = `
   type CartItem {
     name: String!
     itemId: ID!
+    flick: String,
     selectedPrice: Price!
     selectedOptions: [Option!]!
     quantity: Int!
@@ -23,7 +24,9 @@ const CartItem = `
 
 const _Cart = `
   type Cart {
-    restId: String!
+    restId: ID!
+    restName: String!
+    restMenu: [Category!]!
     items: [CartItem!]!
     orderType: OrderType!
     tableNumber: String
