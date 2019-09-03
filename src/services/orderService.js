@@ -95,7 +95,11 @@ class OrderService {
       { ...costs, percentFee, flatRateFee },
       phone
     );
-    setTimeout(async () => { await this.completeOrderAndPay(order._id, signedInUser, rest.banking.stripeId, rest.profile.name, centsTotal, foodflickFee) }, 900000);
+    setTimeout(async () => {
+      if (order.status === OrderStatus.OPEN) {
+        await this.completeOrderAndPay(order._id, signedInUser, rest.banking.stripeId, rest.profile.name, centsTotal, foodflickFee)
+      }
+    }, 900000);
     return true;
   }
   //after 5 seconds set orderStatus to copmlete and charge account
@@ -113,7 +117,7 @@ class OrderService {
                      ctx._source.stripeChargeId=params.chargeId;
                     `,
             params: {
-              status: 'COMPLETED',
+              status: OrderStatus.COMPLETED,
               chargeId: charge.id
             }
           }
