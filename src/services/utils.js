@@ -1,4 +1,5 @@
 import { getRestNotFoundError } from "../utils/errors";
+import { ORDERS_INDEX, ORDER_TYPE } from './orderService';
 
 export const REST_INDEX = 'rests';
 export const REST_TYPE = 'rest';
@@ -138,6 +139,21 @@ export const getRestUpdateOptions = (restId, signedInUser, script, params) => {
     }
   }
 }
+
+export const getOrderUpdateOptions = (orderId, script, params, source = false) => ({
+  index: ORDERS_INDEX,
+  type: ORDER_TYPE,
+  id: orderId,
+  _source: source,
+  body: {
+    script: {
+      source: script,
+      params: {
+        ...params
+      }
+    },
+  }
+})
 
 /**
  * @param  {} restId

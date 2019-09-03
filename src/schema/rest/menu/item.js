@@ -5,6 +5,7 @@ import ItemPrinter from './itemPrinter';
 
 const Item = `
   type Item {
+    _id: String!
     name: String!
     prices: [Price!]!
     description: String

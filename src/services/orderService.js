@@ -1,13 +1,14 @@
-import { getCardService } from "./cardService";
 import { getRestService } from "./restService";
 import { getPrinterService } from './printerService';
 import { getCannotBeEmptyError, NEEDS_MANAGER_SIGN_IN_ERROR } from '../utils/errors';
 import { OrderStatus } from '../schema/order/order';
 import { MANAGER_PERM, throwIfNotRestOwnerOrManager } from '../utils/auth';
-import { QUERY_SIZE, callElasticWithErrorHandler } from './utils';
+import { QUERY_SIZE, callElasticWithErrorHandler, getOrderUpdateOptions } from './utils';
+import { getMenuItemById } from './menuService';
+import { OrderType } from '../schema/cart/cart';
 
-const ORDERS_INDEX = 'orders';
-const ORDER_TYPE = 'order';
+export const ORDERS_INDEX = 'orders';
+export const ORDER_TYPE = 'order';
 
 const PERCENT_FEE = 2.9
 const FLAT_RATE_FEE = .30;
@@ -20,10 +21,6 @@ const containsPrice = ({ label, value }, prices) => {
   }
   return false;
 }
-
-const throwIfInvalidPhone = phone => {
-  if (!phone) throw new Error(getCannotBeEmptyError(`Phone Number`));
-};
 
 //https://stackoverflow.com/questions/11832914/round-to-at-most-2-decimal-places-only-if-necessary
 const round2 = num => +(Math.round(num + "e+2") + "e-2");
@@ -38,10 +35,10 @@ class OrderService {
   validatePrices(items, rest) {
     for (let i = 0; i < items.length; i++) {
       const orderItem = items[i];
-      const { itemIndex, categoryIndex, selectedPrice } = orderItem;
+      const { itemId, selectedPrice } = orderItem;
       try {
-        const dbItem = rest.menu[categoryIndex].items[itemIndex];
-        if (dbItem.name !== orderItem.name) throw new Error(`Item name and indicies mismatch ${JSON.stringify(orderItem)}`)
+        const dbItem = getMenuItemById(itemId, rest.menu);
+        if (!dbItem) throw new Error(`Item ${itemId} not found`);
         if (!containsPrice(selectedPrice, dbItem.prices)) throw new Error(`Invalid price ${JSON.stringify(orderItem.selectedPrice)}`);
       } catch (e) {
         console.error(e, JSON.stringify(orderItem));
@@ -52,85 +49,86 @@ class OrderService {
   }
 
   async placeOrder(signedInUser, cart) {
-    const { restId, items, tableNumber, phone } = cart;
-    if (!tableNumber) throw new Error(getCannotBeEmptyError(`Printer name`));
-    throwIfInvalidPhone(phone);
+    const { items, tableNumber, phone, orderType, cardTok, restId, tip } = cart;
+    if (!tableNumber && orderType === OrderType.SIT_DOWN) throw new Error(getCannotBeEmptyError(`Table number`));
+    if (!phone) throw new Error(getCannotBeEmptyError(`Phone Number`));
     const rest = await getRestService().getRest(restId);
     this.validatePrices(items, rest);
     const itemTotal = round2(items.reduce((sum, item) => sum + item.selectedPrice.value * item.quantity, 0));
     const tax = round2(itemTotal * 0.0625);
-    const tip = round2(itemTotal * 0.15);
-    const total = round2(itemTotal + tax + tip);
+    const finalTip = round2(tip);
+    const total = round2(itemTotal + tax + finalTip);
     const centsTotal = Math.round(total * 100);
     const costs = {
       itemTotal,
       tax,
-      tip,
+      tip: finalTip,
     };
     
     getPrinterService().printOrder(
       signedInUser.name,
-      tableNumber,
+      cart.tableNumber,
       rest.receiver,
-      items.map(({ categoryIndex, itemIndex, ...others }) => ({
+      items.map(({ itemId, ...others }) => ({
         ...others,
-        printers: rest.menu[categoryIndex].items[itemIndex].printers,
+        printers: getMenuItemById(itemId, rest.menu).printers,
       })),
       { ...costs, total }
     );
 
-    // todo 0: do something with failed paid
-    // remove indicies so we don't store them in elastic
-    const itemsWithoutIndices = items.map(({ name, selectedPrice, selectedOptions, quantity, specialRequests }) => ({
-      name,
-      selectedPrice,
-      selectedOptions,
-      quantity,
-      specialRequests
-    }));
-    const order = await this.addOpenOrder(
-      signedInUser,
-      restId,
-      Date.now(), // milliseconds
-      itemsWithoutIndices,
-      costs,
-      phone
-    );
+    const order = await this.addOpenOrder(signedInUser, cart, costs);
+
     setTimeout(() => {
-      this.completeOrderAndPay(order._id, signedInUser, rest.banking.stripeId, rest.profile.name, centsTotal)
-    }, 900000); // 1.5 minutes
+      this.completeOrderAndPay(order._id, signedInUser, rest.banking.stripeId, rest.profile.name, centsTotal, cardTok)
+    }, 900000); // 15 minutes
     return true;
   }
 
-  completeOrderAndPay(orderId, signedInUser, restStripeId, restName, centsTotal) {
-    await callElasticWithErrorHandler(options => this.elastic.update(options), {
-      index: ORDERS_INDEX,
-      type: ORDER_TYPE,
-      id: orderId,
-      _source: true,
-      body: {
-        script: {
-          source: `
-            if (ctx._source.orderStatus)
-            ctx._source.status=params.status;
-            // ctx._source.stripeChargeId=params.chargeId;
-          `,
-          params: {
-            status: OrderStatus.COMPLETED,
-            // chargeId: charge.id
+  async completeOrderAndPay(orderId, signedInUser, restStripeId, restName, centsTotal, cardTok) {
+    try {
+      await callElasticWithErrorHandler(options => this.elastic.update(options), getOrderUpdateOptions(
+        orderId,
+        `
+          if (ctx._source.status.equals("${OrderStatus.COMPLETED}")) {
+            throw new Exception("Order is already completed");
           }
-        }
-      }
-    });
-    const charge = await this.makePayment(signedInUser, restStripeId, restName, centsTotal);
+          if (ctx._source.status.equals("${OrderStatus.RETURNED}")) {
+            throw new Exception("Order is already returned");
+          }
+          ctx._source.status=params.status;
+        `,
+        { status: OrderStatus.COMPLETED }
+      ))
+    } catch (e) {
+      console.error(e);
+      throw(e);
+    };
 
+    let charge;
+    try {
+      // while technically possible for the malconfigured zombie order processor to make a payment between
+      // setting status = COMPLETE and making the payment here, it won't happen as long as we are diligent with the zombie
+      // logic by ensuring that the zombie checker must see an order twice in a row in its cycles before deciding to
+      // auto close them.
+      charge = await this.makePayment(signedInUser, restStripeId, restName, centsTotal, cardTok);
+    } catch (e) {
+      callElasticWithErrorHandler(options => this.elastic.update(options), getOrderUpdateOptions(
+        orderId,
+        `ctx._source.status=params.status;`,
+        { status: OrderStatus.OPEN }
+      ));
+    }
+
+    callElasticWithErrorHandler(options => this.elastic.update(options), getOrderUpdateOptions(
+      orderId,
+      `ctx._source.stripeChargeId=params.chargeId;`,
+      { chargeId: charge.id }
+    ));
   }
 
-  async makePayment(signedInUser, restStripeId, restName, cents) {
+  async makePayment(signedInUser, restStripeId, restName, cents, cardTok) {
     try {
       const foodflickFee = Math.round(cents * round3(PERCENT_FEE / 100) + FLAT_RATE_FEE * 100);
-      const cardTok = await getCardService().getCardId(signedInUser.stripeId);
-      if (!cardTok) throw new Error('No payment card found. Please add a card');
       return await this.stripe.charges.create({
         amount: cents,
         currency: 'usd',
@@ -197,21 +195,32 @@ class OrderService {
     return newOrder;
   }
 
-  addOpenOrder = async (signedInUser, restId, createdDate, items, costs, phone) => {
+  addOpenOrder = async (signedInUser, cart, costs) => {
     const customer = {
       userId: signedInUser._id,
       nameDuring: signedInUser.name,
     };
     const customRefunds = [];
+    const {
+      restId,
+      items,
+      phone,
+      orderType,
+      tableNumber,
+      cardTok
+    } = cart;
     const order = {
       restId,
-      customer: phone,
       status: OrderStatus.OPEN,
       customer,
-      createdDate,
+      createdDate: Date.now(),
       items,
       costs: { ...costs, percentFee: PERCENT_FEE, flatRateFee: FLAT_RATE_FEE },
-      customRefunds
+      customRefunds,
+      phone,
+      orderType,
+      tableNumber,
+      cardTok,
     };
     try {
       // not specifying an id makes elastic add the doc

@@ -17,6 +17,7 @@ import { TagQueryResolvers } from './tag/tagResolvers';
 import { OrderMutationResolvers, OrderQueryResolvers } from './order/orderResolver';
 import { Order } from './order/order';
 import { CartInput } from './cart/cartInput';
+import { Cart } from './cart/cart';
 
 //todo 1: add mongo validation
 
@@ -87,6 +88,7 @@ const schema = `
   }
 `
 const typeDefs = [
+  Cart,
   Card,
   User,
   Tag,

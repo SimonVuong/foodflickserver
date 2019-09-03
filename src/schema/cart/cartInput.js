@@ -1,15 +1,7 @@
-const OrderTypeInput = `
-  enum OrderTypeInput {
-    CARRY_OUT
-    SIT_DOWN
-  }
-`
-
 const CartItemInput = `
   input CartItemInput {
     name: String!
-    categoryIndex: Int!
-    itemIndex: Int!
+    itemId: ID!
     selectedPrice: PriceInput!
     selectedOptions: [OptionInput!]!
     quantity: Int!
@@ -21,11 +13,12 @@ const _CartInput = `
   input CartInput {
     restId: String!
     items: [CartItemInput!]!
-    tableNumber: String!
+    tableNumber: String
+    tip: Float!
     cardTok: String!
     phone: String!
-    orderType: OrderTypeInput!
+    orderType: OrderType!
   }
 `;
 
-export const CartInput = () => [_CartInput, CartItemInput, OrderTypeInput];
+export const CartInput = () => [_CartInput, CartItemInput];

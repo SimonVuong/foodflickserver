@@ -3,18 +3,10 @@
 #create repo (directory to hold snaps)
 PUT /_snapshot/foodflick
 {
-  "type": "fs",
-  "settings": {
-    "location": "foodflick"
-  }
-}
-
-#create snapshot called rest-mapping-only in the rest repo. index must be empty. missing item.likes
-PUT /_snapshot/foodflick/rest-mapping-only?wait_for_completion=true
-{
-  "indices": "rests",
-  "ignore_unavailable": true,
-  "include_global_state": false
+    "type": "fs",
+    "settings": {
+        "location": "foodflick"
+    }
 }
 
 #create snapshot called rests2 with data
@@ -33,7 +25,7 @@ PUT /_snapshot/foodflick/rests?wait_for_completion=true
   "include_global_state": false
 }
 
-PUT /_snapshot/foodflick/2?wait_for_completion=true
+PUT /_snapshot/foodflick/rests2?wait_for_completion=true
 {
   "indices": "rests2",
   "ignore_unavailable": true,
@@ -41,29 +33,16 @@ PUT /_snapshot/foodflick/2?wait_for_completion=true
 }
 
 
-# restore to just rest mapping with no data
-#POST /_snapshot/foodflick/rest-mapping-only/_restore
-
-# restore rest index with data from rests snapshot
-POST /_snapshot/foodflick/rests/_restore
-POST /_snapshot/foodflick/rests-copy/
-POST /_snapshot/foodflick/all/_restore
-#POST /_snapshot/foodflick/rest-mapping-only/_restore
-
-GET /_snapshot/foodflick/_all
-GET /_snapshot/foodflick/rest-mapping-only
-GET /_snapshot/foodflick/rests
-GET /_snapshot/foodflick/
-# delete a snapshot
-DELETE /_snapshot/foodflick/rests
-DELETE /_snapshot/foodflick/users
-DELETE /_snapshot/foodflick/tags
-DELETE /_snapshot/foodflick/rests-copy
-
-
 PUT /_snapshot/foodflick/users?wait_for_completion=true
 {
   "indices": "users",
+  "ignore_unavailable": true,
+  "include_global_state": false
+}
+
+PUT /_snapshot/foodflick/orders?wait_for_completion=true
+{
+  "indices": "orders",
   "ignore_unavailable": true,
   "include_global_state": false
 }
@@ -76,6 +55,24 @@ PUT /_snapshot/foodflick/tags?wait_for_completion=true
 }
 
 
+# restore to just rest mapping with no data
+#POST /_snapshot/foodflick/rest-mapping-only/_restore
+
+# restore rest index with data from rests snapshot
+POST /_snapshot/foodflick/rests/_restore
+POST /_snapshot/foodflick/rests2/_restore
+POST /_snapshot/foodflick/all/_restore
+#POST /_snapshot/foodflick/rest-mapping-only/_restore
+
+GET /_snapshot/foodflick/_all
+GET /_snapshot/foodflick/rest-mapping-only
+GET /_snapshot/foodflick/rests
+GET /_snapshot/foodflick/
+# delete a snapshot
+DELETE /_snapshot/foodflick/rests
+DELETE /_snapshot/foodflick/users
+DELETE /_snapshot/foodflick/tags
+DELETE /_snapshot/foodflick/rests2
 
 
 ########## END SNAPSHOTS ##########
@@ -102,17 +99,15 @@ POST _reindex
       def menu = ctx._source.menu;
       if (menu != null) {
         for (int i = 0 ; i < menu.length; i++) {
-          def items = menu[i
-        ].items;
+          def items = menu[i].items;
           if (items != null) {
             for (int j = 0; j < items.length; j++) {
-              def item = items[j
-            ];
+              def item = items[j];
               item.prices = [];
+            } 
           }
         }
       }
-    }
     """
   }
 }
@@ -137,10 +132,10 @@ POST _reindex
 POST _reindex
 {
   "source": {
-    "index": "rests"
+    "index": "rests2"
   },
   "dest": {
-    "index": "rests2"
+    "index": "rests"
   }
 }
 
@@ -162,578 +157,110 @@ POST _reindex
 
 
 #POST _bulk
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "italian"
-  }
-}
-{
-  "name": "Italian",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "french"
-  }
-}
-{
-  "name": "French",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "chinese"
-  }
-}
-{
-  "name": "Chinese",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "asian"
-  }
-}
-{
-  "name": "Asian",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "seafood"
-  }
-}
-{
-  "name": "Seafood",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "mexican"
-  }
-}
-{
-  "name": "Mexican",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "indian"
-  }
-}
-{
-  "name": "Indian",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "korean"
-  }
-}
-{
-  "name": "Korean",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "indian"
-  }
-}
-{
-  "name": "Indian",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "japanese"
-  }
-}
-{
-  "name": "Japanese",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "sushi"
-  }
-}
-{
-  "name": "Sushi",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "thai"
-  }
-}
-{
-  "name": "Thai",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "american"
-  }
-}
-{
-  "name": "American",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "bar"
-  }
-}
-{
-  "name": "Bars",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "pizza"
-  }
-}
-{
-  "name": "Pizza",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "desserts"
-  }
-}
-{
-  "name": "Desserts",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "bakeries"
-  }
-}
-{
-  "name": "Bakeries",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "diner"
-  }
-}
-{
-  "name": "Diner",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "sandwhiches"
-  }
-}
-{
-  "name": "Sandwiches",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "breakfast"
-  }
-}
-{
-  "name": "Breakfast",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "brunch"
-  }
-}
-{
-  "name": "Brunch",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "asianFusion"
-  }
-}
-{
-  "name": "Asian fusion",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "burgers"
-  }
-}
-{
-  "name": "Burgers",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "fastFood"
-  }
-}
-{
-  "name": "Fast food",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "takeout"
-  }
-}
-{
-  "name": "Takeout",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "soups"
-  }
-}
-{
-  "name": "Soups",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "noodles"
-  }
-}
-{
-  "name": "Noodles",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "ramen"
-  }
-}
-{
-  "name": "Ramen",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "coffee"
-  }
-}
-{
-  "name": "Coffee",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "bubbleTea"
-  }
-}
-{
-  "name": "Bubble tea",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "taiwanese"
-  }
-}
-{
-  "name": "Taiwanese",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "turkish"
-  }
-}
-{
-  "name": "Turkish",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "halal"
-  }
-}
-{
-  "name": "Halal",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "mediterranean"
-  }
-}
-{
-  "name": "Mediterranean",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "poke"
-  }
-}
-{
-  "name": "Poke",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "cantonese"
-  }
-}
-{
-  "name": "Cantonese",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "ayce"
-  }
-}
-{
-  "name": "AYCE",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "spanish"
-  }
-}
-{
-  "name": "Spanish",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "polish"
-  }
-}
-{
-  "name": "Polish",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "middleEastern"
-  }
-}
-{
-  "name": "Middle Eastern",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "cocktails"
-  }
-}
-{
-  "name": "Cocktails",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "salad"
-  }
-}
-{
-  "name": "Salad",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "vietnamese"
-  }
-}
-{
-  "name": "Vietnamese",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "iceCream"
-  }
-}
-{
-  "name": "Ice cream",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "frozenYogurt"
-  }
-}
-{
-  "name": "Frozen yogurt",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "delivery"
-  }
-}
-{
-  "name": "Delivery",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "greek"
-  }
-}
-{
-  "name": "Greek",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "vegetarian"
-  }
-}
-{
-  "name": "Vegetarian",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "vegan"
-  }
-}
-{
-  "name": "Vegan",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "cafe"
-  }
-}
-{
-  "name": "Cafe",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "casual"
-  }
-}
-{
-  "name": "Casual",
-  "count": 0
-}
-{
-  "index": {
-    "_index": "tags",
-    "_type": "tag",
-    "_id": "buffet"
-  }
-}
-{
-  "name": "Buffet",
-  "count": 0
-}
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "italian" } }
+{ "name" : "Italian", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "french" } }
+{ "name" : "French", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "chinese" } }
+{ "name" : "Chinese", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "asian" } }
+{ "name" : "Asian", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "seafood" } }
+{ "name" : "Seafood", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "mexican" } }
+{ "name" : "Mexican", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "indian" } }
+{ "name" : "Indian", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "korean" } }
+{ "name" : "Korean", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "indian" } }
+{ "name" : "Indian", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "japanese" } }
+{ "name" : "Japanese", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "sushi" } }
+{ "name" : "Sushi", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "thai" } }
+{ "name" : "Thai", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "american"} }
+{ "name" : "American", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "bar" } }
+{ "name" : "Bars", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "pizza" } }
+{ "name" : "Pizza", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "desserts" } }
+{ "name" : "Desserts", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "bakeries" } }
+{ "name" : "Bakeries", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "diner" } }
+{ "name" : "Diner", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "sandwhiches" } }
+{ "name" : "Sandwiches", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "breakfast" } }
+{ "name" : "Breakfast", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "brunch" } }
+{ "name" : "Brunch", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "asianFusion" } }
+{ "name" : "Asian fusion", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "burgers" } }
+{ "name" : "Burgers", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "fastFood" } }
+{ "name" : "Fast food", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "takeout" } }
+{ "name" : "Takeout", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "soups" } }
+{ "name" : "Soups", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "noodles" } }
+{ "name" : "Noodles", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "ramen" } }
+{ "name" : "Ramen", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "coffee" } }
+{ "name" : "Coffee", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "bubbleTea" } }
+{ "name" : "Bubble tea", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "taiwanese" } }
+{ "name" : "Taiwanese", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "turkish" } }
+{ "name" : "Turkish", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "halal" } }
+{ "name" : "Halal", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "mediterranean" } }
+{ "name" : "Mediterranean", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "poke" } }
+{ "name" : "Poke", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "cantonese" } }
+{ "name" : "Cantonese", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "ayce" } }
+{ "name" : "AYCE", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "spanish" } }
+{ "name" : "Spanish", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "polish" } }
+{ "name" : "Polish", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "middleEastern" } }
+{ "name" : "Middle Eastern", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "cocktails" } }
+{ "name" : "Cocktails", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "salad" } }
+{ "name" : "Salad", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "vietnamese" } }
+{ "name" : "Vietnamese", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "iceCream" } }
+{ "name" : "Ice cream", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "frozenYogurt" } }
+{ "name" : "Frozen yogurt", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "delivery" } }
+{ "name" : "Delivery", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "greek" } }
+{ "name" : "Greek", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "vegetarian" } }
+{ "name" : "Vegetarian", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "vegan" } }
+{ "name" : "Vegan", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "cafe" } }
+{ "name" : "Cafe", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "casual" } }
+{ "name" : "Casual", "count": 0 }
+{ "index" : { "_index" : "tags", "_type" : "tag", "_id": "buffet" } }
+{ "name" : "Buffet", "count": 0 }
 ########## end setup ##########
 
 
@@ -754,69 +281,58 @@ GET /rests/rest/eVpbBmcBu4xW7khTaw6n
 
 GET /rests/_search?
 {
-  "query": {
-    "term": {
-      "favorites.users.keyword": "auth0|5aa88907856be20dbbd0345d"
+    "query" : {
+          "term": { "favorites.users.keyword": "auth0|5aa88907856be20dbbd0345d" }
     }
-  }
 }
 
 GET /rests/_search?
 {
-  "query": {
-    "term": {
-      "profile.name.keyword": "China Delight"
+    "query" : {
+      "term": { "profile.name.keyword": "China Delight" }
     }
-  }
 }
 
 GET /rests2/_search?
 {
-  "query": {
-    "match_all": {}
-  }
+    "query" : {
+        "match_all" : {}
+    }
 }
 
 GET /rests/_search?
 {
-  "query": {
-    "match_all": {}
-  }
+    "query" : {
+        "match_all" : {}
+    }
 }
 
 GET /users/_search?
 {
-  "query": {
-    "match_all": {}
-  }
+    "query" : {
+        "match_all" : {}
+    }
 }
 
 GET /orders/_search?
 {
-  "query": {
-    "match_all": {}
-  }
-}
-
-GET /tags/_search?
-{
-  "query": {
-    "match_all": {}
-  }
-}
-
-GET /tags/_search?
-{
-  "query": {
-    "terms": {
-      "name.keyword": [
-        "Italian",
-        "Cafe",
-        "Ice cream",
-        "Thai"
-      ]
+    "query" : {
+        "match_all" : {}
     }
-  }
+}
+
+GET /tags/_search?
+{
+    "query" : {
+        "match_all" : {}
+    }
+}
+
+GET /tags/_search?
+{
+    "query" : {
+          "terms": { "name.keyword": ["Italian", "Cafe", "Ice cream", "Thai"] }
+    }
 }
 
 GET /rests/rest/eVpbBmcBu4xW7khTaw6n
@@ -827,11 +343,12 @@ GET /rests/rest/eVpbBmcBu4xW7khTaw6n
 
 POST rests/_delete_by_query
  {
-  "query": {
+  "query": { 
     "match_all": {}
   }
 }
 
+DELETE orders
 DELETE rests
 DELETE rests2
 #DELETE users
@@ -844,41 +361,33 @@ DELETE rests/rest/rohuLWkBVBQEqv1uHn-S
 # {
 #  "query": { 
 #    "match_all": {}
-#
-  }
-#
-}
+#  }
+#}
 
 POST rests/_delete_by_query
  {
-  "query": {
-    "terms": {
-      "profile.name.keyword": [
-        "banking"
-      ]
-    }
+  "query": { 
+    "terms": { "profile.name.keyword": [ "banking"]}
   }
 }
 
-#POST orders/_delete_by_query
+POST orders/_delete_by_query
  {
-  "query": {
+  "query": { 
     "match_all": {}
   }
 }
 
 #POST tags/_delete_by_query
  {
-  "query": {
-    "term": {
-      "name.keyword": "random"
+    "query" : {
+        "term": { "name.keyword": "random" }
     }
-  }
 }
 
 #POST tags/_delete_by_query
  {
-  "query": {
+  "query": { 
     "match_all": {}
   }
 }
@@ -896,9 +405,9 @@ POST rests/_delete_by_query
 #POST rests/rest/
 {
   "profile": {
-    "name": "another elastic rest",
-    "phone": "123",
-    "description": "another custom description"
+      "name": "another elastic rest",
+      "phone": "123",
+      "description": "another custom description"
   },
   "location": {
     "address": {
@@ -909,133 +418,145 @@ POST rests/_delete_by_query
     }
   },
   "owner": {
-    "userId": "auth0|5a78c1ccebf64a46ecdd0d9c",
-    "email": "a@a.com"
+      "userId": "auth0|5a78c1ccebf64a46ecdd0d9c",
+      "email": "a@a.com"
   }
 }
 
 
 POST rests/_update_by_query?conflicts=proceed
 {
-  "script": {
-    "source": """
+    "script": {
+      "source": """
         def menu = ctx._source.menu;
         if (menu != null) {
           for (int i = 0 ; i < menu.length; i++) {
-            def items = menu[i
-        ].items;
+            def items = menu[i].items;
             if (items != null) {
               for (int j = 0; j < items.length; j++) {
-                def item = items[j
-            ];
-                item.optionGroups = params.group;
+                def item = items[j];
+                item._id = params.ids[j];
+              } 
+            }
           }
         }
-      }
-    }
       """,
       "lang": "painless",
-    "params": {
-      "group": []
-    }
-  },
-  "query": {
-    "match_all": {}
-  }
-}
-
-POST rests/_update_by_query?conflicts=proceed
-{
-  "script": {
-    "source": """
-        def menu = ctx._source.menu;
-        if (menu != null) {
-          for (int i = 0 ; i < menu.length; i++) {
-            def items = menu[i
-        ].items;
-            if (items != null) {
-              for (int j = 0; j < items.length; j++) {
-                def item = items[j
-            ];
-                item.printers = params.printers;
-          }
-        }
-      }
-    }
-      """,
-      "lang": "painless",
-    "params": {
-      "printers": [
-        {
-          "port": "9100",
-          "ip": "192.168.123.100",
-          "name": "kitchen",
-          "type": "epson"
-        }
-      ]
-    }
-  },
-  "query": {
-    "match_all": {}
-  }
-}
-
-POST rests/_update_by_query?conflicts=proceed
-{
-  "script": {
-    "source": """
-        ctx._source.receiver = params.receiver
-      """,
       "params": {
-      "receiver": {
+        "ids": ["aFZpsdnPLP", "bFZpsdnPLP", "cFZpsdnPLP", "dFZpsdnPLP"]
+      }
+    },
+    "query" : {
+        "match_all" : {}
+    }
+}
+
+POST rests/_update_by_query?conflicts=proceed
+{
+    "script": {
+      "source": """
+        def menu = ctx._source.menu;
+        if (menu != null) {
+          for (int i = 0 ; i < menu.length; i++) {
+            def items = menu[i].items;
+            if (items != null) {
+              for (int j = 0; j < items.length; j++) {
+                def item = items[j];
+                item.printers = params.printers;
+              } 
+            }
+          }
+        }
+      """,
+      "lang": "painless",
+      "params": {
         "printers": [
           {
             "port": "9100",
             "ip": "192.168.123.100",
             "name": "kitchen",
-            "type": "epson",
-            "isReceipt": true
+            "type": "epson"
           }
-        ],
-        "receiverId": "testReceiver1"
+        ]
       }
+    },
+    "query" : {
+        "match_all" : {}
     }
-  },
-  "query": {
-    "match_all": {}
-  }
+}
+
+POST rests/_update_by_query?conflicts=proceed
+{
+    "script": {
+      "source": """
+        ctx._source.url = params.url
+      """,
+      "params": {
+        "url" : "horizon-simon"
+      }
+    },
+    "query" : {
+        "match_all" : {}
+    }
 }
 
 
 POST rests/_update_by_query?conflicts=proceed
 {
-  "script": {
-    "source": """
+    "script": {
+      "source": """
+        ctx._source.receiver = params.receiver
+      """,
+      "params": {
+        "receiver" : {
+          "printers": [
+            {
+              "port": "9100",
+              "ip": "192.168.123.100",
+              "name": "kitchen",
+              "type": "epson",
+              "isReceipt": true
+            }
+          ],
+          "receiverId": "testReceiver1"
+        }
+      }
+    },
+    "query" : {
+        "match_all" : {}
+    }
+}
+
+
+POST rests/_update_by_query?conflicts=proceed
+{
+    "script": {
+      "source": """
         ctx._source.favorites = params.favorite;
       """,
       "params": {
-      "favorite": {
-        "count": 0,
-        "users": []
+        "favorite": {
+          "count": 0,
+          "users": []
+        }
       }
+    },
+    "query" : {
+        "match_all" : {}
     }
-  },
-  "query": {
-    "match_all": {}
-  }
 }
 
 
 POST rests/_update_by_query?conflicts=proceed
 {
-  "script": {
-    "source": """
+    "script": {
+      "source": """
         ctx._source.receiver.receiverId = null;
       """
-  },
-  "query": {
-    "match_all": {}
-  }
+    },
+    "query" : {
+        "match_all" : {}
+    }
 }
 
 
@@ -1046,21 +567,17 @@ POST rests/_update_by_query?conflicts=proceed
         ctx.op = "noop";
         def menu = ctx._source.menu;
         for (int i = 0; i < menu.length; i++) {
-          if (menu[i
-      ].name.equals(params.categoryName)) {
-            List items = menu[i
-        ].items;
+          if (menu[i].name.equals(params.categoryName)) {
+            List items = menu[i].items;
             for (int j = 0; j < items.length; j++) {
-              if (items[j
-          ].name.equals(params.itemName)) {
-                items[j
-            ].likes++;
+              if (items[j].name.equals(params.itemName)) {
+                items[j].likes++;
                 ctx.op = "index";
                 break;
+              }
+            }
           }
         }
-      }
-    }
     """,
     "lang": "painless",
     "params": {
@@ -1078,12 +595,10 @@ POST rests/_update_by_query?conflicts=proceed
     "source": """
         def menu = ctx._source.menu;
         for (int i = 0; i < menu.length; i++) {
-          if (menu[i
-      ].name.equals(params.categoryName)) {
-            menu[i
-        ].items = params.items;
-      }
-    }
+          if (menu[i].name.equals(params.categoryName)) {
+            menu[i].items = params.items;
+          }
+        }
     """,
     "lang": "painless",
     "params": {
@@ -1096,14 +611,14 @@ POST rests/_update_by_query?conflicts=proceed
 
 POST tags/_update_by_query?conflicts=proceed
 {
-  "script": {
-    "source": """
+    "script": {
+      "source": """
         ctx._source.count = 0;
       """
-  },
-  "query": {
-    "match_all": {}
-  }
+    },
+    "query" : {
+        "match_all" : {}
+    }
 }
 
 POST /rests/rest/D71rFmwB0QaGhfaOS2Jp/_update
@@ -1131,36 +646,36 @@ POST /rests/rest/D71rFmwB0QaGhfaOS2Jp/_update
 POST rests/_search?pretty
 {
   "suggest": {
-    "rest-suggest": {
-      "prefix": "mas",
-      "completion": {
-        "field": "profile.name.suggest"
+      "rest-suggest" : {
+          "prefix" : "mas", 
+          "completion" : { 
+              "field" : "profile.name.suggest"
+          }
       }
-    }
   }
 }
 
 POST rests/_search?pretty
 {
   "suggest": {
-    "rest-suggest": {
-      "prefix": "ma",
-      "completion": {
-        "field": "profile.name.suggest"
+      "rest-suggest" : {
+          "prefix" : "ma", 
+          "completion" : { 
+              "field" : "profile.name.suggest"
+          }
       }
-    }
   }
 }
 
 POST rests/_search?pretty
 {
   "profile.name.suggest": {
-    "rest-suggest": {
-      "prefix": "elast",
-      "completion": {
-        "field": "suggest"
+      "rest-suggest" : {
+          "prefix" : "elast", 
+          "completion" : { 
+              "field" : "suggest" 
+          }
       }
-    }
   }
 }
 
@@ -1181,7 +696,7 @@ PUT rests/_mapping/rest
   "properties": {
     "receiver": {
       "properties": {
-        "receiverId": {
+        "receiverId" : {
           "type": "text",
           "fields": {
             "keyword": {
@@ -1231,7 +746,7 @@ PUT rests/_mapping/rest
   "properties": {
     "printers": {
       "properties": {
-        "isReceipt": {
+        "isReceipt" : {
           "type": "boolean"
         }
       }
@@ -1243,9 +758,8 @@ PUT rests/_mapping/rest
 PUT rests/_mapping/rest
 {
   "properties": {
-    "banking": {
-      "type": "date",
-      "format": "epoch_millis"
+    "url": {
+      "type": "keyword"
     }
   }
 }
@@ -1261,6 +775,25 @@ PUT rests/_mapping/rest
             "keyword": {
               "type": "keyword",
               "ignore_above": 256
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+
+
+PUT rests/_mapping/rest
+{
+  "properties": {
+    "menu": {
+      "properties": {
+        "items": {
+          "properties": {
+            "_id":  {
+              "type": "keyword"
             }
           }
         }
@@ -1448,6 +981,9 @@ PUT rests
             },
             "items": {
               "properties": {
+                "_id": {
+                  "type": "keyword"
+                },
                 "description": {
                   "type": "text",
                   "fields": {
@@ -1474,7 +1010,7 @@ PUT rests
                 },
                 "printers": {
                   "properties": {
-                    "name": {
+                    "name" : {
                       "type": "text",
                       "fields": {
                         "keyword": {
@@ -1492,7 +1028,7 @@ PUT rests
                         }
                       }
                     },
-                    "port": {
+                    "port" : {
                       "type": "text"
                     },
                     "type": {
@@ -1730,7 +1266,7 @@ PUT rests
         },
         "receiver": {
           "properties": {
-            "receiverId": {
+            "receiverId" : {
               "type": "text",
               "fields": {
                 "keyword": {
@@ -1777,22 +1313,6 @@ PUT rests
   }
 }
 
-PUT rests
-{
-  "mappings": {
-    "rest": {
-      "properties": {
-        "feedback": {
-          "createdDate": {
-            "type": "date",
-            "format": "createdDate"
-          }
-        }
-      }
-    }
-  }
-}
-
 PUT orders
 {
   "mappings": {
@@ -1818,7 +1338,7 @@ PUT orders
                   "ignore_above": 256
                 }
               }
-            },
+            }
           }
         },
         "phone": {
@@ -1842,11 +1362,13 @@ PUT orders
         "cardTok": {
           "type": "keyword"
         },
-        // CARRY_OUT or SIT_DOWN
         "orderType": {
           "type": "keyword"
         },
         "stripeChargeId": {
+          "type": "keyword"
+        },
+        "tableNumber": {
           "type": "keyword"
         },
         "createdDate": {
@@ -1855,6 +1377,9 @@ PUT orders
         },
         "items": {
           "properties": {
+            "itemId": {
+              "type": "keyword"
+            },
             "name": {
               "type": "text",
               "fields": {
