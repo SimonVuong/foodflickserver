@@ -21,6 +21,10 @@ const containsPrice = ({ label, value }, prices) => {
   return false;
 }
 
+const throwIfInvalidPhone = phone => {
+  if (!phone) throw new Error(getCannotBeEmptyError(`Phone Number`));
+};
+
 //https://stackoverflow.com/questions/11832914/round-to-at-most-2-decimal-places-only-if-necessary
 const round2 = num => +(Math.round(num + "e+2") + "e-2");
 const round3 = num => +(Math.round(num + "e+3") + "e-3");
@@ -48,8 +52,9 @@ class OrderService {
   }
 
   async placeOrder(signedInUser, cart) {
-    const { restId, items, tableNumber } = cart;
-    if (!tableNumber) throw new Error(getCannotBeEmptyError(`Table number`));
+    const { restId, items, tableNumber, phone } = cart;
+    if (!tableNumber) throw new Error(getCannotBeEmptyError(`Printer name`));
+    throwIfInvalidPhone(phone);
     const rest = await getRestService().getRest(restId);
     this.validatePrices(items, rest);
     const itemTotal = round2(items.reduce((sum, item) => sum + item.selectedPrice.value * item.quantity, 0));
@@ -86,38 +91,41 @@ class OrderService {
     const order = await this.addOpenOrder(
       signedInUser,
       restId,
-      Date.now(), //milliseconds
+      Date.now(), // milliseconds
       itemsWithoutIndices,
-      costs
+      costs,
+      phone
     );
-    this.completeOrderAndPay(order._id, signedInUser, rest.banking.stripeId, rest.profile.name, centsTotal)
+    setTimeout(() => {
+      this.completeOrderAndPay(order._id, signedInUser, rest.banking.stripeId, rest.profile.name, centsTotal)
+    }, 900000); // 1.5 minutes
     return true;
   }
-  //after 5 seconds set orderStatus to copmlete and charge account
+
   completeOrderAndPay(orderId, signedInUser, restStripeId, restName, centsTotal) {
-    setTimeout(async (orderId) => {
-      const charge = await this.makePayment(signedInUser, restStripeId, restName, centsTotal);
-      await callElasticWithErrorHandler(options => this.elastic.update(options),
-        {
-          index: ORDERS_INDEX,
-          type: ORDER_TYPE,
-          id: orderId,
-          _source: true,
-          body: {
-            script: {
-              source: `ctx._source.OrderStatus=params.status;
-                       ctx._source.stripeChargeId=params.chargeId;
-                       `,
-              params: {
-                status: 'COMPLETED',
-                chargeId: charge.id
-              }
-            }
+    await callElasticWithErrorHandler(options => this.elastic.update(options), {
+      index: ORDERS_INDEX,
+      type: ORDER_TYPE,
+      id: orderId,
+      _source: true,
+      body: {
+        script: {
+          source: `
+            if (ctx._source.orderStatus)
+            ctx._source.status=params.status;
+            // ctx._source.stripeChargeId=params.chargeId;
+          `,
+          params: {
+            status: OrderStatus.COMPLETED,
+            // chargeId: charge.id
           }
         }
-      );
-    }, 900000, orderId);
+      }
+    });
+    const charge = await this.makePayment(signedInUser, restStripeId, restName, centsTotal);
+
   }
+
   async makePayment(signedInUser, restStripeId, restName, cents) {
     try {
       const foodflickFee = Math.round(cents * round3(PERCENT_FEE / 100) + FLAT_RATE_FEE * 100);
@@ -127,12 +135,12 @@ class OrderService {
         amount: cents,
         currency: 'usd',
         customer: signedInUser.stripeId,
-        source: cardTok, // signedInUser.source
+        source: cardTok,
         receipt_email: signedInUser.email,
         statement_descriptor_suffix: restName,
         application_fee_amount: foodflickFee,
         transfer_data: {
-          destination: restStripeId, //rest stripe id
+          destination: restStripeId,
         },
       });
     } catch (e) {
@@ -189,7 +197,7 @@ class OrderService {
     return newOrder;
   }
 
-  addOpenOrder = async (signedInUser, restId, createdDate, items, costs) => {
+  addOpenOrder = async (signedInUser, restId, createdDate, items, costs, phone) => {
     const customer = {
       userId: signedInUser._id,
       nameDuring: signedInUser.name,
@@ -197,6 +205,7 @@ class OrderService {
     const customRefunds = [];
     const order = {
       restId,
+      customer: phone,
       status: OrderStatus.OPEN,
       customer,
       createdDate,

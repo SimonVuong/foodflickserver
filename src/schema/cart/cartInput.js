@@ -19,7 +19,7 @@ const CartItemInput = `
 
 const _CartInput = `
   input CartInput {
-    restId: String
+    restId: String!
     items: [CartItemInput!]!
     tableNumber: String!
     cardTok: String!
