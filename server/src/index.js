@@ -7,13 +7,10 @@ import bodyParser from 'body-parser';
 import { createServer } from 'http';
 import { graphqlExpress, graphiqlExpress } from 'graphql-server-express';
 // Subs
-import { execute, subscribe } from 'graphql'
-import { SubscriptionServer } from 'subscriptions-transport-ws';
 import schema from './schema/schema';
 import { getElastic } from './db/elasticConnector';
 import Stripe from 'stripe'; 
 import { getSignedInUser } from './utils/auth';
-import UserService from './services/userService';
 import { getRestService } from './services/restService';
 import { getMenuService } from './services/menuService';
 import { getUserService } from './services/userService'
@@ -23,12 +20,23 @@ import { getBankingService } from './services/bankingService';
 import { getCardService } from './services/cardService';
 import { getOrderService } from './services/orderService';
 import { activeConfig } from './config';
-import { setupPrintForwarder, getPrinterService } from './services/printerService';
+import { getPrinterService } from './services/printerService';
 
 const STRIPE_KEY = activeConfig.stripe.STRIPE_KEY;
 
 const start = async () => {
   const app = express();
+  //needed if you're behind a load balancer
+  // app.enable('trust proxy');
+  if (process.env.NODE_ENV === 'production') {
+    app.use((req, res, next) => {
+      if (req.header('x-forwarded-proto') !== 'https'){
+        res.redirect('https://' + req.header('host') + req.url);
+      } else {
+        next();
+      }
+    });
+  }
   app.use(cors());
   app.use(bodyParser.urlencoded({ extended: true }));
   app.use(bodyParser.json());
@@ -72,31 +80,13 @@ const start = async () => {
   // }, app)
   // must use http.createServer instead of https.createServer because
   // https://stackoverflow.com/questions/41488602/heroku-connection-closed-code-h13
-  const secureServer = createServer(app);
-  secureServer.timeout = 0;
+  const server = createServer(app);
+  server.timeout = 0;
   const port = activeConfig.app.port;
   
-  secureServer.listen(port, () => {
+  server.listen(port, () => {
     console.log(`API Server is now running on port ${port}`)
   });
-
-  // Subs
-  // const SUBSCRIPTIONS_PATH = '/subscriptions';
-  // SubscriptionServer.create(
-  //   {
-  //     schema,
-  //     execute,
-  //     subscribe,
-  //   },
-  //   {
-  //     server,
-  //     path: SUBSCRIPTIONS_PATH,
-  //   }
-  // );
 };
 
 start();
-
-// const fs = require('fs');
-// const https = require('https');
-// const express = require('')
