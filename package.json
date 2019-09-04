@@ -8,10 +8,11 @@
     "build-copy-client": "cp -r client/build/* server/build/public",
     "build": "npm-run-all --parallel build-client build-server --serial build-copy-client",
     "prod": "cd server && npm run prod",
-    "heroku": "npm i && npm run build && npm run prod",
     "dev-client": "cd client && npm run dev",
     "dev-server": "cd server && npm run dev",
-    "dev": "run-p dev-client dev-server"
+    "dev": "run-p dev-client dev-server",
+    "heroku-postbuild": "npm run build",
+    "heroku-logs": "heroku logs --tail -a foodflick"
   },
   "author": "",
   "license": "ISC",
