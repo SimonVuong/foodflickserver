@@ -97,9 +97,6 @@ CAXO0dg=
   stripe: {
     cardPath: '/endpoints/prodCard.html',
   },
-  twilio: {
-    account_sid: 'AC049b2876bcf1f6e12ee8cf74bb2cc6b4' //test account twilio SID
-  }
 };
 
 const config = {

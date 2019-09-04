@@ -17,6 +17,7 @@ import { TagQueryResolvers } from './tag/tagResolvers';
 import { OrderMutationResolvers, OrderQueryResolvers } from './order/orderResolver';
 import { Order } from './order/order';
 import { CartInput } from './cart/cartInput';
+import { Cart } from './cart/cart';
 
 //todo 1: add mongo validation
 
@@ -50,6 +51,7 @@ const mutation = `
     updateRestPrinter(restId: ID!, newPrinter: UpdatePrinterInput!): Rest!
     updateRestProfile(restId: ID!, newProfile: ProfileInput!): Rest!
     updateRestReceiver(restId: ID!, receiverId: ID!): Rest!
+    updateRestUrl(restId: ID!, url: String!): Rest!
     updateUserCard(cardToken: ID!): Card!
     updateUserEmail(newEmail: String!): Boolean!
   }
@@ -63,13 +65,15 @@ const mutation = `
 
 const query = `
   type Query {
+    cartFromOrder(orderId: ID!): Cart!
+    completedOrders(restId: ID!): [Order!]!
     doesUserExist(email: String!): Boolean!
     itemsWithPrinter(restId: ID!, printerName: String!): [String!]!
     myCard: Card
     myRests: [Rest!]!
-    completedOrders(restId: ID!): [Order!]!
     restPrinters: [Printer!]!
     restWithBanking(restId: String!): Rest!
+    restByUrl(url: String!): Rest
     restSearchSuggestions(query: String!, location: String): [Rest!]
     tagSearchSuggestions(query: String!): [Tag!]
     myFavoriteRests: [Rest!]!
@@ -85,7 +89,9 @@ const schema = `
   }
 `
 const typeDefs = [
+  Cart,
   Card,
+  Cart,
   User,
   Tag,
   Flick,

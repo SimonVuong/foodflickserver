@@ -190,7 +190,17 @@ class UserService {
     if (!signedInUser) throw new Error(NEEDS_SIGN_IN_ERROR);
     if (!cardToken) throw new Error(getCannotBeEmptyError('Card token'));
     try {
-      return await getCardService().updateUserCard(signedInUser.stripeId, cardToken);
+      const hiddenCard = await getCardService().updateUserCard(signedInUser.stripeId, cardToken);
+      fetch(MANAGEMENT_URL + 'users/' + signedInUser._id, {
+        headers: await getAuth0Header(),
+        method: 'PATCH',
+        body: JSON.stringify({
+          app_metadata: {
+            card: hiddenCard,
+          },
+        })
+      }).catch(e => console.error(e));
+      return hiddenCard;
     } catch (e) {
       console.error(e);
       throw new Error(`Internal server error. Could not update card`);
@@ -203,7 +213,7 @@ class UserService {
     const regex = /\S+@\S+\.\S+/; // simple regex to cover majority of cases
     if(!regex.test(newEmail)) throw new Error('Invalid email. Please enter an email like example@example.com');
 
-    const res = await fetch(MANAGEMENT_URL + signedInUser._id, {
+    const res = await fetch(MANAGEMENT_URL + 'users/' + signedInUser._id, {
       headers: await getAuth0Header(),
       method: 'PATCH',
       body: JSON.stringify({

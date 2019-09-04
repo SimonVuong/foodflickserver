@@ -13,9 +13,11 @@ import {
   injectFindUserOrderedIndexMethod,
   callElasticWithErrorHandler,
   getRestReadOptions,
-  QUERY_SIZE
+  QUERY_SIZE,
+  URLCharacters
 } from './utils';
 import { throwIfInvalidPrinter } from '../schema/rest/printer';
+import nanoid from 'nanoid/generate';
 
 const findDuplicate = list => {
   const seen = new Set();
@@ -75,6 +77,30 @@ class RestService {
       cleanCustomerRest(signedInUser, _source);
       return _source;
     });    
+  }
+
+  async getRestByUrl(signedInUser, url) {
+    const res = await callElasticWithErrorHandler(options => this.elastic.search(options), {
+      index: 'rests',
+      size: QUERY_SIZE,
+      body: {
+        query: {
+          bool: {
+            filter: {
+              term: {
+                url,
+              }
+            }
+          }
+        }
+      }
+    });
+    if (res.hits.total === 0) return null;
+    const dbRest = res.hits.hits[0];
+    const rest = dbRest._source;
+    rest._id = dbRest._id;
+    cleanCustomerRest(signedInUser, rest);
+    return rest;
   }
 
   /**
@@ -212,6 +238,7 @@ class RestService {
     newRest.banking = {
       stripeId: stripeRes.id,
     };
+    newRest.url = nanoid(URLCharacters, 10);
   
     try {
       // not specifying an id makes elastic add the doc
@@ -333,7 +360,7 @@ class RestService {
       rest._id = restId;
       return rest;
     } catch (e) {
-      console.error(`failed to get stripeId for rest ${restId}`, e);
+      console.error(`failed to get rest for ${restId}`, e);
       throw e;
     }
   }
@@ -526,6 +553,23 @@ class RestService {
     const rest = getUpdatedRestWithId(res, restId);
     cleanCustomerRest(signedInUser, rest);
     return rest;
+  }
+
+  async updateRestUrl(signedInUser, restId, url) {
+    if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
+    if (!url) throw new getCannotBeEmptyError('URL');
+    const rest = await this.getRestByUrl(signedInUser, url);
+    console.log(rest);
+    if (rest) throw new Error('URL already exists. Please try another URL');
+    const regex = /^[a-zA-Z0-9_-]*$/
+    if(!regex.test(url)) throw new Error('Invalid URL. Please use only letters, numbers, -, _, or ~');
+    const res = await callElasticWithErrorHandler(options => this.elastic.update(options), getRestUpdateOptions(
+      restId,
+      signedInUser,
+      'ctx._source.url = params.url;',
+      { url }
+    ));
+    return getUpdatedRestWithId(res, restId);
   }
 }
 

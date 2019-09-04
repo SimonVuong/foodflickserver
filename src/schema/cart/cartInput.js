@@ -1,9 +1,7 @@
-
 const CartItemInput = `
   input CartItemInput {
     name: String!
-    categoryIndex: Int!
-    itemIndex: Int!
+    itemId: ID!
     selectedPrice: PriceInput!
     selectedOptions: [OptionInput!]!
     quantity: Int!
@@ -13,10 +11,13 @@ const CartItemInput = `
 
 const _CartInput = `
   input CartInput {
-    restId: String!
-    tableNumber: String!
-    phoneNumber: String!
+    restId: ID!
     items: [CartItemInput!]!
+    tableNumber: String
+    tip: Float!
+    cardTok: String!
+    phone: String!
+    orderType: OrderType!
   }
 `;
 

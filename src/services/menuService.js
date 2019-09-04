@@ -13,6 +13,7 @@ import {
   REST_INDEX,
   REST_TYPE
 } from './utils';
+import nanoid from 'nanoid/generate';
 
 const throwIfInvalidReorder = newOrder => {
   for (let i = 0; i < newOrder.length; i++) {
@@ -20,6 +21,15 @@ const throwIfInvalidReorder = newOrder => {
                                               + ' in the newOrder. EX: if newOrder is size 5, then newOrder must'
                                               + ' contain values 0 through 5 inclusive.');
   }
+}
+
+export const getMenuItemById = (itemId, menu) => {
+  for (const category of menu) {
+    for (const item of category.items) {
+      if (itemId === item._id) return item;
+    }
+  }
+  return null;
 }
 
 class MenuService {
@@ -140,6 +150,7 @@ class MenuService {
 
       return {
         ...item,
+        _id: nanoid(URLCharacters, 10),
         likes: { count: 0, users: [] },
       }
     });
