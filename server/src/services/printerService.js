@@ -48,7 +48,7 @@ class PrinterService {
   testPrinter(receiver, printer) {
     const registeredReceiver = this.getRegisteredReceiver(receiver.receiverId);
     if (!registeredReceiver) {
-      throw new Error('Could not find receiver. Please verify the receiver is properly setup')
+      throw new Error(`Could not find receiver ${receiver.receiverId}. Please verify the receiver id is correct`);
     }
     registeredReceiver.write(JSON.stringify({
       isOrder: false,

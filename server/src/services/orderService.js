@@ -148,8 +148,8 @@ class OrderService {
   async refundOrder(signedInUser, restId, orderId, stripeChargeId, amount) {
     if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
     if (amount === 0) throw new Error('Refund amount cannot be 0. Please use a another amount');
-    const rest = await getRestService().getRest(restId, ['owner', 'managers']);
-    throwIfNotRestOwnerOrManager(signedInUser._id, rest.owner, rest.managers);
+    const rest = await getRestService().getRest(restId, ['owner', 'managers', 'profile']);
+    throwIfNotRestOwnerOrManager(signedInUser, rest.owner, rest.managers, rest.profile.name);
 
     const order = await callElasticWithErrorHandler(options => this.elastic.getSource(options), {
       index: ORDERS_INDEX,
@@ -259,8 +259,8 @@ class OrderService {
 
   getCompletedOrders = async(signedInUser, restId) => {
     if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
-    const rest = await getRestService().getRest(restId, ['owner', 'managers']);
-    throwIfNotRestOwnerOrManager(signedInUser._id, rest.owner, rest.managers);
+    const rest = await getRestService().getRest(restId, ['owner', 'managers', 'profile']);
+    throwIfNotRestOwnerOrManager(signedInUser, rest.owner, rest.managers, rest.profile.name);
     const res = await callElasticWithErrorHandler(options => this.elastic.search(options), {
       index: ORDERS_INDEX,
       size: QUERY_SIZE,

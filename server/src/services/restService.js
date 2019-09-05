@@ -18,6 +18,7 @@ import {
 } from './utils';
 import { throwIfInvalidPrinter } from '../schema/rest/printer';
 import nanoid from 'nanoid/generate';
+import { getPrinterService } from './printerService';
 
 const findDuplicate = list => {
   const seen = new Set();
@@ -374,7 +375,7 @@ class RestService {
       _sourceInclude: [ 'owner', 'managers', 'menu', 'profile', 'printers']
     });
     const rest = res._source;
-    throwIfNotRestOwnerOrManager(signedInUser._id, rest.owner, rest.managers);
+    throwIfNotRestOwnerOrManager(signedInUser, rest.owner, rest.managers, rest.profile.name);
     return rest.printers;
   }
 
@@ -519,6 +520,13 @@ class RestService {
     return getUpdatedRestWithId(res, restId);
   }
 
+  async testPrinter (signedInUser, restId, printer) {
+    if (!signedInUser) throw new Error(NEEDS_SIGN_IN_ERROR);
+    const rest = await getRestService().getRest(restId, ['owner', 'managers', 'receiver', 'profile']);
+    throwIfNotRestOwnerOrManager(signedInUser, rest.owner, rest.managers, rest.profile.name);
+    await getPrinterService().testPrinter(rest.receiver, printer);
+    return true;
+  }
   
   async toggleRestFavorite (signedInUser, restId) {
     if (!signedInUser) throw new Error(NEEDS_SIGN_IN_ERROR);

@@ -63,6 +63,15 @@ const _PrinterInput = `
   }
 `
 
+const TestPrinterInput = `
+  input TestPrinterInput {
+    name: String!
+    ip: String!
+    port: String!
+    type: PrinterTypeInput!
+  }
+`
+
 const UpdatePrinterInput = `
   input UpdatePrinterInput {
     index: Int!
@@ -83,7 +92,7 @@ const NewRestInput = () => [_NewRestInput, ProfileInput, LocationInput, AddressI
 
 const ManagerInput = () => [_ManagerInput];
 
-const PrinterInput = () => [_PrinterInput, PrinterTypeInput]
+const PrinterInput = () => [_PrinterInput, PrinterTypeInput, TestPrinterInput]
 
 export {
   NewRestInput,

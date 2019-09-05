@@ -29,6 +29,10 @@ export const RestMutationResolvers = {
     return true;
   },
 
+  testPrinter: async (root, { restId, printer }, { signedInUser, RestService }) => {
+    return await RestService.testPrinter(signedInUser, restId, printer);
+  },
+
   toggleRestFavorite: async (root, { restId }, { signedInUser, RestService }) => {
     return await RestService.toggleRestFavorite(signedInUser, restId);
   },

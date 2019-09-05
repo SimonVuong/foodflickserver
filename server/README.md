@@ -72,3 +72,9 @@ Open chrome and use the headers extension to add the following header. Make sure
 | Authorization   | Bearer \<TOKEN HERE\>        |
 
 Then test your api with any of the queries in the test folder (they may be out of date and require shape changes). If you download the graphql extension in vscode you can view these files with syntax highlighting
+
+
+
+ssl
+
+https://support.comodo.com/index.php?/Knowledgebase/Article/View/1144/37/certificate-installation--heroku
