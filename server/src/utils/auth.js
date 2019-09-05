@@ -44,7 +44,7 @@ export const getSignedInUser = req => {
 }
 
 export const throwIfNotRestOwnerOrManager = (signedInUser, owner, managers, restName) => {
-  if (owner.userId != signedInUser._id || (managers.length > 0 && managers.findIndex(manager => manager.userId === signedInUser._id) === -1)) {
+  if (owner.userId != signedInUser._id && (managers.length > 0 && managers.findIndex(manager => manager.userId === signedInUser._id) === -1)) {
     throw new Error(`Unauthorized. ${signedInUser.email} is not a owner/manager of ${restName}`);
   }
 }

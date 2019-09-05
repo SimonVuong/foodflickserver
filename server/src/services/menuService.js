@@ -11,7 +11,8 @@ import {
   injectFindUserOrderedIndexMethod,
   callElasticWithErrorHandler,
   REST_INDEX,
-  REST_TYPE
+  REST_TYPE,
+  URLCharacters
 } from './utils';
 import nanoid from 'nanoid/generate';
 

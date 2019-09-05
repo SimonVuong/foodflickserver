@@ -181,7 +181,7 @@ class RestService {
                   // keyword is a 'field' added by elastic that during auto mapping on indexing a new document
                   // https://www.elastic.co/guide/en/elasticsearch/reference/6.2//multi-fields.html
                   { term: { 'owner.userId.keyword': signedInUser._id } },
-                  { term: { 'managers.userId': signedInUser._id } }
+                  { term: { 'managers.userId.keyword': signedInUser._id } }
                 ]
               }
             }
