@@ -49,6 +49,7 @@ const mutation = `
     updateItemOrder(restId: ID!, categoryName: String!, newOrder: [Int!]!): Rest!
     updateRestBanking(restId: ID!, newBanking: BankingInput!): Rest!
     updateRestLocation(restId: ID!, newLocation: LocationInput!): Rest!
+    updateRestMinsTillOrderCompletion(restId: ID!, mins: Float!): Rest!
     updateRestPrinter(restId: ID!, newPrinter: UpdatePrinterInput!): Rest!
     updateRestProfile(restId: ID!, newProfile: ProfileInput!): Rest!
     updateRestReceiver(restId: ID!, receiverId: ID!): Rest!
