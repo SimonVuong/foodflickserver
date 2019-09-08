@@ -5,11 +5,15 @@ import { OrderStatus } from '../schema/order/order';
 import { MANAGER_PERM, throwIfNotRestOwnerOrManager } from '../utils/auth';
 import { QUERY_SIZE, callElasticWithErrorHandler, getOrderUpdateOptions } from './utils';
 import { getMenuItemById } from './menuService';
+import { activeConfig } from '../config';
 import { OrderType } from '../schema/cart/cart';
-
 export const ORDERS_INDEX = 'orders';
 export const ORDER_TYPE = 'order';
 
+const accountSid = activeConfig.twilio.accountSId;
+const authToken = activeConfig.twilio.TWILIO_KEY;
+const twilioPhone = activeConfig.twilio.phone;
+const client = require('twilio')(accountSid, authToken);
 const PERCENT_FEE = 2.9
 const FLAT_RATE_FEE = .30;
 
@@ -64,18 +68,19 @@ class OrderService {
       tip: finalTip,
     };
 
-    getPrinterService().printOrder(
-      signedInUser.name,
-      cart.tableNumber,
-      rest.receiver,
-      items.map(({ itemId, ...others }) => ({
-        ...others,
-        printers: getMenuItemById(itemId, rest.menu).printers,
-      })),
-      { ...costs, total }
-    );
+    // getPrinterService().printOrder(
+    //   signedInUser.name,
+    //   cart.tableNumber,
+    //   rest.receiver,
+    //   items.map(({ itemId, ...others }) => ({
+    //     ...others,
+    //     printers: getMenuItemById(itemId, rest.menu).printers,
+    //   })),
+    //   { ...costs, total }
+    // );
 
     const order = await this.addOpenOrder(signedInUser, cart, costs);
+
 
     setTimeout(() => {
       this.completeOrderAndPay(order._id, signedInUser, rest.banking.stripeId, rest.profile.name, centsTotal, cardTok)
@@ -100,7 +105,7 @@ class OrderService {
       ))
     } catch (e) {
       console.error(e);
-      throw(e);
+      throw (e);
     };
 
     let charge;
@@ -123,6 +128,39 @@ class OrderService {
       `ctx._source.stripeChargeId=params.chargeId;`,
       { chargeId: charge.id }
     ));
+  }
+
+  async returnOrder(signedInUser, restId, orderId) {
+    if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
+    const order = await callElasticWithErrorHandler(options => this.elastic.getSource(options), {
+      index: ORDERS_INDEX,
+      type: ORDER_TYPE,
+      id: orderId,
+      _source: ['restId', 'phone'],
+    });
+    if (order.restId !== restId) throw new Error("The provided restId doesn't match the restId stored with the order. Please provide the correct restId");
+    try {
+      await callElasticWithErrorHandler(options => this.elastic.update(options), getOrderUpdateOptions(
+        orderId,
+        `
+          ctx._source.status=params.status;
+        `,
+        { status: OrderStatus.RETURNED }
+      ))
+      console.log(twilioPhone);
+      client.messages
+        .create({
+          body: `Your order has been returned please redo order here: https://www.foodflick.co/${orderId}`,
+          from: twilioPhone,
+          to: `+1${order.phone}`,
+        })
+        .then(message => console.log(message.sid));
+
+    } catch (e) {
+      console.error(e);
+    };
+
+    return true;
   }
 
   async makePayment(signedInUser, restStripeId, restName, cents, cardTok) {
@@ -235,7 +273,7 @@ class OrderService {
     }
   }
 
-  getCartFromOrder = async(orderId) => {
+  getCartFromOrder = async (orderId) => {
     try {
       const order = await callElasticWithErrorHandler(options => this.elastic.getSource(options), {
         index: ORDERS_INDEX,
@@ -257,7 +295,7 @@ class OrderService {
     }
   }
 
-  getCompletedOrders = async(signedInUser, restId) => {
+  getCompletedOrders = async (signedInUser, restId) => {
     if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
     const rest = await getRestService().getRest(restId, ['owner', 'managers', 'profile']);
     throwIfNotRestOwnerOrManager(signedInUser, rest.owner, rest.managers, rest.profile.name);

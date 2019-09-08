@@ -7,14 +7,18 @@ export const OrderMutationResolvers = {
   refundOrder: async (root, { restId, orderId, stripeChargeId, amount }, { signedInUser, OrderService }) => {
     return await OrderService.refundOrder(signedInUser, restId, orderId, stripeChargeId, amount);
   },
+
+  returnOrder: async (root, { restId, orderId }, { signedInUser, OrderService }) => {
+    return await OrderService.returnOrder(signedInUser, restId, orderId);
+  }
 };
 
 export const OrderQueryResolvers = {
-  cartFromOrder: async(root, { orderId }, { OrderService }) => {
+  cartFromOrder: async (root, { orderId }, { OrderService }) => {
     return await OrderService.getCartFromOrder(orderId);
   },
 
-  completedOrders: async(root, { restId }, { signedInUser, OrderService }) => {
+  completedOrders: async (root, { restId }, { signedInUser, OrderService }) => {
     return await OrderService.getCompletedOrders(signedInUser, restId)
   },
 }
