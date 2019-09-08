@@ -150,7 +150,7 @@ class OrderService {
       console.log(twilioPhone);
       client.messages
         .create({
-          body: `Your order has been returned please redo order here: https://www.foodflick.co/${orderId}`,
+          body: `Your order has been returned please redo order here: https://www.foodflick.co/cart/${orderId}`,
           from: twilioPhone,
           to: `+1${order.phone}`,
         })
