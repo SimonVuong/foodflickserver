@@ -237,28 +237,46 @@ class OrderService {
     if (!reason) throw new Error(getCannotBeEmptyError('Reason'));
     const rest = await getRestService().getRest(restId, ['owner', 'managers', 'profile']);
     throwIfNotRestOwnerOrManager(signedInUser, rest.owner, rest.managers, rest.profile.name);
-    const orderRes = await callElasticWithErrorHandler(options => this.elastic.update(options), {
-      index: ORDERS_INDEX,
-      type: ORDER_TYPE,
-      id: orderId,
-      _source: true,
-      refresh: 'wait_for',
-      body: {
-        script: {
-          source: `
+
+    try {
+      const order = await callElasticWithErrorHandler(options => this.elastic.getSource(options), {
+        index: ORDERS_INDEX,
+        type: ORDER_TYPE,
+        id: orderId,
+        _source: ['restId', 'phone'],
+      });
+      if (order.restId !== restId) throw new Error("The provided restId doesn't match the restId stored with the order. Please provide the correct restId");
+      await callElasticWithErrorHandler(options => this.elastic.update(options), {
+        index: ORDERS_INDEX,
+        type: ORDER_TYPE,
+        id: orderId,
+        _source: true,
+        refresh: 'wait_for',
+        body: {
+          script: {
+            source: `
             ctx._source.status = params.status;
             ctx._source.returnReason = params.reason;
           `,
-          params: {
-            status: OrderStatus.RETURNED,
-            reason,
+            params: {
+              status: OrderStatus.RETURNED,
+              reason,
+            }
           }
         }
-      }
-    });
-    const newOrder = orderRes.get._source;
-    newOrder._id = orderId;
-    return newOrder;
+      });
+      client.messages
+        .create({
+          body: `Your order has been returned for the following reason: ${reason}.
+          Please redo order here: https://www.foodflick.co/cart/${orderId}`,
+          from: twilioPhone,
+          to: `+1${order.phone}`,
+        })
+        .then(message => console.log(message.sid));
+    } catch (e) {
+      console.error(e);
+    }
+    return true;
   }
 
   addOpenOrder = async (signedInUser, cart, costs) => {
