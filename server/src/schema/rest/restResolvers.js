@@ -45,6 +45,10 @@ export const RestMutationResolvers = {
     return await RestService.updateRestLocation(signedInUser, restId, newLocation);  
   },
 
+  updateRestMinsTillOrderCompletion: async (root, { restId, mins }, { signedInUser, RestService }) => {
+    return await RestService.updateRestMinsTillOrderCompletion(signedInUser, restId, mins);  
+  },
+
   updateRestPrinter: async (root, { restId, newPrinter }, { signedInUser, RestService }) => {
     return await RestService.updateRestPrinter(signedInUser, restId, newPrinter);  
   },

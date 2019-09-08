@@ -212,17 +212,46 @@ class OrderService {
       type: ORDER_TYPE,
       id: orderId,
       _source: true,
+      refresh: 'wait_for',
       body: {
         script: {
           source: `
             ctx._source.customRefunds.add(params.refund);
           `,
           params: {
-            restId,
             refund: {
               stripeRefundId: refundRes.id,
               amount,
             },
+          }
+        }
+      }
+    });
+    const newOrder = orderRes.get._source;
+    newOrder._id = orderId;
+    return newOrder;
+  }
+
+  async returnOrder(signedInUser, restId, orderId, reason) {
+    if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
+    if (!reason) throw new Error(getCannotBeEmptyError('Reason'));
+    const rest = await getRestService().getRest(restId, ['owner', 'managers', 'profile']);
+    throwIfNotRestOwnerOrManager(signedInUser, rest.owner, rest.managers, rest.profile.name);
+    const orderRes = await callElasticWithErrorHandler(options => this.elastic.update(options), {
+      index: ORDERS_INDEX,
+      type: ORDER_TYPE,
+      id: orderId,
+      _source: true,
+      refresh: 'wait_for',
+      body: {
+        script: {
+          source: `
+            ctx._source.status = params.status;
+            ctx._source.returnReason = params.reason;
+          `,
+          params: {
+            status: OrderStatus.RETURNED,
+            reason,
           }
         }
       }
@@ -295,7 +324,7 @@ class OrderService {
     }
   }
 
-  getCompletedOrders = async (signedInUser, restId) => {
+  getOrders = async (signedInUser, restId, orderStatus) => {
     if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
     const rest = await getRestService().getRest(restId, ['owner', 'managers', 'profile']);
     throwIfNotRestOwnerOrManager(signedInUser, rest.owner, rest.managers, rest.profile.name);
@@ -316,7 +345,7 @@ class OrderService {
               bool: {
                 must: [
                   { term: { restId } },
-                  { term: { status: OrderStatus.COMPLETED } }
+                  { term: { status: orderStatus } }
                 ]
               }
             }
@@ -330,6 +359,11 @@ class OrderService {
       return _source;
     });
   }
+
+  getCompletedOrders = async (signedInUser, restId) => await this.getOrders(signedInUser, restId, OrderStatus.COMPLETED);
+
+  getOpenOrders = async (signedInUser, restId) => await this.getOrders(signedInUser, restId, OrderStatus.OPEN);
+
 }
 
 let orderService;

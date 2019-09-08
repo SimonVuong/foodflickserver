@@ -240,6 +240,7 @@ class RestService {
       stripeId: stripeRes.id,
     };
     newRest.url = nanoid(URLCharacters, 10);
+    newRest.minsTillOrderCompletion = 15;
   
     try {
       // not specifying an id makes elastic add the doc
@@ -453,6 +454,18 @@ class RestService {
       { newLocation }
     ));
 
+    return getUpdatedRestWithId(res, restId);
+  }
+
+  async updateRestMinsTillOrderCompletion(signedInUser, restId, mins) {
+    if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
+    if (mins <= 0) throw new Error('Minutes must be greater than 0');
+    const res = await callElasticWithErrorHandler(options => this.elastic.update(options), getRestUpdateOptions(
+      restId,
+      signedInUser,
+      'ctx._source.minsTillOrderCompletion = params.mins;',
+      { mins }
+    ));
     return getUpdatedRestWithId(res, restId);
   }
 

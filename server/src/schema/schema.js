@@ -39,7 +39,7 @@ const mutation = `
     giveRestFeedback(restId: ID!, feedback: String!): Boolean!
     placeOrder(cart: CartInput!): Boolean!
     refundOrder(restId: ID!, orderId: ID!, stripeChargeId: ID!, amount: Float!): Order!
-    returnOrder(restId: ID!, orderId: ID!): Boolean!
+    returnOrder(restId: ID!, orderId: ID!, reason: String!): Boolean!
     testPrinter(restId: ID!, printer: TestPrinterInput!): Boolean!
     toggleItemLike(restId: ID!, categoryName: String!, itemName: String!): Rest!
     toggleRestFavorite(restId: ID!): Rest!
@@ -49,6 +49,7 @@ const mutation = `
     updateItemOrder(restId: ID!, categoryName: String!, newOrder: [Int!]!): Rest!
     updateRestBanking(restId: ID!, newBanking: BankingInput!): Rest!
     updateRestLocation(restId: ID!, newLocation: LocationInput!): Rest!
+    updateRestMinsTillOrderCompletion(restId: ID!, mins: Float!): Rest!
     updateRestPrinter(restId: ID!, newPrinter: UpdatePrinterInput!): Rest!
     updateRestProfile(restId: ID!, newProfile: ProfileInput!): Rest!
     updateRestReceiver(restId: ID!, receiverId: ID!): Rest!
@@ -72,6 +73,7 @@ const query = `
     itemsWithPrinter(restId: ID!, printerName: String!): [String!]!
     myCard: Card
     myRests: [Rest!]!
+    openOrders(restId: ID!): [Order!]!
     restPrinters: [Printer!]!
     restWithBanking(restId: String!): Rest!
     restByUrl(url: String!): Rest
