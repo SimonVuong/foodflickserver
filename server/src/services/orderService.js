@@ -213,8 +213,11 @@ class OrderService {
       order = res.get._source;
       order._id = orderId;
     } catch (e) {
-      console.error(e);
-      if (e.message !== 'Order is already completed' && e.message !== 'Order is already returned') throw(e);
+      if (e.message === 'Order is already completed' || e.message === 'Order is already returned') {
+        console.log('skipping payment', e);
+        return;
+      }
+      throw(e);
     };
 
     if (order.status !== OrderStatus.COMPLETED) {
@@ -351,9 +354,9 @@ class OrderService {
         body: {
           script: {
             source: `
-            ctx._source.status = params.status;
-            ctx._source.returnReason = params.reason;
-          `,
+              ctx._source.status = params.status;
+              ctx._source.returnReason = params.reason;
+            `,
             params: {
               status: OrderStatus.RETURNED,
               reason,
