@@ -151,7 +151,8 @@ class OrderService {
   async refundOrder(signedInUser, restId, orderId, stripeChargeId, amount) {
     if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
     if (amount === 0) throw new Error('Refund amount cannot be 0. Please use a another amount');
-
+    const rest = await getRestService().getRest(restId, ['owner', 'managers', 'profile']);
+    throwIfNotRestOwnerOrManager(signedInUser, rest.owner, rest.managers, rest.profile.name);
     const order = await callElasticWithErrorHandler(options => this.elastic.getSource(options), {
       index: ORDERS_INDEX,
       type: ORDER_TYPE,
@@ -208,7 +209,6 @@ class OrderService {
       });
       const rest = await getRestService().getRest(order.restId, ['owner', 'managers', 'profile']);
       throwIfNotRestOwnerOrManager(signedInUser, rest.owner, rest.managers, rest.profile.name);
-      if (order.restId !== order.restId) throw new Error("The provided restId doesn't match the restId stored with the order. Please provide the correct restId");
       await callElasticWithErrorHandler(options => this.elastic.update(options), {
         index: ORDERS_INDEX,
         type: ORDER_TYPE,
@@ -231,6 +231,7 @@ class OrderService {
       this.sendReturnOrderText(order.phone, orderId, reason);
     } catch (e) {
       console.error(e);
+      throw (e);
     }
     return true;
   }
@@ -242,7 +243,8 @@ class OrderService {
         from: activeConfig.twilio.phone,
         to: `+1${orderPhone}`,
       })
-      .then(message => console.log(message.sid)).catch((e) => { console.error(e) });
+      .then(message => console.log(message.sid))
+      .catch((e) => { console.error(e) });
   }
   addOpenOrder = async (signedInUser, cart, costs) => {
     const customer = {
