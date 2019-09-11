@@ -66,16 +66,16 @@ class OrderService {
       tip: finalTip,
     };
 
-    // getPrinterService().printOrder(
-    //   signedInUser.name,
-    //   cart.tableNumber,
-    //   rest.receiver,
-    //   items.map(({ itemId, ...others }) => ({
-    //     ...others,
-    //     printers: getMenuItemById(itemId, rest.menu).printers,
-    //   })),
-    //   { ...costs, total }
-    // );
+    getPrinterService().printOrder(
+      signedInUser.name,
+      cart.tableNumber,
+      rest.receiver,
+      items.map(({ itemId, ...others }) => ({
+        ...others,
+        printers: getMenuItemById(itemId, rest.menu).printers,
+      })),
+      { ...costs, total }
+    );
 
     const order = await this.addOpenOrder(signedInUser, cart, costs);
 
@@ -230,20 +230,27 @@ class OrderService {
           }
         }
       });
-      this.textClient.messages
-        .create({
-          body: `Your order has been returned for the following reason: ${reason}.
-          Please redo order here: https://www.foodflick.co/cart/${orderId}`,
-          from: activeConfig.twilio.phone,
-          to: `+1${order.phone}`,
-        })
-        .then(message => console.log(message.sid));
+      await this.sendReturnOrderText(order.phone, orderId, reason);
     } catch (e) {
       console.error(e);
     }
     return true;
   }
-
+  sendReturnOrderText = async (orderPhone, orderId, reason) => {
+    try {
+      this.textClient.messages
+        .create({
+          body: `Your order has been returned for the following reason: ${reason}.
+          Please redo order here: https://www.foodflick.co/cart/${orderId}`,
+          from: activeConfig.twilio.phone,
+          to: `+1${orderPhone}`,
+        })
+        .then(message => console.log(message.sid));
+    }
+    catch (e) {
+      console.error(e)
+    }
+  }
   addOpenOrder = async (signedInUser, cart, costs) => {
     const customer = {
       userId: signedInUser._id,
