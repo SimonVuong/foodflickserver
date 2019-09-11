@@ -267,18 +267,19 @@ class OrderService {
   async makePayment(customer, restStripeId, restName, cents, cardTok) {
     try {
       const foodflickFee = Math.round(cents * round3(PERCENT_FEE / 100) + FLAT_RATE_FEE * 100);
-      return await this.stripe.charges.create({
-        amount: cents,
-        currency: 'usd',
-        customer: customer.stripeId,
-        source: cardTok,
-        receipt_email: customer.email,
-        statement_descriptor_suffix: restName,
-        application_fee_amount: foodflickFee,
-        transfer_data: {
-          destination: restStripeId,
-        },
-      });
+      return 'testCharge';
+      // return await this.stripe.charges.create({
+      //   amount: cents,
+      //   currency: 'usd',
+      //   customer: customer.stripeId,
+      //   source: cardTok,
+      //   receipt_email: customer.email,
+      //   statement_descriptor_suffix: restName,
+      //   application_fee_amount: foodflickFee,
+      //   transfer_data: {
+      //     destination: restStripeId,
+      //   },
+      // });
     } catch (e) {
       throw new Error(`Failed to make payment. ${e.message}`);
     }
