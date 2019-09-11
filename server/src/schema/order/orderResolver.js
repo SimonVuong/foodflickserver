@@ -1,5 +1,10 @@
 
 export const OrderMutationResolvers = {
+
+  completeOrder: async (root, { orderId }, { signedInUser, OrderService }) => {
+    return await OrderService.completeOrder(signedInUser, orderId);
+  },
+
   placeOrder: async (root, { cart }, { signedInUser, OrderService }) => {
     return await OrderService.placeOrder(signedInUser, cart);
   },

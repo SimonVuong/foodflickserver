@@ -16,8 +16,8 @@ class PrinterService {
       }
       res.status(200).set({
         connection: 'keep-alive',
-        'cache-control': 'no-cache',
-        'content-type': 'application/json',
+        'Cache-Control': 'no-cache',
+        'Content-Type': 'application/json',
       });
 
       // empty write to 'solidify' connection.
@@ -51,23 +51,39 @@ class PrinterService {
       throw new Error(`Could not find receiver ${receiver.receiverId}. Please verify the receiver id is correct`);
     }
     registeredReceiver.write(JSON.stringify({
-      isOrder: false,
+      type: 'TEST',
       data: {
         printer,
       }
     }))
   }
 
-  printOrder(signedInUserName, tableNumber, receiver, items, costs) {
+  printTickets(signedInUserName, tableNumber, receiver, items) {
     const registeredReceiver = this.getRegisteredReceiver(receiver.receiverId);
     if (!registeredReceiver) {
       console.error('Could not find receiver. Skipping printer. Please verify with the manager that the receiver is properly setup')
       return;
     }
     registeredReceiver.write(JSON.stringify({
-      isOrder: true,
-      receiptPrinters: receiver.printers.filter(printer => printer.isReceipt),
+      type: 'TICKETS',
       data: {
+        customerName: signedInUserName,
+        tableNumber,
+        items,
+      }
+    }))
+  }
+
+  printReceipts(signedInUserName, tableNumber, receiver, items, costs) {
+    const registeredReceiver = this.getRegisteredReceiver(receiver.receiverId);
+    if (!registeredReceiver) {
+      console.error('Could not find receiver. Skipping printer. Please verify with the manager that the receiver is properly setup')
+      return;
+    }
+    registeredReceiver.write(JSON.stringify({
+      type: 'RECEIPTS',
+      data: {
+        receiptPrinters: receiver.printers.filter(printer => printer.isReceipt),
         customerName: signedInUserName,
         tableNumber,
         items,

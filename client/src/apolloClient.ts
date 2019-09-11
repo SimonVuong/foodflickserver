@@ -26,9 +26,6 @@ const getApolloClient = (store?: Store<RootState, RootActions>) => {
     }
 
     if (networkError) {
-      // @ts-ignore
-      // todo 2: dont use body text if it's nto available. and use message instead
-      store!.dispatch(notificationErrorAction(e.networkError!.bodyText));
       console.warn(`[Network error]: ${networkError}`);
     }
   });

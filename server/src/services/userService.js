@@ -186,6 +186,18 @@ class UserService {
     return jsonData;
   }
 
+  async getUserById (id, fields) {
+    const params = fields ? `?fields=${fields}` : ''
+    const res = await fetch(MANAGEMENT_URL + 'users/' + id + params, {
+      headers: await getAuth0Header(),
+    });
+
+    const jsonData = await res.json();
+
+    if (!res.ok) throw(jsonData);    
+    return jsonData;
+  }
+
   async updateCard (signedInUser, cardToken) {
     if (!signedInUser) throw new Error(NEEDS_SIGN_IN_ERROR);
     if (!cardToken) throw new Error(getCannotBeEmptyError('Card token'));

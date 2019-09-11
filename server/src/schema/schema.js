@@ -32,6 +32,7 @@ const mutation = `
     addRestPrinter(restId: ID!, newPrinter: PrinterInput!): Rest!
     addRestReceiver(restId: ID!, receiverId: ID!): Rest!
     addUserFlicks(urls: [String!]!): Boolean!
+    completeOrder(orderId: ID!): Boolean!
     deleteCategory(restId: ID!, categoryName: String!): Rest!
     deleteItem(restId: ID!, categoryName: String!, itemName: String!): Rest!
     deleteRestManager(restId: ID!, managerEmail: String!): Rest!
