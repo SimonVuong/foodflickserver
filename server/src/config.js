@@ -55,6 +55,11 @@ GHvfjzAiLDRjG8pWVA==
   },
   stripe: {
     cardPath: '/endpoints/devCard.html',
+  },
+  twilio: {
+    //test accountSID and phone
+    accountSid: 'AC049b2876bcf1f6e12ee8cf74bb2cc6b4',
+    phone: '+15005550006',
   }
 };
 
@@ -97,6 +102,10 @@ CAXO0dg=
   stripe: {
     cardPath: '/endpoints/prodCard.html',
   },
+  twilio: {
+    accountSid: 'ACbce252e67753d063d4d183d97e2c58a0',
+    phone: '+16096164938',
+  }
 };
 
 const config = {

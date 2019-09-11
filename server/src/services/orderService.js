@@ -5,6 +5,7 @@ import { OrderStatus } from '../schema/order/order';
 import { MANAGER_PERM, throwIfNotRestOwnerOrManager } from '../utils/auth';
 import { QUERY_SIZE, callElasticWithErrorHandler, getOrderUpdateOptions } from './utils';
 import { getMenuItemById } from './menuService';
+import { activeConfig } from '../config';
 import { OrderType } from '../schema/cart/cart';
 import { getUserService } from './userService';
 
@@ -31,9 +32,10 @@ const round2 = num => +(Math.round(num + "e+2") + "e-2");
 const round3 = num => +(Math.round(num + "e+3") + "e-3");
 
 class OrderService {
-  constructor(stripe, elastic) {
+  constructor(stripe, elastic, textClient) {
     this.stripe = stripe;
     this.elastic = elastic;
+    this.textClient = textClient;
   }
 
   validatePrices(items, rest) {
@@ -211,6 +213,7 @@ class OrderService {
       order = res.get._source;
       order._id = orderId;
     } catch (e) {
+      console.error(e);
       if (e.message !== 'Order is already completed' && e.message !== 'Order is already returned') throw(e);
     };
 
@@ -283,7 +286,6 @@ class OrderService {
     if (amount === 0) throw new Error('Refund amount cannot be 0. Please use a another amount');
     const rest = await getRestService().getRest(restId, ['owner', 'managers', 'profile']);
     throwIfNotRestOwnerOrManager(signedInUser, rest.owner, rest.managers, rest.profile.name);
-
     const order = await callElasticWithErrorHandler(options => this.elastic.getSource(options), {
       index: ORDERS_INDEX,
       type: ORDER_TYPE,
@@ -327,35 +329,56 @@ class OrderService {
     return newOrder;
   }
 
-  async returnOrder(signedInUser, restId, orderId, reason) {
+  async returnOrder(signedInUser, orderId, reason) {
     if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
     if (!reason) throw new Error(getCannotBeEmptyError('Reason'));
-    const rest = await getRestService().getRest(restId, ['owner', 'managers', 'profile']);
-    throwIfNotRestOwnerOrManager(signedInUser, rest.owner, rest.managers, rest.profile.name);
-    const orderRes = await callElasticWithErrorHandler(options => this.elastic.update(options), {
-      index: ORDERS_INDEX,
-      type: ORDER_TYPE,
-      id: orderId,
-      _source: true,
-      refresh: 'wait_for',
-      body: {
-        script: {
-          source: `
+
+    try {
+      const order = await callElasticWithErrorHandler(options => this.elastic.getSource(options), {
+        index: ORDERS_INDEX,
+        type: ORDER_TYPE,
+        id: orderId,
+        _source: ['restId', 'phone'],
+      });
+      const rest = await getRestService().getRest(order.restId, ['owner', 'managers', 'profile']);
+      throwIfNotRestOwnerOrManager(signedInUser, rest.owner, rest.managers, rest.profile.name);
+      await callElasticWithErrorHandler(options => this.elastic.update(options), {
+        index: ORDERS_INDEX,
+        type: ORDER_TYPE,
+        id: orderId,
+        _source: true,
+        refresh: 'wait_for',
+        body: {
+          script: {
+            source: `
             ctx._source.status = params.status;
             ctx._source.returnReason = params.reason;
           `,
-          params: {
-            status: OrderStatus.RETURNED,
-            reason,
+            params: {
+              status: OrderStatus.RETURNED,
+              reason,
+            }
           }
         }
-      }
-    });
-    const newOrder = orderRes.get._source;
-    newOrder._id = orderId;
-    return newOrder;
+      });
+      this.sendReturnOrderText(order.phone, orderId, reason);
+    } catch (e) {
+      console.error(e);
+      throw (e);
+    }
+    return true;
   }
+  sendReturnOrderText = (orderPhone, orderId, reason) => {
 
+    this.textClient.messages
+      .create({
+        body: 'Your order has been returned for the following reason: ' + reason + '.' + '\n' + 'Please redo order here: https://www.foodflick.co/cart/' + orderId,
+        from: activeConfig.twilio.phone,
+        to: `+1${orderPhone}`,
+      })
+      .then(message => console.log(message.sid))
+      .catch((e) => { console.error(e) });
+  }
   addOpenOrder = async (signedInUser, cart, costs) => {
     const customer = {
       userId: signedInUser._id,
@@ -425,7 +448,7 @@ class OrderService {
     return newOrder;
   }
 
-  getCartFromOrder = async(orderId) => {
+  getCartFromOrder = async (orderId) => {
     try {
       const order = await callElasticWithErrorHandler(options => this.elastic.getSource(options), {
         index: ORDERS_INDEX,
@@ -487,7 +510,7 @@ class OrderService {
     return orders[0];
   }
 
-  getOrders = async(signedInUser, restId, orderStatus) => {
+  getOrders = async (signedInUser, restId, orderStatus) => {
     if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
     const rest = await getRestService().getRest(restId, ['owner', 'managers', 'profile']);
     throwIfNotRestOwnerOrManager(signedInUser, rest.owner, rest.managers, rest.profile.name);
@@ -523,16 +546,16 @@ class OrderService {
     });
   }
 
-  getCompletedOrders = async(signedInUser, restId) => await this.getOrders(signedInUser, restId, OrderStatus.COMPLETED);
+  getCompletedOrders = async (signedInUser, restId) => await this.getOrders(signedInUser, restId, OrderStatus.COMPLETED);
 
-  getOpenOrders = async(signedInUser, restId) => await this.getOrders(signedInUser, restId, OrderStatus.OPEN);
+  getOpenOrders = async (signedInUser, restId) => await this.getOrders(signedInUser, restId, OrderStatus.OPEN);
 
 }
 
 let orderService;
 
-export const getOrderService = (stripe, elastic) => {
+export const getOrderService = (stripe, elastic, textClient) => {
   if (orderService) return orderService;
-  orderService = new OrderService(stripe, elastic);
+  orderService = new OrderService(stripe, elastic, textClient);
   return orderService;
 };
