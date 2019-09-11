@@ -39,7 +39,7 @@ const mutation = `
     giveRestFeedback(restId: ID!, feedback: String!): Boolean!
     placeOrder(cart: CartInput!): Boolean!
     refundOrder(restId: ID!, orderId: ID!, stripeChargeId: ID!, amount: Float!): Order!
-    returnOrder(restId: ID!, orderId: ID!, reason: String!): Boolean!
+    returnOrder(orderId: ID!, reason: String!): Boolean!
     testPrinter(restId: ID!, printer: TestPrinterInput!): Boolean!
     toggleItemLike(restId: ID!, categoryName: String!, itemName: String!): Rest!
     toggleRestFavorite(restId: ID!): Rest!
