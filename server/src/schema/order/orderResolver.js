@@ -8,8 +8,8 @@ export const OrderMutationResolvers = {
     return await OrderService.refundOrder(signedInUser, restId, orderId, stripeChargeId, amount);
   },
 
-  returnOrder: async (root, { restId, orderId, reason }, { signedInUser, OrderService }) => {
-    return await OrderService.returnOrder(signedInUser, restId, orderId, reason);
+  returnOrder: async (root, { orderId, reason }, { signedInUser, OrderService }) => {
+    return await OrderService.returnOrder(signedInUser, orderId, reason);
   },
 };
 

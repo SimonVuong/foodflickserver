@@ -66,16 +66,16 @@ class OrderService {
       tip: finalTip,
     };
 
-    getPrinterService().printOrder(
-      signedInUser.name,
-      cart.tableNumber,
-      rest.receiver,
-      items.map(({ itemId, ...others }) => ({
-        ...others,
-        printers: getMenuItemById(itemId, rest.menu).printers,
-      })),
-      { ...costs, total }
-    );
+    // getPrinterService().printOrder(
+    //   signedInUser.name,
+    //   cart.tableNumber,
+    //   rest.receiver,
+    //   items.map(({ itemId, ...others }) => ({
+    //     ...others,
+    //     printers: getMenuItemById(itemId, rest.menu).printers,
+    //   })),
+    //   { ...costs, total }
+    // );
 
     const order = await this.addOpenOrder(signedInUser, cart, costs);
 
@@ -151,8 +151,6 @@ class OrderService {
   async refundOrder(signedInUser, restId, orderId, stripeChargeId, amount) {
     if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
     if (amount === 0) throw new Error('Refund amount cannot be 0. Please use a another amount');
-    const rest = await getRestService().getRest(restId, ['owner', 'managers', 'profile']);
-    throwIfNotRestOwnerOrManager(signedInUser, rest.owner, rest.managers, rest.profile.name);
 
     const order = await callElasticWithErrorHandler(options => this.elastic.getSource(options), {
       index: ORDERS_INDEX,
@@ -197,11 +195,9 @@ class OrderService {
     return newOrder;
   }
 
-  async returnOrder(signedInUser, restId, orderId, reason) {
+  async returnOrder(signedInUser, orderId, reason) {
     if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
     if (!reason) throw new Error(getCannotBeEmptyError('Reason'));
-    const rest = await getRestService().getRest(restId, ['owner', 'managers', 'profile']);
-    throwIfNotRestOwnerOrManager(signedInUser, rest.owner, rest.managers, rest.profile.name);
 
     try {
       const order = await callElasticWithErrorHandler(options => this.elastic.getSource(options), {
@@ -210,7 +206,9 @@ class OrderService {
         id: orderId,
         _source: ['restId', 'phone'],
       });
-      if (order.restId !== restId) throw new Error("The provided restId doesn't match the restId stored with the order. Please provide the correct restId");
+      const rest = await getRestService().getRest(order.restId, ['owner', 'managers', 'profile']);
+      throwIfNotRestOwnerOrManager(signedInUser, rest.owner, rest.managers, rest.profile.name);
+      if (order.restId !== order.restId) throw new Error("The provided restId doesn't match the restId stored with the order. Please provide the correct restId");
       await callElasticWithErrorHandler(options => this.elastic.update(options), {
         index: ORDERS_INDEX,
         type: ORDER_TYPE,
@@ -230,26 +228,21 @@ class OrderService {
           }
         }
       });
-      await this.sendReturnOrderText(order.phone, orderId, reason);
+      this.sendReturnOrderText(order.phone, orderId, reason);
     } catch (e) {
       console.error(e);
     }
     return true;
   }
-  sendReturnOrderText = async (orderPhone, orderId, reason) => {
-    try {
-      this.textClient.messages
-        .create({
-          body: `Your order has been returned for the following reason: ${reason}.
-          Please redo order here: https://www.foodflick.co/cart/${orderId}`,
-          from: activeConfig.twilio.phone,
-          to: `+1${orderPhone}`,
-        })
-        .then(message => console.log(message.sid));
-    }
-    catch (e) {
-      console.error(e)
-    }
+  sendReturnOrderText = (orderPhone, orderId, reason) => {
+
+    this.textClient.messages
+      .create({
+        body: 'Your order has been returned for the following reason: ' + reason + '.' + '\n' + 'Please redo order here: https://www.foodflick.co/cart/' + orderId,
+        from: activeConfig.twilio.phone,
+        to: `+1${orderPhone}`,
+      })
+      .then(message => console.log(message.sid)).catch((e) => { console.error(e) });
   }
   addOpenOrder = async (signedInUser, cart, costs) => {
     const customer = {

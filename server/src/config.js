@@ -103,7 +103,7 @@ CAXO0dg=
     cardPath: '/endpoints/prodCard.html',
   },
   twilio: {
-    accountSId: 'ACbce252e67753d063d4d183d97e2c58a0',
+    accountSid: 'ACbce252e67753d063d4d183d97e2c58a0',
     phone: '+16096164938',
   }
 };
