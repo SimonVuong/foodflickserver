@@ -7,13 +7,10 @@ import { QUERY_SIZE, callElasticWithErrorHandler, getOrderUpdateOptions } from '
 import { getMenuItemById } from './menuService';
 import { activeConfig } from '../config';
 import { OrderType } from '../schema/cart/cart';
+
 export const ORDERS_INDEX = 'orders';
 export const ORDER_TYPE = 'order';
 
-const accountSid = activeConfig.twilio.accountSId;
-const authToken = activeConfig.twilio.TWILIO_KEY;
-const twilioPhone = activeConfig.twilio.phone;
-const client = require('twilio')(accountSid, authToken);
 const PERCENT_FEE = 2.9
 const FLAT_RATE_FEE = .30;
 
@@ -31,9 +28,10 @@ const round2 = num => +(Math.round(num + "e+2") + "e-2");
 const round3 = num => +(Math.round(num + "e+3") + "e-3");
 
 class OrderService {
-  constructor(stripe, elastic) {
+  constructor(stripe, elastic, textClient) {
     this.stripe = stripe;
     this.elastic = elastic;
+    this.textClient = textClient;
   }
 
   validatePrices(items, rest) {
@@ -128,39 +126,6 @@ class OrderService {
       `ctx._source.stripeChargeId=params.chargeId;`,
       { chargeId: charge.id }
     ));
-  }
-
-  async returnOrder(signedInUser, restId, orderId) {
-    if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
-    const order = await callElasticWithErrorHandler(options => this.elastic.getSource(options), {
-      index: ORDERS_INDEX,
-      type: ORDER_TYPE,
-      id: orderId,
-      _source: ['restId', 'phone'],
-    });
-    if (order.restId !== restId) throw new Error("The provided restId doesn't match the restId stored with the order. Please provide the correct restId");
-    try {
-      await callElasticWithErrorHandler(options => this.elastic.update(options), getOrderUpdateOptions(
-        orderId,
-        `
-          ctx._source.status=params.status;
-        `,
-        { status: OrderStatus.RETURNED }
-      ))
-      console.log(twilioPhone);
-      client.messages
-        .create({
-          body: `Your order has been returned please redo order here: https://www.foodflick.co/cart/${orderId}`,
-          from: twilioPhone,
-          to: `+1${order.phone}`,
-        })
-        .then(message => console.log(message.sid));
-
-    } catch (e) {
-      console.error(e);
-    };
-
-    return true;
   }
 
   async makePayment(signedInUser, restStripeId, restName, cents, cardTok) {
@@ -265,11 +230,11 @@ class OrderService {
           }
         }
       });
-      client.messages
+      this.textClient.messages
         .create({
           body: `Your order has been returned for the following reason: ${reason}.
           Please redo order here: https://www.foodflick.co/cart/${orderId}`,
-          from: twilioPhone,
+          from: activeConfig.twilio.phone,
           to: `+1${order.phone}`,
         })
         .then(message => console.log(message.sid));
@@ -386,8 +351,8 @@ class OrderService {
 
 let orderService;
 
-export const getOrderService = (stripe, elastic) => {
+export const getOrderService = (stripe, elastic, textClient) => {
   if (orderService) return orderService;
-  orderService = new OrderService(stripe, elastic);
+  orderService = new OrderService(stripe, elastic, textClient);
   return orderService;
 };

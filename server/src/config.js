@@ -58,7 +58,7 @@ GHvfjzAiLDRjG8pWVA==
   },
   twilio: {
     //test accountSID and phone
-    accountSId: 'AC049b2876bcf1f6e12ee8cf74bb2cc6b4',
+    accountSid: 'AC049b2876bcf1f6e12ee8cf74bb2cc6b4',
     phone: '+15005550006',
   }
 };
