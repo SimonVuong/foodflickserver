@@ -4,8 +4,8 @@ import Modal from '@material-ui/core/Modal';
 import Close from '@material-ui/icons/Close';
 import { Grow, Typography, useMediaQuery, Theme } from '@material-ui/core';
 import { useTheme } from '@material-ui/styles';
-import SignIn from 'general/components/lib/account/SignIn';
-import SignUp from 'general/components/lib/account/SignUp';
+import SignIn from 'general/components/useCases/account/SignIn';
+import SignUp from 'general/components/useCases/account/SignUp';
 
 type props = {
   onClose: () => void,

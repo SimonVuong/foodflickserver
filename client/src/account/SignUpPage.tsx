@@ -1,7 +1,7 @@
 import React from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import { Container, Typography } from '@material-ui/core';
-import SignUp from 'general/components/lib/account/SignUp';
+import SignUp from 'general/components/useCases/account/SignUp';
 import { RouteComponentProps } from '@reach/router';
 import { routes } from 'general/routes/routes';
 

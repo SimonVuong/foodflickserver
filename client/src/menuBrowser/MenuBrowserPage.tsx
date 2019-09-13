@@ -9,7 +9,7 @@ import { ThunkDispatch } from 'redux-thunk';
 import { ToggleMobileDrawerAction, toggleMobileDrawerAction } from 'general/redux/ui/uiActions';
 import MobileDrawer from './MobileDrawer';
 import DesktopDrawer from './DesktopDrawer';
-import AddCartItemModal from 'general/components/lib/cartItemModal/AddCartItemModal';
+import AddCartItemModal from 'general/components/useCases/cartItemModal/AddCartItemModal';
 import { SelectedRestStateReducer } from 'general/rest/redux/restReducer';
 import { useGetRestByUrlQuery } from 'general/rest/restService';
 

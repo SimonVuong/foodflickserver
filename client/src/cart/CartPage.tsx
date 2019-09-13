@@ -7,7 +7,7 @@ import { Typography, Container, Button, useMediaQuery } from '@material-ui/core'
 import { useTheme } from '@material-ui/styles';
 import { ThunkDispatch } from 'redux-thunk';
 import { removeCartItemAction } from 'general/order/redux/cartActions';
-import UpdateCartItemModal from 'general/components/lib/cartItemModal/UpdateCartItemModal';
+import UpdateCartItemModal from 'general/components/useCases/cartItemModal/UpdateCartItemModal';
 import { getCustomerItemFromCartItem } from 'general/order/CartItemModel';
 import { SignedInUser } from 'general/account/SignedInUserModel';
 import SignInModal from './SignInModal';

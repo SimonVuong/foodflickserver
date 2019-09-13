@@ -29,7 +29,7 @@ const AccountPage: React.FC<props & RouteComponentProps> = ({ signedInUser }) =>
         Hi, {signedInUser.FirstName}.
       </Typography>
       <Typography variant='h6'>
-        Account page coming soon. You can still update your phone and payment details when reviewing your cart
+        More account options coming soon. You can still update your phone and payment details when reviewing your cart
       </Typography>
     </Container>
   );

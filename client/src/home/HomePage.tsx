@@ -4,7 +4,7 @@ import { TextField, Link, InputAdornment } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 import { routes } from 'general/routes/routes';
 import Search from '@material-ui/icons/Search';
-import SearchModal from 'general/components/lib/SearchModal';
+import SearchModal from 'general/components/useCases/SearchModal';
 const background = '/assets/global/background.jpg';
 
 const useStyles = makeStyles(theme => ({
