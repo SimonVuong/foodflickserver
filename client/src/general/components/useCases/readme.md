@@ -1,0 +1,1 @@
+useCases components are fully functional, drop-in components used throughout the app. They serve specific use cases and are meant to be used in specific scenarios, with little customization. put components in here if they need to be reused, are not global, and are serve a specific BUSINESS functionality

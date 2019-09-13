@@ -1,0 +1,1 @@
+lib components are meant generic building blocks for the app such as lists, cards, etc. Put a component in here if it is reused, contains no business logic, and has supports a decent amount of customization.
