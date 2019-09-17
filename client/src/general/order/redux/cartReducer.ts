@@ -1,6 +1,6 @@
 import { CartActions, CartActionTypes } from './cartActions';
-import { Cart, OrderType } from 'general/order/CartModel';
-
+import { Cart } from 'general/order/CartModel';
+import { OrderType } from 'general/order/OrderModel';
 export type CartStateReducer = Cart | null | undefined;
 
 export const cartReducer = (state: CartStateReducer = null, action: CartActions): CartStateReducer => {

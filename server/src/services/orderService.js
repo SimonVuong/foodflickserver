@@ -8,6 +8,7 @@ import { getMenuItemById } from './menuService';
 import { activeConfig } from '../config';
 import { OrderType } from '../schema/cart/cart';
 import { getUserService } from './userService';
+import { getCardService } from './cardService';
 
 export const ORDERS_INDEX = 'orders';
 export const ORDER_TYPE = 'order';
@@ -285,6 +286,44 @@ class OrderService {
     }
   }
 
+  async getMyCompletedOrders(signedInUser) {
+    try {
+      const orders = await this.getOrders([
+        { term: { 'customer.userId': signedInUser._id } },
+        { term: { status: OrderStatus.COMPLETED } }
+      ]);
+      if (orders.length === 0) return [];
+      const restId = orders[0].restId;
+      const rest = await getRestService().getRest(restId, ['profile.name']);
+      return orders.map(async order => ({
+        restName: rest.profile.name,
+        card: await getCardService().getCustomerCardById(signedInUser.stripeId, order.cardTok),
+        ...order
+      }));
+    } catch (e) {
+      throw new Error(`Failed to get your open orders. ${e.message}`);
+    }
+  }
+
+  async getMyOpenOrders(signedInUser) {
+    try {
+      const orders = await this.getOrders([
+        { term: { 'customer.userId': signedInUser._id } },
+        { term: { status: OrderStatus.OPEN } }
+      ]);
+      if (orders.length === 0) return [];
+      const restId = orders[0].restId;
+      const rest = await getRestService().getRest(restId, ['profile.name']);
+      return orders.map(async order => ({
+        restName: rest.profile.name,
+        card: await getCardService().getCustomerCardById(signedInUser.stripeId, order.cardTok),
+        ...order
+      }));
+    } catch (e) {
+      throw new Error(`Failed to get your open orders. ${e.message}`);
+    }
+  }
+
   async refundOrder(signedInUser, restId, orderId, stripeChargeId, amount) {
     if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
     if (amount === 0) throw new Error('Refund amount cannot be 0. Please use a another amount');
@@ -475,34 +514,15 @@ class OrderService {
   }
 
   getMatchingOrder = async(restId, signedInUserId, orderType, tableNumber, phone, cardTok) => {
-    const res = await callElasticWithErrorHandler(options => this.elastic.search(options), {
-      index: ORDERS_INDEX,
-      size: QUERY_SIZE,
-      body: {
-        query: {
-          bool: {
-            filter: {
-              bool: {
-                must: [
-                  { term: { status: OrderStatus.OPEN } },
-                  { term: { 'customer.userId': signedInUserId } },
-                  { term: { restId } },
-                  { term: { orderType } },
-                  { term: { cardTok } },
-                  { term: { tableNumber } },
-                  { term: { 'phone.keyword': phone } },
-                ]
-              }
-            }
-          }
-        },
-      }
-    });
-
-    const orders = res.hits.hits.map(({ _source, _id }) => {
-      _source._id = _id;
-      return _source;
-    });
+    const orders = this.getOrders([
+      { term: { status: OrderStatus.OPEN } },
+      { term: { 'customer.userId': signedInUserId } },
+      { term: { restId } },
+      { term: { orderType } },
+      { term: { cardTok } },
+      { term: { tableNumber } },
+      { term: { 'phone.keyword': phone } },
+    ]);
 
     if (orders.length > 1) {
       console.error('Found multiple matching orders');
@@ -514,18 +534,15 @@ class OrderService {
     return orders[0];
   }
 
-  getOrders = async (signedInUser, restId, orderStatus) => {
-    if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
-    const rest = await getRestService().getRest(restId, ['owner', 'managers', 'profile']);
-    throwIfNotRestOwnerOrManager(signedInUser, rest.owner, rest.managers, rest.profile.name);
+  getOrders = async fields => {
     const res = await callElasticWithErrorHandler(options => this.elastic.search(options), {
       index: ORDERS_INDEX,
       size: QUERY_SIZE,
       body: {
         sort: [
           {
-            createdDate: {
-              order: "desc",
+            cartUpdatedDate: {
+              order: 'desc',
             }
           }
         ],
@@ -533,10 +550,7 @@ class OrderService {
           bool: {
             filter: {
               bool: {
-                must: [
-                  { term: { restId } },
-                  { term: { status: orderStatus } }
-                ]
+                must: fields
               }
             }
           }
@@ -550,9 +564,33 @@ class OrderService {
     });
   }
 
-  getCompletedOrders = async (signedInUser, restId) => await this.getOrders(signedInUser, restId, OrderStatus.COMPLETED);
+  getCompletedOrders = async (signedInUser, restId) => {
+    if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
+    const rest = await getRestService().getRest(restId, ['owner', 'managers', 'profile']);
+    throwIfNotRestOwnerOrManager(signedInUser, rest.owner, rest.managers, rest.profile.name);
+    try {
+      return await this.getOrders([
+        { term: { restId } },
+        { term: { status: OrderStatus.COMPLETED } }
+      ]);
+    } catch (e) {
+      throw e;
+    }
+  }
 
-  getOpenOrders = async (signedInUser, restId) => await this.getOrders(signedInUser, restId, OrderStatus.OPEN);
+  getOpenOrders = async (signedInUser, restId) => {
+    if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
+    const rest = await getRestService().getRest(restId, ['owner', 'managers', 'profile']);
+    throwIfNotRestOwnerOrManager(signedInUser, rest.owner, rest.managers, rest.profile.name);
+    try {
+      return await this.getOrders([
+        { term: { restId } },
+        { term: { status: OrderStatus.OPEN } }
+      ]);
+    } catch (e) {
+      throw e;
+    }
+  }
 
 }
 

@@ -1,10 +1,8 @@
 import { CustomerCategory, ICustomerCategory } from 'general/menu/models/CustomerItemModel';
 import { CartItem, ICartItem } from "./CartItemModel";
+import { OrderType } from './OrderModel';
 
-export enum OrderType {
-  CARRY_OUT = 'CARRY_OUT',
-  SIT_DOWN = 'SIT_DOWN',
-}
+
 
 export interface ICart {
   readonly restId: string,

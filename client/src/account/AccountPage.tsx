@@ -5,6 +5,8 @@ import { RouteComponentProps } from '@reach/router';
 import { connect } from 'react-redux';
 import { RootState } from 'general/redux/rootReducer';
 import { SignedInUser } from 'general/account/SignedInUserModel';
+import CompletedOrders from 'account/CompletedOrders';
+import OpenOrders from 'account/OpenOrders';
 
 const useStyles = makeStyles(theme => ({
   container: {
@@ -31,6 +33,8 @@ const AccountPage: React.FC<props & RouteComponentProps> = ({ signedInUser }) =>
       <Typography variant='h6'>
         More account options coming soon. You can still update your phone and payment details when reviewing your cart
       </Typography>
+      <OpenOrders />
+      <CompletedOrders />
     </Container>
   );
 }

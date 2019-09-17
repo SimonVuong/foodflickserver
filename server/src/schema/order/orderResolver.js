@@ -23,6 +23,14 @@ export const OrderQueryResolvers = {
     return await OrderService.getCartFromOrder(orderId);
   },
 
+  myCompletedOrders: async(root, args, { signedInUser, OrderService }) => {
+    return await OrderService.getMyCompletedOrders(signedInUser);
+  },
+
+  myOpenOrders: async(root, args, { signedInUser, OrderService }) => {
+    return await OrderService.getMyOpenOrders(signedInUser);
+  },
+
   openOrders: async (root, { restId }, { signedInUser, OrderService }) => {
     return await OrderService.getOpenOrders(signedInUser, restId)
   },

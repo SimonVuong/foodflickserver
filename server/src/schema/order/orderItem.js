@@ -3,9 +3,10 @@ const _OrderItem = `
     name: String!
     quantity: Int!
     selectedPrice: Price!
+    flick: String
     selectedOptions: [Option!]!
     specialRequests: String
-    refund: Refund
+    #refund: Refund
   }
 `
 export const OrderItem = () => [_OrderItem]

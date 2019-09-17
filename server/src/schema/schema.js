@@ -74,14 +74,16 @@ const query = `
     itemsWithPrinter(restId: ID!, printerName: String!): [String!]!
     myCard: Card
     myRests: [Rest!]!
+    myFavoriteRests: [Rest!]!
+    myFlicks: [Flick!]
+    myOpenOrders: [Order!]!
+    myCompletedOrders: [Order!]!
     openOrders(restId: ID!): [Order!]!
     restPrinters: [Printer!]!
     restWithBanking(restId: String!): Rest!
     restByUrl(url: String!): Rest
     restSearchSuggestions(query: String!, location: String): [Rest!]
     tagSearchSuggestions(query: String!): [Tag!]
-    myFavoriteRests: [Rest!]!
-    myFlicks: [Flick!]
   }
 `
 

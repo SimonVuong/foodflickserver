@@ -35,6 +35,17 @@ class CardService {
     if (res.error) throw res.error;
     return getCardData(res);
   }
+
+  getCustomerCardById = async (stripeCustomerId, cardTok) => {
+    const card = await this.stripe.customers.retrieveSource(stripeCustomerId, cardTok);
+    const { id, last4, exp_month, exp_year } = card;
+    return {
+      cardTok: id,
+      last4,
+      expMonth: exp_month,
+      expYear: exp_year,
+    };
+  }
   
   updateUserCard = async (stripeCustomerId, cardToken) => {
     const res = await this.stripe.customers.update(

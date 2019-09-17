@@ -21,10 +21,15 @@ const _Order = `
   type Order {
     _id: ID!
     restId: ID!
+    restName: String!
+    orderType: OrderType!
+    card: Card!
+    phone: String!
+    tableNumber: String
     stripeChargeId: ID
     status: OrderStatus!
     customer: Customer!
-    createdDate: Float!
+    cartUpdatedDate: Float!
     items: [OrderItem]!
     costs: OrderCosts!
     customRefunds: [Refund!]!

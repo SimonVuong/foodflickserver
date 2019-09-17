@@ -1,12 +1,14 @@
+import { orderFragment } from './orderFragment';
 import { notificationSuccessAction, notificationErrorAction } from 'general/redux/ui/notification/notificationActions';
 import { Cart } from 'general/order/CartModel';
 import gql from 'graphql-tag';
-import { useMutation, useLazyQuery } from '@apollo/react-hooks';
+import { useMutation, useLazyQuery, useQuery } from '@apollo/react-hooks';
 import { MutationResult, QueryResult } from '@apollo/react-common';
 import { useEffect, useMemo } from 'react';
 import { getStore } from 'general/redux/store';
 import { clearCartAction, setCartAction } from 'general/order/redux/cartActions';
 import { cartFragment } from './cartFragment';
+import { Order, IOrder } from './OrderModel';
 
 const getCartInput = (cart: Cart) => {
   const newCart: any = new Cart(cart);
@@ -58,6 +60,64 @@ const useGetCartFromOrderId = (): [
   ]
 }
 
+const useGetMyCompletedOrders = () => {
+  type res = {
+    myCompletedOrders: IOrder[]
+  }
+  const queryRes = useQuery<res>(gql`
+    query {
+      myCompletedOrders {
+        ...orderFragment
+      }
+    }
+    ${orderFragment}
+  `, {
+    fetchPolicy: 'no-cache',
+  });
+
+  const orders = useMemo(() => (
+    queryRes.data && queryRes.data.myCompletedOrders ? queryRes.data.myCompletedOrders.map(order => new Order(order)) : undefined
+  ), [queryRes.data]);
+
+  if (queryRes.error) {
+    getStore().dispatch(notificationErrorAction(`Failed to get orders: ${queryRes.error}`));
+  }
+
+  return {
+    ...queryRes,
+    data: orders
+  }
+}
+
+const useGetMyOpenOrders = () => {
+  type res = {
+    myOpenOrders: IOrder[]
+  }
+  const queryRes = useQuery<res>(gql`
+    query {
+      myOpenOrders {
+        ...orderFragment
+      }
+    }
+    ${orderFragment}
+  `, {
+    fetchPolicy: 'no-cache',
+  });
+
+  const orders = useMemo(() => (
+    queryRes.data && queryRes.data.myOpenOrders ? queryRes.data.myOpenOrders.map(order => new Order(order)) : undefined
+  ), [queryRes.data]);
+  
+  if (queryRes.error) {
+    getStore().dispatch(notificationErrorAction(`Failed to get orders: ${queryRes.error}`));
+  }
+
+  return {
+    ...queryRes,
+    data: orders
+  }
+}
+
 const usePlaceOrder = (): [
   (cart: Cart) => void,
   MutationResult<boolean | undefined>
@@ -95,4 +155,6 @@ const usePlaceOrder = (): [
 export {
   usePlaceOrder,
   useGetCartFromOrderId,
+  useGetMyCompletedOrders,
+  useGetMyOpenOrders,
 }
