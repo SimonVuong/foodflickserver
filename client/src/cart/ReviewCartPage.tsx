@@ -285,6 +285,7 @@ const ReviewCartPage: React.FC<props & ReactStripeElements.InjectedStripeProps> 
       {orderType === OrderType.SIT_DOWN &&
         <div className={classes.section}>
           <Typography gutterBottom variant='h6'>Tip</Typography>
+          <Typography gutterBottom variant='body2' color='textSecondary'>Tip is paid with your order, but you can change it within 6 hours after ordering.</Typography>
           <Grid container spacing={2}>
             <Grid item sm={6} xs={12}>
               <ToggleButtonGroup
