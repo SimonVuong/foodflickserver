@@ -8,6 +8,7 @@ const useStyles = makeStyles((theme: Theme) => ({
   },
   wrapper: {
     position: 'relative',
+    width: ({ fullWidth }: props) => fullWidth ? '100%' : 'auto',
   },
   buttonProgress: {
     color: theme.palette.common.loading,
@@ -21,10 +22,12 @@ const useStyles = makeStyles((theme: Theme) => ({
 
 type props = {
   isLoading: boolean,
+  fullWidth?: boolean,
 }
 
-const WithLoader: React.FC<props> =({ isLoading, children }) => {
-  const classes = useStyles();
+const WithLoader: React.FC<props> = props => {
+  const classes = useStyles(props);
+  const { isLoading, children } = props;
   return (
     <div className={classes.root}>
       <div className={classes.wrapper}>

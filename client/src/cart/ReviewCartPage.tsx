@@ -3,8 +3,7 @@ import { makeStyles, Theme } from '@material-ui/core/styles';
 import { RootState, RootActions } from 'general/redux/rootReducer';
 import { connect } from 'react-redux';
 import { CartStateReducer } from 'general/order/redux/cartReducer';
-import { Typography, Container, Button, useMediaQuery, TextField, InputAdornment, Grid, Divider, IconButton } from '@material-ui/core';
-import { useTheme } from '@material-ui/styles';
+import { Typography, Container, Button, TextField, InputAdornment, Grid, Divider, IconButton } from '@material-ui/core';
 import { ThunkDispatch } from 'redux-thunk';
 import { removeCartItemAction } from 'general/order/redux/cartActions';
 import ToggleButton from '@material-ui/lab/ToggleButton';
@@ -106,10 +105,7 @@ const ReviewCartPage: React.FC<props & ReactStripeElements.InjectedStripeProps> 
   if (!initialPhone) initialPhone = signedInUser ? signedInUser.Phone : '';
 
   const classes = useStyles();
-  const theme: Theme = useTheme();
-  const isXSmall = useMediaQuery(theme.breakpoints.down('xs'));
   const [hiddenCard, setHiddenCard] = useState<Card | null>(null);
-  const [wantsNewCard, setWantsNewCard] = useState<boolean>(false);
   const [cardTok, setCardTok] = useState<string | null>(initialCardTok);
   const [phone, setPhone] = useState<string>(initialPhone);
   const [tableError, setTableError] = useState<string>('');
@@ -120,18 +116,13 @@ const ReviewCartPage: React.FC<props & ReactStripeElements.InjectedStripeProps> 
   const [orderType, setOrderType] = useState<OrderType>(OrderType.SIT_DOWN);
   const [isSavingCard, setIsSavingCard] = useState<boolean>(false);
   const [placeOrder, placeOrderRes] = usePlaceOrder();
-  const textStyle: any = {};
   if (placeOrderRes.data && selectedRest) {
     navigate(routes.menuBrowser.getLink(selectedRest.Url));
     return null;
   }
-  if (isXSmall) {
-    textStyle.lineHeight = 'normal';
-  }
-  const doesPassRequirements = async (): Promise<boolean> => {
+  const doesPassRequirements = (): boolean => {
     let tableErrorMsg = '';
     let phoneErrorMsg = '';
-    let cardErrorMsg = '';
 
     if (!tableNumber && orderType === OrderType.SIT_DOWN) {
       tableErrorMsg = 'Table # cannot be empty';
@@ -139,16 +130,10 @@ const ReviewCartPage: React.FC<props & ReactStripeElements.InjectedStripeProps> 
     if (!phone) {
       phoneErrorMsg = 'Phone cannot be empty';
     }
-    if (wantsNewCard && !cardTok) {
-      const res = await stripe!.createToken({ name: (signedInUser && signedInUser.FullName) ? signedInUser.FullName : '' });
-      if (res.error) {
-        cardErrorMsg = res.error.message || 'Bad card';
-      }
-    }
 
     setTableError(tableErrorMsg);
     setPhoneError(phoneErrorMsg);
-    return !tableErrorMsg && !phoneErrorMsg && !cardErrorMsg
+    return !tableErrorMsg && !phoneErrorMsg
   }
   const onSaveCard = async () => {
     setIsSavingCard(true);
@@ -194,12 +179,20 @@ const ReviewCartPage: React.FC<props & ReactStripeElements.InjectedStripeProps> 
   const total = round2(itemTotal + estimatedTax + tip);
 
   const onPlaceOrder = async () => {
-    const isOrderValid = await doesPassRequirements();
+    let orderCardTok = cardTok;
+
+    if (!orderCardTok) {
+      const res = await stripe!.createToken({ name: (signedInUser && signedInUser.FullName) ? signedInUser.FullName : '' });
+      if (res.error) return;
+      orderCardTok = res.token!.id;
+    }
+
+    const isOrderValid = doesPassRequirements();
     if (isOrderValid) {
       placeOrder(new Cart({
         ...cart,
         phone,
-        cardTok: cardTok!,
+        cardTok: orderCardTok!,
         orderType,
         tableNumber: tableNumber ? tableNumber : undefined,
         tip,
@@ -210,13 +203,16 @@ const ReviewCartPage: React.FC<props & ReactStripeElements.InjectedStripeProps> 
   return (
     <Container className={classes.container}>
       <Typography gutterBottom variant='h4'>{cart.RestName} review</Typography>
-      <CartItemList />
+      <CartItemList items={cart.Items} />
       <div className={classes.section}>
         <Typography gutterBottom variant='h6'>Payment</Typography>
-        {hiddenCard && !wantsNewCard ?
+        {hiddenCard && cardTok ?
           <div className={classes.hiddenCard}>
             <Typography variant='subtitle2'>{hiddenCard.HiddenString}</Typography>
-            <IconButton onClick={() => setWantsNewCard(true)}>
+            <IconButton onClick={() => {
+              setHiddenCard(null);
+              setCardTok(null);
+            }}>
               <EditIcon fontSize='small'/>
             </IconButton>
           </div>
@@ -285,7 +281,7 @@ const ReviewCartPage: React.FC<props & ReactStripeElements.InjectedStripeProps> 
       {orderType === OrderType.SIT_DOWN &&
         <div className={classes.section}>
           <Typography gutterBottom variant='h6'>Tip</Typography>
-          <Typography gutterBottom variant='body2' color='textSecondary'>Tip is paid with your order, but you can change it within 6 hours after ordering.</Typography>
+          <Typography gutterBottom variant='body2' color='textSecondary'>Tip is paid with your order, but you can change it within 3 hours after ordering.</Typography>
           <Grid container spacing={2}>
             <Grid item sm={6} xs={12}>
               <ToggleButtonGroup

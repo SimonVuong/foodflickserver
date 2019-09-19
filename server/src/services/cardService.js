@@ -1,13 +1,15 @@
-const getCard = stripeCustomer => {
-  const sources = stripeCustomer.sources;
-  if (sources.total_count === 0) return null;
-  if (sources.total_count > 1) throw new Error(`Found mulitple cards for ${stripeCustomerId}. Should only have 1.`)
-  return sources.data[0];
+const getCustomerDefaultCard = stripeCustomer => {
+  const defaultSourceId = stripeCustomer.default_source;
+  return stripeCustomer.sources.data.find(card => card.id === defaultSourceId);
 }
 
-const getCardData = stripeCustomer => {
-  const card = getCard(stripeCustomer);
+const getCustomerDefaultCardData = stripeCustomer => {
+  const card = getCustomerDefaultCard(stripeCustomer);
   if (!card) return null;
+  return getHiddenCard(card);
+}
+
+const getHiddenCard = card => {
   const { id, last4, exp_month, exp_year } = card;
   return {
     cardTok: id,
@@ -25,7 +27,7 @@ class CardService {
   getCardId = async stripeCustomerId => {
     const res = await this.stripe.customers.retrieve(stripeCustomerId);
     if (res.error) throw res.error;
-    const card = getCard(res);
+    const card = getCustomerDefaultCard(res);
     if (!card) return null;
     return card.id
   }
@@ -33,27 +35,37 @@ class CardService {
   getUserCard = async stripeCustomerId => {
     const res = await this.stripe.customers.retrieve(stripeCustomerId);
     if (res.error) throw res.error;
-    return getCardData(res);
+    return getCustomerDefaultCardData(res);
   }
 
   getCustomerCardById = async (stripeCustomerId, cardTok) => {
-    const card = await this.stripe.customers.retrieveSource(stripeCustomerId, cardTok);
-    const { id, last4, exp_month, exp_year } = card;
-    return {
-      cardTok: id,
-      last4,
-      expMonth: exp_month,
-      expYear: exp_year,
-    };
+    try {
+      const card = await this.stripe.customers.retrieveSource(stripeCustomerId, cardTok);
+      return getHiddenCard(card);
+    } catch(e) {
+      console.error(e);
+      return null;
+    }
   }
-  
-  updateUserCard = async (stripeCustomerId, cardToken) => {
-    const res = await this.stripe.customers.update(
+
+  addUserCard = async (stripeCustomerId, cardToken) => {
+    const res = await this.stripe.customers.createSource(
       stripeCustomerId,
       { source: cardToken }
     );
     if (res.error) throw res.error;
-    return getCardData(res);
+    return getHiddenCard(res);
+  }
+
+  // update a user's default source
+  updateUserCard = async (stripeCustomerId, cardToken) => {
+    const newCard = await this.addUserCard(stripeCustomerId, cardToken);
+    const res = await this.stripe.customers.update(
+      stripeCustomerId,
+      { default_source: newCard.cardTok }
+    );
+    if (res.error) throw res.error;
+    return getCustomerDefaultCardData(res);
   }
 }
 

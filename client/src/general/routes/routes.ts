@@ -6,6 +6,7 @@ import SignUpPage from 'account/SignUpPage';
 import SignInPage from 'account/SignInPage';
 import ReviewCartPage from 'cart/ReviewCartPage';
 import AccountPage from 'account/AccountPage';
+import CompletedOrderSummaryPage from 'account/OrderSummaryPage';
 
 const routes = {
   about: {
@@ -19,6 +20,12 @@ const routes = {
     basePath: '/me',
     Component: AccountPage,
     getLink: () => '/me',
+  },
+  orderSummary: {
+    path: '/order/:orderId',
+    basePath: '/order',
+    Component: CompletedOrderSummaryPage,
+    getLink: (orderId: string) => `/order/${orderId}`,
   },
   cartFromOrder: {
     path: '/cart/:orderId',

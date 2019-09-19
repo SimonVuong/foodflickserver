@@ -7,6 +7,7 @@ import { RootState } from 'general/redux/rootReducer';
 import { SignedInUser } from 'general/account/SignedInUserModel';
 import CompletedOrders from 'account/CompletedOrders';
 import OpenOrders from 'account/OpenOrders';
+import PendingTipOrders from 'account/PendingTipOrders';
 
 const useStyles = makeStyles(theme => ({
   container: {
@@ -34,6 +35,7 @@ const AccountPage: React.FC<props & RouteComponentProps> = ({ signedInUser }) =>
         More account options coming soon. You can still update your phone and payment details when reviewing your cart
       </Typography>
       <OpenOrders />
+      <PendingTipOrders />
       <CompletedOrders />
     </Container>
   );

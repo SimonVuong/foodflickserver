@@ -1,8 +1,9 @@
+import { OrderStatus } from './order';
 
 export const OrderMutationResolvers = {
 
   completeOrder: async (root, { orderId }, { signedInUser, OrderService }) => {
-    return await OrderService.completeOrder(signedInUser, orderId);
+    return await OrderService.completeOrderNow(signedInUser, orderId);
   },
 
   placeOrder: async (root, { cart }, { signedInUser, OrderService }) => {
@@ -16,6 +17,14 @@ export const OrderMutationResolvers = {
   returnOrder: async (root, { orderId, reason }, { signedInUser, OrderService }) => {
     return await OrderService.returnOrder(signedInUser, orderId, reason);
   },
+
+  setOrderPendingTip: async(root, { orderId }, { signedInUser, OrderService }) => {
+    return await OrderService.setOrderPendingTipNow(signedInUser, orderId);
+  },
+
+  updateTip: async(root, { orderId, newTip }, { signedInUser, OrderService }) => {
+    return await OrderService.updateTip(signedInUser, orderId, newTip);
+  }
 };
 
 export const OrderQueryResolvers = {
@@ -24,11 +33,19 @@ export const OrderQueryResolvers = {
   },
 
   myCompletedOrders: async(root, args, { signedInUser, OrderService }) => {
-    return await OrderService.getMyCompletedOrders(signedInUser);
+    return await OrderService.getMyOrders(signedInUser, OrderStatus.COMPLETED);
   },
 
   myOpenOrders: async(root, args, { signedInUser, OrderService }) => {
-    return await OrderService.getMyOpenOrders(signedInUser);
+    return await OrderService.getMyOrders(signedInUser, OrderStatus.OPEN);
+  },
+
+  myPendingTipOrders: async(root, args, { signedInUser, OrderService }) => {
+    return await OrderService.getMyOrders(signedInUser, OrderStatus.PENDING_TIP_CHANGE);
+  },
+
+  pendingTipOrders: async (root, { restId }, { signedInUser, OrderService }) => {
+    return await OrderService.getPendingTipOrders(signedInUser, restId)
   },
 
   openOrders: async (root, { restId }, { signedInUser, OrderService }) => {

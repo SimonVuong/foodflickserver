@@ -8,7 +8,7 @@ import { useEffect, useMemo } from 'react';
 import { getStore } from 'general/redux/store';
 import { clearCartAction, setCartAction } from 'general/order/redux/cartActions';
 import { cartFragment } from './cartFragment';
-import { Order, IOrder } from './OrderModel';
+import { Order } from './OrderModel';
 
 const getCartInput = (cart: Cart) => {
   const newCart: any = new Cart(cart);
@@ -62,7 +62,7 @@ const useGetCartFromOrderId = (): [
 
 const useGetMyCompletedOrders = () => {
   type res = {
-    myCompletedOrders: IOrder[]
+    myCompletedOrders: Order[]
   }
   const queryRes = useQuery<res>(gql`
     query {
@@ -91,7 +91,7 @@ const useGetMyCompletedOrders = () => {
 
 const useGetMyOpenOrders = () => {
   type res = {
-    myOpenOrders: IOrder[]
+    myOpenOrders: Order[]
   }
   const queryRes = useQuery<res>(gql`
     query {
@@ -106,6 +106,35 @@ const useGetMyOpenOrders = () => {
 
   const orders = useMemo(() => (
     queryRes.data && queryRes.data.myOpenOrders ? queryRes.data.myOpenOrders.map(order => new Order(order)) : undefined
+  ), [queryRes.data]);
+  
+  if (queryRes.error) {
+    getStore().dispatch(notificationErrorAction(`Failed to get orders: ${queryRes.error}`));
+  }
+
+  return {
+    ...queryRes,
+    data: orders
+  }
+}
+
+const useGetMyPendingTipOrders = () => {
+  type res = {
+    myPendingTipOrders: Order[]
+  }
+  const queryRes = useQuery<res>(gql`
+    query {
+      myPendingTipOrders {
+        ...orderFragment
+      }
+    }
+    ${orderFragment}
+  `, {
+    fetchPolicy: 'no-cache',
+  });
+
+  const orders = useMemo(() => (
+    queryRes.data && queryRes.data.myPendingTipOrders ? queryRes.data.myPendingTipOrders.map(order => new Order(order)) : undefined
   ), [queryRes.data]);
   
   if (queryRes.error) {
@@ -152,9 +181,43 @@ const usePlaceOrder = (): [
   ]
 }
 
+const useUpdateTip = (): [
+  (orderId: string, newTip: number) => void,
+  MutationResult<boolean | undefined>
+] => {
+  type res = { updateTip: boolean }
+  type vars = { orderId: string, newTip: number };
+  const [mutate, mutation] = useMutation<res, vars>(gql`
+    mutation updateTip($orderId: ID!, $newTip: Float!) {
+      updateTip(orderId: $orderId, newTip: $newTip)
+    }
+  `);
+  const updateTip = (orderId: string, newTip: number) => {
+    mutate({ variables: { orderId, newTip } })
+  }
+  useEffect(() => {
+    if (mutation.error) {
+      getStore().dispatch(notificationErrorAction(`Order failed: ${mutation.error}`));
+    }
+    if (mutation.data && mutation.data.updateTip) {
+      getStore().dispatch(notificationSuccessAction('Tip updated'));
+    }
+  }, [mutation]);
+
+  return [
+    updateTip,
+    {
+      ...mutation,
+      data: mutation.data ? mutation.data.updateTip : undefined,
+    }
+  ]
+}
+
 export {
   usePlaceOrder,
   useGetCartFromOrderId,
   useGetMyCompletedOrders,
   useGetMyOpenOrders,
+  useGetMyPendingTipOrders,
+  useUpdateTip,
 }

@@ -41,6 +41,7 @@ const mutation = `
     placeOrder(cart: CartInput!): Boolean!
     refundOrder(restId: ID!, orderId: ID!, stripeChargeId: ID!, amount: Float!): Order!
     returnOrder(orderId: ID!, reason: String!): Boolean!
+    setOrderPendingTip(orderId: ID!): Boolean!
     testPrinter(restId: ID!, printer: TestPrinterInput!): Boolean!
     toggleItemLike(restId: ID!, categoryName: String!, itemName: String!): Rest!
     toggleRestFavorite(restId: ID!): Rest!
@@ -55,6 +56,7 @@ const mutation = `
     updateRestProfile(restId: ID!, newProfile: ProfileInput!): Rest!
     updateRestReceiver(restId: ID!, receiverId: ID!): Rest!
     updateRestUrl(restId: ID!, url: String!): Rest!
+    updateTip(orderId: ID!, newTip: Float!): Boolean!
     updateUserCard(cardToken: ID!): Card!
     updateUserEmail(newEmail: String!): Boolean!
   }
@@ -78,6 +80,8 @@ const query = `
     myFlicks: [Flick!]
     myOpenOrders: [Order!]!
     myCompletedOrders: [Order!]!
+    myPendingTipOrders: [Order!]!
+    pendingTipOrders(restId: ID!): [Order!]!
     openOrders(restId: ID!): [Order!]!
     restPrinters: [Printer!]!
     restWithBanking(restId: String!): Rest!

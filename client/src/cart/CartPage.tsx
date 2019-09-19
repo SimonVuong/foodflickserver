@@ -3,8 +3,7 @@ import { makeStyles, Theme } from '@material-ui/core/styles';
 import { RootState, RootActions } from 'general/redux/rootReducer';
 import { connect } from 'react-redux';
 import { CartStateReducer } from 'general/order/redux/cartReducer';
-import { Typography, Container, Button, useMediaQuery } from '@material-ui/core';
-import { useTheme } from '@material-ui/styles';
+import { Typography, Container, Button } from '@material-ui/core';
 import { ThunkDispatch } from 'redux-thunk';
 import { removeCartItemAction } from 'general/order/redux/cartActions';
 import UpdateCartItemModal from 'general/components/useCases/cartItemModal/UpdateCartItemModal';
@@ -45,13 +44,10 @@ type props = {
 
 const CartPage: React.FC<props & RouteComponentProps<routeParams>> = ({ cart, removeCartItem, signedInUser, navigate, orderId }) => {
   const classes = useStyles();
-  const theme: Theme = useTheme();
   const [getCartFromOrderId, { loading, error, called, data }] = useGetCartFromOrderId()
   const [isItemModalOpen, setIsItemModalOpen] = useState(false);
   const [needsSignInModal, setNeedsSignInModal] = useState(false);
   const [selectedCartIndex, setSelectedCartIndex] = useState<number | null>(null);
-  const isXSmall = useMediaQuery(theme.breakpoints.down('xs'));
-  const textStyle: any = {};
   const onClickCard = (cartIndex: number) => {
     setSelectedCartIndex(cartIndex);
     setIsItemModalOpen(true);
@@ -73,9 +69,6 @@ const CartPage: React.FC<props & RouteComponentProps<routeParams>> = ({ cart, re
   const onSignUpSignIn = () => {
     setNeedsSignInModal(false);
     navigate!(routes.reviewCart.getLink());
-  }
-  if (isXSmall) {
-    textStyle.lineHeight = 'normal';
   }
 
   useEffect(() => {
@@ -114,7 +107,7 @@ const CartPage: React.FC<props & RouteComponentProps<routeParams>> = ({ cart, re
       )}
       {needsSignInModal && <SignInModal onSignUpSignIn={onSignUpSignIn} open={needsSignInModal} onClose={() => setNeedsSignInModal(false)} />}
       <Typography gutterBottom variant='h4'>{cart.RestName} cart</Typography>
-      <CartItemList onRemoveCartItem={onClickRemove} onClickCard={onClickCard} />
+      <CartItemList items={cart.Items} onRemoveCartItem={onClickRemove} onClickCard={onClickCard} />
       <Button
         color='primary'
         variant='contained'

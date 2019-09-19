@@ -8,8 +8,9 @@ export enum OrderType {
 }
 
 export enum OrderStatus {
-  COMPLETED = 'COMPLETED',
   OPEN = 'OPEN',
+  PENDING_TIP_CHANGE = 'PENDING_TIP_CHANGE',
+  COMPLETED = 'COMPLETED',
   RETURNED = 'RETURNED',
 }
 
@@ -47,6 +48,7 @@ export class OrderCosts implements IOrderCosts {
   public get Tip() { return this.tip }
   public get PercentFee() { return this.percentFee }
   public get FlatRateFee() { return this.flatRateFee }
+  public get TipPercent() { return this.tip / this.itemTotal }
   public get Total() { return round2(this.itemTotal + this.tax + this.tip) }
 }
 
@@ -77,7 +79,7 @@ export interface IOrder {
   readonly stripeChargeId: string
   readonly tableNumber?: string
   readonly phone: string
-  readonly card: ICard
+  readonly card: ICard | null
   readonly cartUpdatedDate: number
   readonly items: ICartItem[]
   readonly costs: IOrderCosts
@@ -93,7 +95,7 @@ export class Order implements IOrder {
   readonly stripeChargeId: string
   readonly tableNumber?: string
   readonly phone: string
-  readonly card: Card
+  readonly card: Card | null
   readonly cartUpdatedDate: number
   readonly items: CartItem[]
   readonly costs: OrderCosts
@@ -121,7 +123,7 @@ export class Order implements IOrder {
     this.stripeChargeId = stripeChargeId
     this.tableNumber = tableNumber
     this.phone = phone
-    this.card = new Card(card)
+    this.card = card ? new Card(card) : null;
     this.cartUpdatedDate = cartUpdatedDate
     this.items = items.map(item => new CartItem(item));
     this.costs = new OrderCosts(costs);

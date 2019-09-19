@@ -1,10 +1,8 @@
 import React from 'react';
 import { makeStyles, Theme } from '@material-ui/core/styles';
-import { RootState } from 'general/redux/rootReducer';
-import { connect } from 'react-redux';
 import { Typography, Card, CardContent, CardMedia, Button, useMediaQuery } from '@material-ui/core';
 import { useTheme } from '@material-ui/styles';
-import { CartStateReducer } from 'general/order/redux/cartReducer';
+import { CartItem } from 'general/order/CartItemModel';
 
 const useStyles = makeStyles((theme: Theme) => ({
   remove: {
@@ -34,13 +32,13 @@ const useStyles = makeStyles((theme: Theme) => ({
 }));
 
 type props = {
-  cart: CartStateReducer,
+  items: CartItem[],
   onRemoveCartItem?: (itemIndex: number) => void,
   onClickCard?: (itemIndex: number) => void,
 };
 
 const CartItemList: React.FC<props> = props => {
-  const { cart, onRemoveCartItem, onClickCard } = props;
+  const { items, onRemoveCartItem, onClickCard } = props;
   const classes = useStyles(props);
   const theme: Theme = useTheme();
   const isXSmall = useMediaQuery(theme.breakpoints.down('xs'));
@@ -57,10 +55,9 @@ const CartItemList: React.FC<props> = props => {
   if (isXSmall) {
     textStyle.lineHeight = 'normal';
   }
-  if (!cart) return null;
   return (
     <>
-      {cart.Items.map((item, index) => (
+      {items.map((item, index) => (
         <Card key={index} className={classes.card} onClick={() => handleCardClick(index)}>
           <CardMedia className={classes.img} image={item.Flick}  title={item.Name} />
           <div className={classes.section}>
@@ -97,8 +94,4 @@ const CartItemList: React.FC<props> = props => {
   );
 }
 
-const mapStateToProps = (state: RootState) => ({
-  cart: state.OrderingFlow.cart,
-});
-
-export default connect(mapStateToProps)(CartItemList);
+export default CartItemList;

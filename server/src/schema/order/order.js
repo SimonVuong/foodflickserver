@@ -5,15 +5,17 @@ import { Refund } from './refund';
 
 export const OrderStatus = {
   OPEN: 'OPEN',
-  RETURNED: 'RETURNED',
   COMPLETED: 'COMPLETED',
+  PENDING_TIP_CHANGE: 'PENDING_TIP_CHANGE',
+  RETURNED: 'RETURNED',
 }
 
 const _OrderStatus = `
   enum OrderStatus {
     OPEN
-    RETURNED
     COMPLETED
+    PENDING_TIP_CHANGE
+    RETURNED
   }
 `
 
@@ -23,7 +25,7 @@ const _Order = `
     restId: ID!
     restName: String!
     orderType: OrderType!
-    card: Card!
+    card: Card
     phone: String!
     tableNumber: String
     stripeChargeId: ID

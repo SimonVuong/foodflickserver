@@ -12,7 +12,9 @@ import { getCardService } from './cardService';
 
 export const ORDERS_INDEX = 'orders';
 export const ORDER_TYPE = 'order';
-const ORDER_COMPLETION_BUFFER_MILLIS = 60000; // 1 min
+const SCHEDULING_BUFFER_MILLIS = 60000; // 1 min
+const PENDING_TIP_HOLDING_TIME = 10800000; // 3hr
+// const PENDING_TIP_HOLDING_TIME = 120000; // 2min
 const TAX_RATE = 0.0625;
 const PERCENT_FEE = 2.9
 const FLAT_RATE_FEE = .30;
@@ -54,56 +56,6 @@ class OrderService {
     }
   }
 
-  /**
-   * Open orders by the same customer within the rest's specified timeframe are grouped together. We identify an order by
-   * the same customer comparing the customerId, orderType, tableNumber, phone, and cardTok. If any of these are different,
-   * we add a new open order. Otherwise, we get the existing open order and add the new items and sum the tips.
-   * 
-   * So a customer places their first order and the rest has set the minsToAutoComplete (MAC) to 10 mins. Additional orders
-   * from the same customer within 9 minutes are grouped together. We purposefully subtract 1 min from MAC to avoid any
-   * timing async issues. One such issue, for example with a 10m MAC
-   * 
-   * - 10.00 am - add order
-   * - 10.09.59 -> update order
-   * - 10.10 - status -> complete
-   * - 10.10.01 - updateOrder (how is this possible?, well you never know with async, latency, milliseocnds differences. point
-   * is, somehow it didnt detect that 10.01 is 1 milisecond past the 10m mark)
-   * - 10.10 - pay the for the 10.00 update
-   * - 10:11.01 will try to pay for 10.10.01 update but, we already paid this order
-   * 
-   * Assuming the customer placed an order at 10.00am and at 10.09am we need to ensure that only the 10.09am update gets
-   * c mpleted and paid. The tricky part is that the 10.00am order doesn't know about the 10.09m update so how do we
-   * 'invalidate' the 10.00am order? Every order addition or update is followed by a payment ATTEMPT. Emphasis on attempt
-   * because the payment may not occur. So with the 10.00 order, an attempt will be made at 10.10. The attempt will check
-   * the cartUpdatedDate field and see if it is PAST the autoCompletion deadline, which in this case is 10.19am due
-   * to the second order. This check will fail and payment will not occur.
-   * 
-   * What if the rest changes the MAC in the middle of this process? This is accounted for by always aligning the 
-   * cartUpdate deadline with the payment deadline (9m vs 10m). See the example below with an initial 9m MAC
-   * 
-   * 10:00 am order added
-   * 10:05 am order updated
-   * 10:07 am MAC set to 5m
-   * 10:08 am order updated
-   * 10:10 am payment attempted and denied since 10:10 am is NOT 10m past 10:08. Note here we used the 10m MAC
-   * 10:15 am payment attempted and deneid since 10:15 am is NOT 10m past 10:08. Note again, we used the 10m MAC
-   * 10:13 am payment attempted and succeeded since 10:13 am IS 5m past 10:08.
-   * 
-   * test cases with 1.5min auto complete with 1 min order update buffer = 30 seconds update window
-   * - place order then update within 30 seconds
-   *   - should make 1 payment for the updated
-   * - place order then update after 30 seconds
-   *   - should make 2 payments
-   * - place order, then manually complete right away
-   *   - order should immediately pay and skip payment
-   * - place order, then manually complete right away, then place order again
-   *   - immediately pays due to manual. then skips first order. then ADDS new order
-   * - place order, then manually return right away
-   *     - order should skip
-   * 
-   * @param {*} signedInUser 
-   * @param {*} cart 
-   */
   async placeOrder(signedInUser, cart) {
     // todo 0: replace these console.logs with real logging
     const { items, tableNumber, phone, orderType, cardTok, restId, tip } = cart;
@@ -122,14 +74,31 @@ class OrderService {
       })),
     );
 
-    const restMillis = rest.minsTillOrderCompletion * 60000; // 60000 ms in a min
-    // subtract by some buffer to avoid updates that are too close to the payment deadline. simply for safety to avoid
-    // any async or timing related bugs.
-    const cartUpdateWindowMillis = restMillis - ORDER_COMPLETION_BUFFER_MILLIS;
-    let upsertedOrder = await this.getMatchingOrder(restId, signedInUser._id, orderType, tableNumber, phone, cardTok);
+    // when the customer orders with a default card, cardTok is what we expect, namely a card id in the form of "card_<string>".
+    // however if the customer is ordering with a new card, then cardTok is not a card id, but rather a token id of the form
+    // tok_<string>. we always want to store card Ids in the db order as it is cardIds that are tied to a customer, not
+    // token ids. in other words we need to store card ids in orders so we can view card data for historical orders.
+    let finalCardTok = cardTok;
+    // when finalCardTok is a token id, then getCustomerCardById will return null
+    const storedCard = await getCardService().getCustomerCardById(signedInUser.stripeId, finalCardTok)
+    if (!storedCard) {
+      const newHiddenCard = await getCardService().addUserCard(signedInUser.stripeId, finalCardTok);
+      finalCardTok = newHiddenCard.cardTok;
+      cart.cardTok = finalCardTok;
+    }
+    const cartUpdateWindowMillis = rest.minsToUpdateCart * 60000; // 60000 ms in a min
+
+    let upsertedOrder = await this.getMatchingOrder(
+      restId,
+      signedInUser._id,
+      orderType,
+      tableNumber,
+      phone,
+      finalCardTok,
+      cartUpdateWindowMillis
+    );
     const finalTip = round2(tip);
-    // add the order if it doesn't exist or if we are past the update window
-    if (!upsertedOrder || Date.now() > upsertedOrder.cartUpdatedDate + cartUpdateWindowMillis) {
+    if (!upsertedOrder) {
       const itemTotal = getItemTotal(items);
       const tax = round2(itemTotal * TAX_RATE);
       const costs = {
@@ -145,23 +114,97 @@ class OrderService {
       // console.log('UPDATED ORDER', upsertedOrder.cartUpdatedDate);
       // console.log('will update for orders before', new Date(upsertedOrder.cartUpdatedDate + cartUpdateWindowMillis).toTimeString());
     }
-    // console.log('set timeout for', restMillis / 60000)
-    setTimeout(() => {
-      this.completeOrderAndPay(
-        upsertedOrder._id,
-        signedInUser,
-        rest.banking.stripeId,
-        rest.profile.name,
-        rest.receiver,
-        // pass restMillis so that the updateDeadline + the paymentDeadline use the same schedule.
-        // that way, if the schedule is changed, it wont affect orders already scheduled orders
-        restMillis
-      )
-    }, restMillis);
+
+    setTimeout(async () => {
+      const success = await this.setOrderPendingTip(upsertedOrder._id);
+      if (!success) return;
+      // console.log('order set to pending tip');
+      setTimeout(() => {
+        this.completeOrderAndPay(
+          upsertedOrder._id,
+          signedInUser,
+          rest.banking.stripeId,
+          rest.profile.name,
+          rest.receiver,
+        )
+        // console.log('paid');
+      // add 1 minute to the PENDING_TIP_HOLDING_TIME to avoid any issues with timing and async. for example, what
+      // the user updated the tip at the last minute such that when we try to pay, elastic doesn't pick up the new tip.
+      }, PENDING_TIP_HOLDING_TIME + SCHEDULING_BUFFER_MILLIS);
+      // console.log('payment scheduled');
+    }, cartUpdateWindowMillis);
     return true;
   }
 
-  async completeOrder(signedInUser, orderId) {
+  async setOrderPendingTipNow(signedInUser, orderId) {
+    if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
+    try {
+      const order = await callElasticWithErrorHandler(options => this.elastic.getSource(options), {
+        index: ORDERS_INDEX,
+        type: ORDER_TYPE,
+        id: orderId,
+        _source: ['customer', 'restId'],
+      });
+      const rest = await getRestService().getRest(order.restId, ['owner', 'managers', 'profile','banking', 'receiver']);
+      throwIfNotRestOwnerOrManager(signedInUser, rest.owner, rest.managers, rest.profile.name);
+
+      await this.setOrderPendingTip(orderId);
+      const userRes = await getUserService().getUserById(order.customer.userId, 'email,app_metadata');
+      const customer = {
+        email: userRes.email,
+        stripeId: userRes.app_metadata.stripeId,
+      }
+
+      setTimeout(() => {
+        this.completeOrderAndPay(
+          orderId,
+          customer,
+          rest.banking.stripeId,
+          rest.profile.name,
+          rest.receiver,
+        )
+        // console.log('paid');
+      // add 1 minute to the PENDING_TIP_HOLDING_TIME to avoid any issues with timing and async. for example, what
+      // the user updated the tip at the last minute such that when we try to pay, elastic doesn't pick up the new tip.
+      }, PENDING_TIP_HOLDING_TIME + SCHEDULING_BUFFER_MILLIS);
+      // console.log('payment scheduled');
+      return true;
+    } catch (e) {
+      console.error(e);
+      return false
+    }
+  }
+
+  async setOrderPendingTip(orderId) {
+    try {
+      await callElasticWithErrorHandler(options => this.elastic.update(options), getOrderUpdateOptions(
+        orderId,
+        `
+          if (ctx._source.status.equals("${OrderStatus.COMPLETED}")) {
+            throw new Exception("Order is already completed");
+          }
+          if (ctx._source.status.equals("${OrderStatus.RETURNED}")) {
+            throw new Exception("Order is already returned");
+          }
+          if (ctx._source.status.equals("${OrderStatus.PENDING_TIP_CHANGE}")) {
+            throw new Exception("Order is already pending tip change");
+          }
+          ctx._source.status=params.status;
+        `,
+        {
+          status: OrderStatus.PENDING_TIP_CHANGE,
+        }
+      ));
+      return true;
+    } catch(e) {
+      // this is exected when a customer updates an order
+      if (e.message === 'Order is already pending tip change') return false;
+      console.error(e);
+      return false;
+    }
+  }
+
+  async completeOrderNow(signedInUser, orderId) {
     try {
       const order = await callElasticWithErrorHandler(options => this.elastic.getSource(options), {
         index: ORDERS_INDEX,
@@ -183,11 +226,9 @@ class OrderService {
     }
   }
 
-  async completeOrderAndPay(orderId, customer, restStripeId, restName, restReceiver, restMillis) {
-    // todo 0: replace these console.logs with real logging
+  async completeOrderAndPay(orderId, customer, restStripeId, restName, restReceiver) {
     let order;
     try {
-      // if (restMillis) console.log('attempting pay with deadline', Date.now() - restMillis, new Date(Date.now() - restMillis).toTimeString())
       const res = await callElasticWithErrorHandler(options => this.elastic.update(options), getOrderUpdateOptions(
         orderId,
         `
@@ -197,36 +238,23 @@ class OrderService {
           if (ctx._source.status.equals("${OrderStatus.RETURNED}")) {
             throw new Exception("Order is already returned");
           }
-          if (params.threshold == null || ctx._source.cartUpdatedDate < params.threshold) {
-            ctx._source.status=params.status;
+          if (ctx._source.status.equals("${OrderStatus.OPEN}")) {
+            throw new Exception("Order is still OPEN");
           }
+          ctx._source.status=params.status;
         `,
         {
-          status: OrderStatus.COMPLETED,
-          // now > updatedate + restMillis. am i currently after the deadline?
-          // now - updadtedDate > restMillis
-          // - updatedDate > restMillis - now
-          // updatedDate < now - restMillis
-          threshold: restMillis ? Date.now() - restMillis : null
+          status: OrderStatus.COMPLETED
         },
         true
       ));
       order = res.get._source;
       order._id = orderId;
     } catch (e) {
-      if (e.message === 'Order is already completed' || e.message === 'Order is already returned') {
-        console.log('skipping payment', e);
-        return;
-      }
-      throw(e);
+      console.error('skipping payment', e);
+      throw e;
     };
 
-    if (order.status !== OrderStatus.COMPLETED) {
-      console.log('skipping payment');
-      return;
-    }
-
-    // console.log('proceeding with payment');
     const { itemTotal, tax, tip } = order.costs;
     const total = round2(itemTotal + tax + tip);
     const centsTotal = Math.round(total * 100);
@@ -286,41 +314,26 @@ class OrderService {
     }
   }
 
-  async getMyCompletedOrders(signedInUser) {
+  async getMyOrders(signedInUser, status) {
     try {
       const orders = await this.getOrders([
         { term: { 'customer.userId': signedInUser._id } },
-        { term: { status: OrderStatus.COMPLETED } }
+        { term: { status } }
       ]);
       if (orders.length === 0) return [];
       const restId = orders[0].restId;
-      const rest = await getRestService().getRest(restId, ['profile.name']);
+      const rest = await getRestService().getRest(restId, ['profile.name', 'menu']);
       return orders.map(async order => ({
+        ...order,
         restName: rest.profile.name,
         card: await getCardService().getCustomerCardById(signedInUser.stripeId, order.cardTok),
-        ...order
+        items: order.items.map(item => ({
+          ...item,
+          flick: getMenuItemById(item.itemId, rest.menu).flick
+        }))
       }));
     } catch (e) {
-      throw new Error(`Failed to get your open orders. ${e.message}`);
-    }
-  }
-
-  async getMyOpenOrders(signedInUser) {
-    try {
-      const orders = await this.getOrders([
-        { term: { 'customer.userId': signedInUser._id } },
-        { term: { status: OrderStatus.OPEN } }
-      ]);
-      if (orders.length === 0) return [];
-      const restId = orders[0].restId;
-      const rest = await getRestService().getRest(restId, ['profile.name']);
-      return orders.map(async order => ({
-        restName: rest.profile.name,
-        card: await getCardService().getCustomerCardById(signedInUser.stripeId, order.cardTok),
-        ...order
-      }));
-    } catch (e) {
-      throw new Error(`Failed to get your open orders. ${e.message}`);
+      throw new Error(`Failed to get your orders. ${e.message}`);
     }
   }
 
@@ -513,8 +526,8 @@ class OrderService {
     }
   }
 
-  getMatchingOrder = async(restId, signedInUserId, orderType, tableNumber, phone, cardTok) => {
-    const orders = this.getOrders([
+  getMatchingOrder = async(restId, signedInUserId, orderType, tableNumber, phone, cardTok, cartUpdateWindowMillis) => {
+    const orders = await this.getOrders([
       { term: { status: OrderStatus.OPEN } },
       { term: { 'customer.userId': signedInUserId } },
       { term: { restId } },
@@ -522,8 +535,8 @@ class OrderService {
       { term: { cardTok } },
       { term: { tableNumber } },
       { term: { 'phone.keyword': phone } },
+      { range: { cartUpdatedDate: { gt: Date.now() - cartUpdateWindowMillis } } },
     ]);
-
     if (orders.length > 1) {
       console.error('Found multiple matching orders');
       return null;;
@@ -566,13 +579,20 @@ class OrderService {
 
   getCompletedOrders = async (signedInUser, restId) => {
     if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
-    const rest = await getRestService().getRest(restId, ['owner', 'managers', 'profile']);
+    const rest = await getRestService().getRest(restId, ['owner', 'managers', 'profile', 'menu']);
     throwIfNotRestOwnerOrManager(signedInUser, rest.owner, rest.managers, rest.profile.name);
     try {
-      return await this.getOrders([
+      const orders = await this.getOrders([
         { term: { restId } },
         { term: { status: OrderStatus.COMPLETED } }
       ]);
+      return orders.map(order => ({
+        ...order,
+        items: order.items.map(item => ({
+          ...item,
+          flick: getMenuItemById(item.itemId, rest.menu).flick
+        }))
+      }))
     } catch (e) {
       throw e;
     }
@@ -580,18 +600,74 @@ class OrderService {
 
   getOpenOrders = async (signedInUser, restId) => {
     if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
-    const rest = await getRestService().getRest(restId, ['owner', 'managers', 'profile']);
+    const rest = await getRestService().getRest(restId, ['owner', 'managers', 'profile', 'menu']);
     throwIfNotRestOwnerOrManager(signedInUser, rest.owner, rest.managers, rest.profile.name);
     try {
-      return await this.getOrders([
+      const orders = await this.getOrders([
         { term: { restId } },
         { term: { status: OrderStatus.OPEN } }
       ]);
+      return orders.map(order => ({
+        ...order,
+        items: order.items.map(item => ({
+          ...item,
+          flick: getMenuItemById(item.itemId, rest.menu).flick
+        }))
+      }))
     } catch (e) {
       throw e;
     }
   }
 
+  getPendingTipOrders = async (signedInUser, restId) => {
+    if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
+    const rest = await getRestService().getRest(restId, ['owner', 'managers', 'profile', 'menu']);
+    throwIfNotRestOwnerOrManager(signedInUser, rest.owner, rest.managers, rest.profile.name);
+    try {
+      const orders = await this.getOrders([
+        { term: { restId } },
+        { term: { status: OrderStatus.PENDING_TIP_CHANGE } }
+      ]);
+      return orders.map(order => ({
+        ...order,
+        items: order.items.map(item => ({
+          ...item,
+          flick: getMenuItemById(item.itemId, rest.menu).flick
+        }))
+      }))
+    } catch (e) {
+      throw e;
+    }
+  }
+
+  updateTip = async(signedInUser, orderId, newTip) => {
+    try {
+      await callElasticWithErrorHandler(options => this.elastic.update(options), {
+        index: ORDERS_INDEX,
+        type: ORDER_TYPE,
+        id: orderId,
+        _source: true,
+        body: {
+          script: {
+            source: `
+              if (!ctx._source.customer.userId.equals(params.customerUserId)) {
+                throw new Exception('Only the user who placed order can update the tip')
+              }
+              ctx._source.costs.tip = params.newTip;
+            `,
+            params: {
+              customerUserId: signedInUser._id,
+              newTip,
+            }
+          }
+        }
+      });
+      return true;
+    } catch (e) {
+      console.error(e);
+      throw e;
+    }
+  }
 }
 
 let orderService;
