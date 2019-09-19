@@ -327,10 +327,13 @@ class OrderService {
         ...order,
         restName: rest.profile.name,
         card: await getCardService().getCustomerCardById(signedInUser.stripeId, order.cardTok),
-        items: order.items.map(item => ({
-          ...item,
-          flick: getMenuItemById(item.itemId, rest.menu).flick
-        }))
+        items: order.items.map(item => {
+          const restItem = getMenuItemById(item.itemId, rest.menu);
+          return {
+            ...item,
+            flick: restItem ? restItem.flick : null
+          }
+        })
       }));
     } catch (e) {
       throw new Error(`Failed to get your orders. ${e.message}`);
@@ -515,7 +518,8 @@ class OrderService {
       order._id = orderId;
       const rest = await getRestService().getRest(order.restId, ['menu', 'profile.name']);
       order.items.forEach(item => {
-        item.flick = getMenuItemById(item.itemId, rest.menu).flick;
+        const restItem = getMenuItemById(item.itemId, rest.menu);
+        item.flick = restItem ? restItem.flick : null;
       })
       order.restName = rest.profile.name;
       order.restMenu = rest.menu;
@@ -588,10 +592,13 @@ class OrderService {
       ]);
       return orders.map(order => ({
         ...order,
-        items: order.items.map(item => ({
-          ...item,
-          flick: getMenuItemById(item.itemId, rest.menu).flick
-        }))
+        items: order.items.map(item => {
+          const restItem = getMenuItemById(item.itemId, rest.menu);
+          return {
+            ...item,
+            flick: restItem ? restItem.flick : null,
+          }
+        })
       }))
     } catch (e) {
       throw e;
@@ -609,10 +616,13 @@ class OrderService {
       ]);
       return orders.map(order => ({
         ...order,
-        items: order.items.map(item => ({
-          ...item,
-          flick: getMenuItemById(item.itemId, rest.menu).flick
-        }))
+        items: order.items.map(item => {
+          const restItem = getMenuItemById(item.itemId, rest.menu);
+          return {
+            ...item,
+            flick: restItem ? restItem.flick : null,
+          }
+        })
       }))
     } catch (e) {
       throw e;
@@ -630,10 +640,13 @@ class OrderService {
       ]);
       return orders.map(order => ({
         ...order,
-        items: order.items.map(item => ({
-          ...item,
-          flick: getMenuItemById(item.itemId, rest.menu).flick
-        }))
+        items: order.items.map(item => {
+          const restItem = getMenuItemById(item.itemId, rest.menu);
+          return {
+            ...item,
+            flick: restItem ? restItem.flick : null,
+          }
+        })
       }))
     } catch (e) {
       throw e;
