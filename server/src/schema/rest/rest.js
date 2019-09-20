@@ -24,7 +24,7 @@ const Rest = `
     #if i put in secondary account, then reject and ask if meant to do primary. restaurant references user and not the
     #otherway arround because a restarunt MUST HAVE a manager while user does NOT NEED a restaruant. keeps data cleaner.   
     managers: [Manager!]
-    minsTillOrderCompletion: Float
+    minsToUpdateCart: Float
     menu: [Category!]!
     url: String!
   }

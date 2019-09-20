@@ -34,6 +34,15 @@ const initStore = (rootReducer = getRootReducer()) => {
   // store.dispatch(addCartItemAction(1, 0, new Price({ value: 8, label: null }), [new Option({ name: 'medium spicy' })], 1, 'special request2' ));
   // // @ts-ignore
   // store.dispatch(addCartItemAction(1, 2, new Price({ value: 9, label: null }), [], 3, 'special request3' ));
+  // // @ts-ignore
+  // store.dispatch(addCartItemAction(1, 2, new Price({ value: 9, label: null }), [], 3, 'special request3' ));
+  // // @ts-ignore
+  // store.dispatch(addCartItemAction(1, 2, new Price({ value: 9, label: null }), [], 3, 'special request3' ));
+  // // @ts-ignore
+  // store.dispatch(addCartItemAction(1, 2, new Price({ value: 9, label: null }), [], 3, 'special request3' ));
+  // // @ts-ignore
+  // store.dispatch(addCartItemAction(1, 2, new Price({ value: 9, label: null }), [], 3, 'special request3' ));
+
   return store;
 };
 
