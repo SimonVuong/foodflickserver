@@ -104,9 +104,9 @@ CAXO0dg=
     protocol: 'amqp',
     hostname: 'rhino.rmq.cloudamqp.com',
     port: 5672,
-    password: process.env.BROKER_PASS,
     username: 'lyqzqicu',
-    vhost: '/lyqzqicu',
+    password: process.env.BROKER_PASS,
+    vhost: 'lyqzqicu',
   },
   elastic: {
     node: 'https://a153191553584841a3c930b758f559c6.us-east-1.aws.found.io:9243',

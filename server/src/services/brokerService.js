@@ -20,10 +20,11 @@ class BrokerService {
         console.error('[Broker] reconnecting');
         setTimeout(this.connect.bind(this), 2000);
       });
-
+      return true;
     } catch (e) {
       console.error('[Broker] connection failed', e.message);
       setTimeout(this.connect.bind(this), 2000);
+      return false;
     }
   }
 
@@ -102,7 +103,7 @@ let brokerService;
 export const getBrokerService = async () => {
   if (brokerService) return brokerService;
   brokerService = new BrokerService();
-  await brokerService.connect();
-  await brokerService.openSession();
+  const connected = await brokerService.connect();
+  if (connected) await brokerService.openSession();
   return brokerService;
 }
