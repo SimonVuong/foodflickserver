@@ -1,9 +1,3 @@
-import { ObjectID } from 'mongodb';
-import { getManagedRestByIdQuery } from '../utils';
-import { findIndex } from 'lodash';
-import category from './category';
-import rest from '../rest';
-
 export const MenuMutationResolvers = {
   addCategory: async (root, { restId, newCategory }, { signedInUser, MenuService }) => {
     return await MenuService.addCategory(signedInUser, restId, newCategory);

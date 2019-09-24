@@ -1,86 +1,58 @@
-class PrinterService {
-  app;
-  receivers = {};
+import io from 'socket.io';
+import parser from 'socket.io-json-parser';
 
-  constructor(app) {
-    this.app = app;
+class PrinterService {
+  broker;
+  socketConn;
+
+  constructor(broker) {
+    this.broker = broker;
   }
 
-  openReceiverRegistration() {
-    this.app.use('/register-receiver', (req, res) => {
-      const receiverId = req.query.id;
-      if (this.receivers[receiverId]) {
-        const staleRes = this.receivers[receiverId];
-        staleRes.end(`Received newer registration for ${receiverId}`);
-        console.log(`Will update receiver ${receiverId}`)
-      }
-      res.status(200).set({
-        connection: 'keep-alive',
-        'Cache-Control': 'no-cache',
-        'Content-Type': 'application/json',
+  openReceiverRegistration(webServer) {
+    const socket = io(webServer, {
+      parser,
+      serveClient: false
+    });
+
+    socket.on('connect', async conn => {
+      this.socketConn = conn;
+      console.log('[Socket] connected', conn.id);
+      const receiverId = conn.handshake.query.id;
+      const isListening = await this.broker.listen(receiverId, (json => {
+        console.log(`[Socket] ${conn.id} sending json type: ${json.type}` )
+        this.socketConn.send(json);
+      }).bind(this));
+      if (isListening) console.log(`[Socket] ${conn.id} tied to Q: ${receiverId}`);
+      conn.on('disconnect', () => {
+        console.log('[Socket] disconnected', conn.id);
+        this.broker.cancelListen(receiverId);
       });
-
-      // empty write to 'solidify' connection.
-      // https://devcenter.heroku.com/articles/request-timeout#long-polling-and-streaming-responses
-      res.write('1');
-
-      // 50 seconds because heroku timesout in 55
-      const heartbeat = setInterval(() => {
-        res.write('1');
-      }, 50000) // 50 seconds because heroku timesout in 30 seconds
-
-      req.on('close', () => {
-        // todo 0: think about how we should clear these from memory if it's NOT being replaced,
-        // ex: restaurant stops using ff and removes receiver
-        console.log(`${receiverId} req closed`);
-        clearInterval(heartbeat)
-      });
-      req.on('end', () => {
-        console.log(`${receiverId} req ended`);
-        clearInterval(heartbeat)
-      });
-
-      this.receivers[receiverId] = res;
-      console.log('Saved receiver', receiverId);
     });
   }
 
   testPrinter(receiver, printer) {
-    const registeredReceiver = this.getRegisteredReceiver(receiver.receiverId);
-    if (!registeredReceiver) {
-      throw new Error(`Could not find receiver ${receiver.receiverId}. Please verify the receiver id is correct`);
-    }
-    registeredReceiver.write(JSON.stringify({
+    this.broker.send(receiver.receiverId, {
       type: 'TEST',
       data: {
         printer,
       }
-    }))
+    });
   }
 
   printTickets(signedInUserName, tableNumber, receiver, items) {
-    const registeredReceiver = this.getRegisteredReceiver(receiver.receiverId);
-    if (!registeredReceiver) {
-      console.error('Could not find receiver. Skipping printer. Please verify with the manager that the receiver is properly setup')
-      return;
-    }
-    registeredReceiver.write(JSON.stringify({
+    this.broker.send(receiver.receiverId,{
       type: 'TICKETS',
       data: {
         customerName: signedInUserName,
         tableNumber,
         items,
       }
-    }))
+    });
   }
 
   printReceipts(signedInUserName, tableNumber, receiver, items, costs) {
-    const registeredReceiver = this.getRegisteredReceiver(receiver.receiverId);
-    if (!registeredReceiver) {
-      console.error('Could not find receiver. Skipping printer. Please verify with the manager that the receiver is properly setup')
-      return;
-    }
-    registeredReceiver.write(JSON.stringify({
+    this.broker.send(receiver.receiverId, {
       type: 'RECEIPTS',
       data: {
         receiptPrinters: receiver.printers.filter(printer => printer.isReceipt),
@@ -89,19 +61,14 @@ class PrinterService {
         items,
         costs,
       }
-    }))
-  }
-
-  getRegisteredReceiver (receiverId) {
-    return this.receivers[receiverId];
+    });
   }
 }
 
 let printerService;
 
-export const getPrinterService = app => {
+export const getPrinterService = broker => {
   if (printerService) return printerService;
-  printerService = new PrinterService(app);
-  printerService.openReceiverRegistration();
+  printerService = new PrinterService(broker);
   return printerService;
 }

@@ -14,12 +14,20 @@ const secrets = {
   },
   twilio: {
     TWILIO_KEY: process.env.TWILIO_KEY,
-  }
+  },
 };
 
 const development = {
   app: {
     port: 8443,
+  },
+  broker: {
+    protocol: 'amqp',
+    hostname: 'localhost',
+    port: 5672,
+    username: 'guest',
+    password: 'guest',
+    vhost: '/',
   },
   auth: {
     domain: 'https://foodflick-dev.auth0.com', // domain of auth management api
@@ -60,7 +68,7 @@ GHvfjzAiLDRjG8pWVA==
     //test accountSID and phone
     accountSid: 'AC049b2876bcf1f6e12ee8cf74bb2cc6b4',
     phone: '+15005550006',
-  }
+  },
 };
 
 const production = {
@@ -91,6 +99,14 @@ HH5LD0RE9irb3gEn+BFMOd2JyMbddf2HiFIiPErw+LhDoWr2jpmFc6tIieDm8Fcj
 CAXO0dg=
 -----END CERTIFICATE-----
 `
+  },
+  broker: {
+    protocol: 'amqp',
+    hostname: 'rhino.rmq.cloudamqp.com',
+    port: 5672,
+    password: process.env.BROKER_PASS,
+    username: 'lyqzqicu',
+    vhost: '/lyqzqicu',
   },
   elastic: {
     node: 'https://a153191553584841a3c930b758f559c6.us-east-1.aws.found.io:9243',

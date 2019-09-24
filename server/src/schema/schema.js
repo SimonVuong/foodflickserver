@@ -1,7 +1,6 @@
 import { merge } from 'lodash';
-import { makeExecutableSchema } from 'graphql-tools';
+import { makeExecutableSchema } from 'apollo-server';
 // import Tags from './connectors';
-// import { PubSub, withFilter } from 'graphql-subscriptions';
 import User from './user/user';
 import Card from './user/card';
 import Flick from './user/flick';
@@ -18,10 +17,6 @@ import { Order } from './order/order';
 import { CartInput } from './cart/cartInput';
 import { Cart } from './cart/cart';
 
-//todo 1: add mongo validation
-
-// const pubsub = new PubSub();
-// const TAGS_CHANGED_TOPIC = 'tags_changed'
 
 const mutation = `
   type Mutation {
@@ -61,12 +56,6 @@ const mutation = `
     updateUserEmail(newEmail: String!): Boolean!
   }
 `
-
-// const sub = `
-//   type Subscription {
-//     tagAdded(type: String!): Tag
-//   }
-// `
 
 const query = `
   type Query {
@@ -123,15 +112,7 @@ const typeDefs = [
 
 const resolvers = {
   Query: merge(RestQueryResolvers, MenuQueryResolvers, UserQueryResolvers, TagQueryResolvers, OrderQueryResolvers),
-  Mutation: merge(RestMutationResolvers, MenuMutationResolvers, UserMutationResolvers, OrderMutationResolvers)
-  // Subscription: {
-  //   tagAdded: {
-  //     subscribe: withFilter(
-  //       () => pubsub.asyncIterator(TAGS_CHANGED_TOPIC),
-  //       (payload, variables) => payload.tagAdded.type === variables.type,
-  //     ),
-  //   }
-  // },
+  Mutation: merge(RestMutationResolvers, MenuMutationResolvers, UserMutationResolvers, OrderMutationResolvers),
 };
 
 export default makeExecutableSchema({
