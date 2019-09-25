@@ -19,6 +19,7 @@ class PrinterService {
       //   fn(400, true);
       // },
       // allowUpgrades: false,
+      transports:	['websocket'],
       serveClient: false
     });
 
