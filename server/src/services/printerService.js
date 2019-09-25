@@ -1,5 +1,4 @@
 import io from 'socket.io';
-import parser from 'socket.io-json-parser';
 
 const handleBrokerMessage = (socketConn, obj) => socketConn.send(obj);
 
@@ -12,12 +11,11 @@ class PrinterService {
 
   openReceiverRegistration(webServer) {
     const socket = io(webServer, {
-      parser,
-      allowRequest: (req, fn) => {
-        console.log(req);
-        fn(400, true);
-      },
-      allowUpgrades: false,
+      // allowRequest: (req, fn) => {
+      //   console.log(req);
+      //   fn(400, true);
+      // },
+      // allowUpgrades: false,
       serveClient: false
     });
 
