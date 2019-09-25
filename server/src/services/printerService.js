@@ -1,5 +1,4 @@
 import io from 'socket.io';
-// left off here. dont use jsonparser
 import parser from 'socket.io-json-parser';
 
 const handleBrokerMessage = (socketConn, obj) => socketConn.send(obj);
@@ -14,39 +13,30 @@ class PrinterService {
   openReceiverRegistration(webServer) {
     const socket = io(webServer, {
       parser,
-      // allowRequest: (req, fn) => {
-      //   console.log(req);
-      //   fn(400, true);
-      // },
-      // allowUpgrades: false,
       transports:	['websocket'],
       serveClient: false
     });
 
-    // FYI, there is a known issue where the same socket client sometimes makes mulitple connections on server restart.
-    // this is why we can't generate custom socket connection ids equal to the receiver id. luckily, these random "ghost"
-    // connections disappear on their own.
     socket.on('connect', async conn => {
       console.log(`[Socket] connected '${conn.id}'`);
       const receiverId = conn.handshake.query.id;
-      console.log(conn.handshake);
-      conn.send('testing123');
       let isListening = await this.broker.listen(receiverId, json => handleBrokerMessage(conn, json));
       if (isListening) {
         console.log(`[Socket] '${conn.id}' listening for messages to '${receiverId}'`);
       } else {
-        console.log(`[Socket] '${conn.id}' failed to listen for message to '${receiverId}'. Trying again in 5 seconds.`)
+        console.log(`[Socket] '${conn.id}' failed to listen for message to '${receiverId}'. Trying again in 5 seconds`)
         // necessary because it's possible that upon receiver restart, that the receiver establishes a new socket
         // connection so fast that it triggers a broker consumption on Q <receiverId> before the previous socket
         // connection canceled the previous consumption
         setTimeout(async () => {
           isListening = await this.broker.listen(receiverId, obj => handleBrokerMessage(conn, obj));
-          if (isListening) console.log(`[Socket] '${conn.id}' listening for messages to ${receiverId}`);
+          if (isListening) {
+            console.log(`[Socket] '${conn.id}' listening for messages to ${receiverId}`);
+          } else {
+            console.log(`[Socket] '${conn.id}' failed to listen for message to '${receiverId}'`)
+          }
         }, 5000);
       }
-      conn.on('register', () => {
-        console.log(`[Socket] '${conn.id}' registered`)
-      });
       conn.once('disconnect', () => {
         console.log(`[Socket] ${conn.id} disconnected`);
         if (isListening) this.broker.cancelListen(receiverId);

@@ -72,16 +72,9 @@ class BrokerService {
     const channel = await this.openChannel(receiverId);
     if (!channel) return false;
     try {
-      const q = await channel.assertQueue(receiverId, {
+      await channel.assertQueue(receiverId, {
         autoDelete: true,
       });
-      // necessary because there is a known issue where the server socket receives 2 socket connections from the same client
-      // on server restart. this is problematic because if we don't return, then the 2nd consumption attempt will error
-      // due to duplicate consumerTag (receiverId) and then kill the channel.
-      if (q.consumerCount === 1) {
-        console.warn(`[Broker] mulitple consumptions from Q '${receiverId}' attempted`)
-        return false;
-      }
     } catch (e) {
       console.error('[Broker] assertQueue error', e);
       return false;
@@ -102,6 +95,7 @@ class BrokerService {
       console.log(`[Broker] consuming Q '${receiverId}'`)
     } catch (e) {
       console.error('[Broker] consuming error', e);
+      return false;
     }
     return true;
   }
