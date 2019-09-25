@@ -35,10 +35,10 @@ class PrinterService {
           if (isListening) console.log(`[Socket] '${conn.id}' listening for messages to ${receiverId}`);
         }, 5000);
       }
-      conn.on('disconnect', () => {
-        console.log(`[Socket] ${conn.id} disconnected`);
-        if (isListening) this.broker.cancelListen(receiverId);
-      });
+      // conn.on('disconnect', () => {
+      //   console.log(`[Socket] ${conn.id} disconnected`);
+      //   if (isListening) this.broker.cancelListen(receiverId);
+      // });
     });
   }
 
