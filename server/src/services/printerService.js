@@ -13,6 +13,11 @@ class PrinterService {
   openReceiverRegistration(webServer) {
     const socket = io(webServer, {
       parser,
+      allowRequest: (req, fn) => {
+        console.log(req);
+        fn(400, true);
+      },
+      allowUpgrades: false,
       serveClient: false
     });
 
@@ -35,10 +40,10 @@ class PrinterService {
           if (isListening) console.log(`[Socket] '${conn.id}' listening for messages to ${receiverId}`);
         }, 5000);
       }
-      // conn.on('disconnect', () => {
-      //   console.log(`[Socket] ${conn.id} disconnected`);
-      //   if (isListening) this.broker.cancelListen(receiverId);
-      // });
+      conn.on('disconnect', () => {
+        console.log(`[Socket] ${conn.id} disconnected`);
+        if (isListening) this.broker.cancelListen(receiverId);
+      });
     });
   }
 
