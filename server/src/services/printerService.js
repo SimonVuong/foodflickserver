@@ -12,7 +12,7 @@ class PrinterService {
   }
 
   openReceiverRegistration(webServer) {
-    const socket = io.attach(webServer, {
+    const socket = io(webServer, {
       parser,
       // allowRequest: (req, fn) => {
       //   console.log(req);
