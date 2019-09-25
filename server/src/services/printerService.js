@@ -43,7 +43,7 @@ class PrinterService {
           if (isListening) console.log(`[Socket] '${conn.id}' listening for messages to ${receiverId}`);
         }, 5000);
       }
-      conn.once('register', () => {
+      conn.on('register', () => {
         console.log(`[Socket] '${conn.id}' registered`)
       });
       conn.once('disconnect', () => {
