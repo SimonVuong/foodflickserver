@@ -28,6 +28,7 @@ class PrinterService {
     socket.on('connect', async conn => {
       console.log(`[Socket] connected '${conn.id}'`);
       const receiverId = conn.handshake.query.id;
+      console.log(conn.handshake);
       conn.send('testing123');
       let isListening = await this.broker.listen(receiverId, json => handleBrokerMessage(conn, json));
       if (isListening) {
@@ -42,6 +43,9 @@ class PrinterService {
           if (isListening) console.log(`[Socket] '${conn.id}' listening for messages to ${receiverId}`);
         }, 5000);
       }
+      conn.once('register', () => {
+        console.log(`[Socket] '${conn.id}' registered`)
+      });
       conn.once('disconnect', () => {
         console.log(`[Socket] ${conn.id} disconnected`);
         if (isListening) this.broker.cancelListen(receiverId);
