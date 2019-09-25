@@ -34,7 +34,6 @@ const autoSetAuth0ManagementToken = async () => {
 
     auth0ManagementToken = access_token;
     tokenType = token_type;
-    console.log('set auth0Token', auth0ManagementToken);
     setTimeout(autoSetAuth0ManagementToken, expirationInSeconds * 1000);
   } catch (e) {
     console.error('could not request new token from auth0', e);

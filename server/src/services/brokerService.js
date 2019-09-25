@@ -1,9 +1,13 @@
 import rabbit from 'amqplib';
 import { activeConfig } from '../config';
 
+const SENDING_CHANNEL = 'sending';
+
 class BrokerService {
   conn = null;
-  channel = null;
+  // separate channel for sending + each consume because channels die easily. so if we put everyone on 1 channel and it
+  // and it dies, then we lose all the consumers on that channel.
+  channels = {};
 
   constructor() {}
 
@@ -28,73 +32,86 @@ class BrokerService {
     }
   }
 
-  async openSession() {
+  async openChannel(name) {
     try {
-      console.log('[Broker] channel creating');
-      this.channel = await this.conn.createChannel();
-      this.channel.on('error', e => {
-        console.error('[Broker] channel error', e.message);
+      if (this.channels[name]) {
+        console.warn(`[Broker] channel '${name}' already exists`);
+        return null;
+      }
+      console.log(`[Broker] channel '${name}' creating`);
+      const channel = await this.conn.createChannel();
+      channel.on('error', e => {
+        console.error(`[Broker] channel '${name}' error`, e.message);
       });
-      this.channel.on('close', () => {
-        console.log('[Broker] channel closed');
-        setTimeout(this.openSession.bind(this), 2000);
+      channel.on('close', async () => {
+        console.log(`[Broker] channel '${name}' closed`);
+        delete this.channels[name];
+        if (name === SENDING_CHANNEL) {
+          let isSendingChannelOpen = await this.openChannel(SENDING_CHANNEL);
+          while (!isSendingChannelOpen) {
+            isSendingChannelOpen = await this.openChannel(SENDING_CHANNEL);
+          }
+        }
       });
-      console.log('[Broker] channel created');
+      console.log(`[Broker] channel '${name}' created`);
+      this.channels[name] = channel;
+      return channel;
     } catch (e) {
-      console.error('[Broker] channel creation failed', e.message);
-      this.closeConnOnErr(e);
+      console.error(`[Broker] channel '${name}' creation failed`, e.message);
+      return null;
     }
   }
 
   send(receiverId, obj) {
-    this.channel.sendToQueue(receiverId, Buffer.from(JSON.stringify(obj)), {
+    this.channels[SENDING_CHANNEL].sendToQueue(receiverId, Buffer.from(JSON.stringify(obj)), {
       persistent: false,
     });
   }
 
   async listen(receiverId, onReceive) {
+    const channel = await this.openChannel(receiverId);
+    if (!channel) return false;
     try {
-      await this.channel.assertQueue(receiverId, {
+      const q = await channel.assertQueue(receiverId, {
         autoDelete: true,
       });
+      // necessary because there is a known issue where the server socket receives 2 socket connections from the same client
+      // on server restart. this is problematic because if we don't return, then the 2nd consumption attempt will error
+      // due to duplicate consumerTag (receiverId) and then kill the channel.
+      if (q.consumerCount === 1) {
+        console.warn(`[Broker] mulitple consumptions from Q '${receiverId}' attempted`)
+        return false;
+      }
     } catch (e) {
       console.error('[Broker] assertQueue error', e);
-      this.closeConnOnErr(e);
       return false;
     }
     try {
-      await this.channel.consume(
+      await channel.consume(
         receiverId,
         ({ content }) => {
-          const json = JSON.parse(content);
-          onReceive(json);
+          const obj = JSON.parse(content);
+          onReceive(obj);
         },
         {
           consumerTag: receiverId,
           noAck: true,
-          // decided against true because when true, channel dies if there is already another consumer of queue <receiverId>.
-          // this is problematic even though we cancel the consume on socket disconnect, there's no guarantee that
-          // the cancel finishes before the another socket reconnects and tries to re-consume on queue named <receiverId>
-          exclusive: false,
+          exclusive: true,
         }
       );
-      console.log(`[Broker] consuming Q: ${receiverId}`)
+      console.log(`[Broker] consuming Q '${receiverId}'`)
     } catch (e) {
       console.error('[Broker] consuming error', e);
-      return false;
     }
     return true;
   }
 
-  cancelListen(receiverId) {
-    this.channel.cancel(receiverId);
-  }
-
-  closeConnOnErr(e) {
-    if (!e) return false;
-    console.error('[Broker] error', e);
-    this.conn.close();
-    return true;
+  async cancelListen(receiverId) {
+    const channel = this.channels[receiverId];
+    if (channel) {
+      await channel.cancel(receiverId);
+      channel.close();
+    }
   }
 }
 
@@ -104,6 +121,6 @@ export const getBrokerService = async () => {
   if (brokerService) return brokerService;
   brokerService = new BrokerService();
   const connected = await brokerService.connect();
-  if (connected) await brokerService.openSession();
+  if (connected) await brokerService.openChannel(SENDING_CHANNEL);
   return brokerService;
 }
