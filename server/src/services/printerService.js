@@ -1,4 +1,6 @@
 import io from 'socket.io';
+// left off here. dont use jsonparser
+import parser from 'socket.io-json-parser';
 
 const handleBrokerMessage = (socketConn, obj) => socketConn.send(obj);
 
@@ -10,7 +12,8 @@ class PrinterService {
   }
 
   openReceiverRegistration(webServer) {
-    const socket = io(webServer, {
+    const socket = io.attach(webServer, {
+      parser,
       // allowRequest: (req, fn) => {
       //   console.log(req);
       //   fn(400, true);
@@ -25,6 +28,7 @@ class PrinterService {
     socket.on('connect', async conn => {
       console.log(`[Socket] connected '${conn.id}'`);
       const receiverId = conn.handshake.query.id;
+      conn.send('testing123');
       let isListening = await this.broker.listen(receiverId, json => handleBrokerMessage(conn, json));
       if (isListening) {
         console.log(`[Socket] '${conn.id}' listening for messages to '${receiverId}'`);
@@ -38,7 +42,7 @@ class PrinterService {
           if (isListening) console.log(`[Socket] '${conn.id}' listening for messages to ${receiverId}`);
         }, 5000);
       }
-      conn.on('disconnect', () => {
+      conn.once('disconnect', () => {
         console.log(`[Socket] ${conn.id} disconnected`);
         if (isListening) this.broker.cancelListen(receiverId);
       });
