@@ -15,7 +15,7 @@ const CategoryNameListNavigator: React.FC<stateProps & {}> = ({ menu }) => (
     {menu.map((category, index) => (
       category.Items.length > 0 &&
       <ListItem key={index}>
-        <Link href={`#${category.Name}`} variant='subtitle1'>
+        <Link href={`#${category.Name}`} variant='subtitle1' color='textPrimary'>
           {category.Name}
         </Link>
       </ListItem>

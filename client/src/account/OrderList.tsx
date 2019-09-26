@@ -43,7 +43,7 @@ const OrderList: React.FC<props> = ({ orders, title }) => {
             color='textPrimary'
             component={RouterLink}
             to={routes.orderSummary.getLink(order._Id)}
-            state={{ order }} 
+            state={{ order }}
           >
             <ListItem button>
               <ListItemText

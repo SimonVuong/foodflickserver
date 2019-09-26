@@ -3,17 +3,19 @@ import { makeStyles, Theme } from '@material-ui/core/styles';
 import { RootState, RootActions } from 'general/redux/rootReducer';
 import { connect } from 'react-redux';
 import { CartStateReducer } from 'general/order/redux/cartReducer';
-import { Typography, Container, Button } from '@material-ui/core';
+import { Typography, Link, Container, Button } from '@material-ui/core';
 import { ThunkDispatch } from 'redux-thunk';
 import { removeCartItemAction } from 'general/order/redux/cartActions';
 import UpdateCartItemModal from 'general/components/useCases/cartItemModal/UpdateCartItemModal';
 import { getCustomerItemFromCartItem } from 'general/order/CartItemModel';
 import { SignedInUser } from 'general/account/SignedInUserModel';
 import SignInModal from './SignInModal';
+import ArrowBack from '@material-ui/icons/ArrowBack';
 import { RouteComponentProps } from '@reach/router';
 import { routes } from 'general/routes/routes';
 import CartItemList from './CartItemList';
 import { useGetCartFromOrderId } from 'general/order/orderService';
+import { Link as RouterLink } from '@reach/router';
 
 const useStyles = makeStyles((theme: Theme) => ({
   review: {
@@ -30,6 +32,10 @@ const useStyles = makeStyles((theme: Theme) => ({
   container: {
     display: 'flex',
     flexDirection: 'column',
+  },
+  title: {
+    display: 'flex',
+    verticalAlign: 'center',
   },
 }));
 
@@ -106,7 +112,12 @@ const CartPage: React.FC<props & RouteComponentProps<routeParams>> = ({ cart, re
         />
       )}
       {needsSignInModal && <SignInModal onSignUpSignIn={onSignUpSignIn} open={needsSignInModal} onClose={() => setNeedsSignInModal(false)} />}
-      <Typography gutterBottom variant='h4'>{cart.RestName} cart</Typography>
+      <div className={classes.title}>
+        <Link color='textPrimary' component={RouterLink} to={routes.menuBrowser.getLink(cart.RestId)}>
+          <ArrowBack fontSize='large'/>
+        </Link>
+        <Typography gutterBottom variant='h4'>{cart.RestName} cart</Typography>
+      </div>
       <CartItemList items={cart.Items} onRemoveCartItem={onClickRemove} onClickCard={onClickCard} />
       <Button
         color='primary'

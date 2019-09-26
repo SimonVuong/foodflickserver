@@ -3,10 +3,11 @@ import { makeStyles, Theme } from '@material-ui/core/styles';
 import { RootState, RootActions } from 'general/redux/rootReducer';
 import { connect } from 'react-redux';
 import { CartStateReducer } from 'general/order/redux/cartReducer';
-import { Typography, Container, Button, TextField, InputAdornment, Grid, Divider, IconButton } from '@material-ui/core';
+import { Typography, Link, Container, Button, TextField, InputAdornment, Grid, Divider, IconButton } from '@material-ui/core';
 import { ThunkDispatch } from 'redux-thunk';
 import { removeCartItemAction } from 'general/order/redux/cartActions';
 import ToggleButton from '@material-ui/lab/ToggleButton';
+import ArrowBack from '@material-ui/icons/ArrowBack';
 import ToggleButtonGroup from '@material-ui/lab/ToggleButtonGroup';
 import CartItemList from './CartItemList';
 import { Cart } from 'general/order/CartModel';
@@ -23,6 +24,8 @@ import EditIcon from '@material-ui/icons/Create';
 import { Card } from 'general/card/CardModel';
 import { usePlaceOrder } from 'general/order/orderService';
 import { routes } from 'general/routes/routes';
+import { Link as RouterLink } from '@reach/router';
+
 import { SelectedRestStateReducer } from 'general/rest/redux/restReducer';
 import { navigate } from '@reach/router'
 
@@ -60,6 +63,10 @@ const useStyles = makeStyles((theme: Theme) => ({
   customTipSection: {
     display: 'flex',
     alignItems: 'flex-end',
+  },
+  title: {
+    display: 'flex',
+    verticalAlign: 'center',
   },
   divider: {
     margin: theme.spacing(2, 0),
@@ -202,7 +209,12 @@ const ReviewCartPage: React.FC<props & ReactStripeElements.InjectedStripeProps> 
 
   return (
     <Container className={classes.container}>
-      <Typography gutterBottom variant='h4'>{cart.RestName} review</Typography>
+      <div className={classes.title}>
+        <Link color='textPrimary' component={RouterLink} to={routes.cart.getLink()}>
+          <ArrowBack fontSize='large'/>
+        </Link>
+        <Typography gutterBottom variant='h4'>{cart.RestName} review</Typography>
+      </div>
       <CartItemList items={cart.Items} />
       <div className={classes.section}>
         <Typography gutterBottom variant='h6'>Payment</Typography>
