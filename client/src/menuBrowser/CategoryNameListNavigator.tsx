@@ -8,7 +8,7 @@ import { detailsId } from './MenuBrowserPage';
 const CategoryNameListNavigator: React.FC<stateProps & {}> = ({ menu }) => (
   <List>
     <ListItem>
-      <Link href={`#${detailsId}`} variant='subtitle1'>
+      <Link href={`#${detailsId}`} variant='subtitle1' color='textPrimary'>
         Details
       </Link>
     </ListItem>

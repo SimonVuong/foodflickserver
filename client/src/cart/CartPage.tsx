@@ -16,12 +16,13 @@ import { routes } from 'general/routes/routes';
 import CartItemList from './CartItemList';
 import { useGetCartFromOrderId } from 'general/order/orderService';
 import { Link as RouterLink } from '@reach/router';
+import { SelectedRestStateReducer } from 'general/rest/redux/restReducer';
 
 const useStyles = makeStyles((theme: Theme) => ({
   review: {
     margin: theme.spacing(2, 0),
   },
-  emptyCart: {
+  empty: {
     width: '100%',
     textAlign: 'center',
     paddingTop: '20%',
@@ -44,11 +45,12 @@ type routeParams = {
 }
 type props = {
   cart: CartStateReducer,
+  rest: SelectedRestStateReducer,
   signedInUser?: SignedInUser,
   removeCartItem: (cartIndex: number) => void,
 };
 
-const CartPage: React.FC<props & RouteComponentProps<routeParams>> = ({ cart, removeCartItem, signedInUser, navigate, orderId }) => {
+const CartPage: React.FC<props & RouteComponentProps<routeParams>> = ({ cart, rest, removeCartItem, signedInUser, navigate, orderId }) => {
   const classes = useStyles();
   const [getCartFromOrderId, { loading, error, called, data }] = useGetCartFromOrderId()
   const [isItemModalOpen, setIsItemModalOpen] = useState(false);
@@ -98,8 +100,11 @@ const CartPage: React.FC<props & RouteComponentProps<routeParams>> = ({ cart, re
   }
 
   if (!cart) {
-    return <Typography variant='h1'className={classes.emptyCart}>Cart is empty</Typography> 
+    return <Typography variant='h1'className={classes.empty}>Cart is empty</Typography> 
   };
+  if (!rest) {
+    return <Typography variant='h1'className={classes.empty}>Please start with browsing a menu</Typography> 
+  }
   return (
     <Container className={classes.container}>
       {selectedCartIndex !== null && (
@@ -113,7 +118,7 @@ const CartPage: React.FC<props & RouteComponentProps<routeParams>> = ({ cart, re
       )}
       {needsSignInModal && <SignInModal onSignUpSignIn={onSignUpSignIn} open={needsSignInModal} onClose={() => setNeedsSignInModal(false)} />}
       <div className={classes.title}>
-        <Link color='textPrimary' component={RouterLink} to={routes.menuBrowser.getLink(cart.RestId)}>
+        <Link color='textPrimary' component={RouterLink} to={routes.menuBrowser.getLink(rest.Url)}>
           <ArrowBack fontSize='large'/>
         </Link>
         <Typography gutterBottom variant='h4'>{cart.RestName} cart</Typography>
@@ -133,6 +138,7 @@ const CartPage: React.FC<props & RouteComponentProps<routeParams>> = ({ cart, re
 
 const mapStateToProps = (state: RootState) => ({
   cart: state.OrderingFlow.cart,
+  rest: state.OrderingFlow.selectedRest,
   signedInUser: state.Account.SignedInUser,
 });
 
