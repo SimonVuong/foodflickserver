@@ -12,7 +12,8 @@ import { getCardService } from './cardService';
 
 export const ORDERS_INDEX = 'orders';
 export const ORDER_TYPE = 'order';
-const SCHEDULING_BUFFER_MILLIS = 60000; // 1 min
+const MS_IN_MINUTE = 60000;
+const SCHEDULING_BUFFER_MILLIS = MS_IN_MINUTE;
 const PENDING_TIP_HOLDING_TIME = 10800000; // 3hr
 // const PENDING_TIP_HOLDING_TIME = 120000; // 2min
 const TAX_RATE = 0.0625;
@@ -57,7 +58,6 @@ class OrderService {
   }
 
   async placeOrder(signedInUser, cart) {
-    // todo 0: replace these console.logs with real logging
     const { items, tableNumber, phone, orderType, cardTok, restId, tip } = cart;
     if (!tableNumber && orderType === OrderType.SIT_DOWN) throw new Error(getCannotBeEmptyError(`Table number`));
     if (!phone) throw new Error(getCannotBeEmptyError(`Phone Number`));
@@ -86,7 +86,7 @@ class OrderService {
       finalCardTok = newHiddenCard.cardTok;
       cart.cardTok = finalCardTok;
     }
-    const cartUpdateWindowMillis = rest.minsToUpdateCart * 60000; // 60000 ms in a min
+    const cartUpdateWindowMillis = rest.minsToUpdateCart * MS_IN_MINUTE;
 
     let upsertedOrder = await this.getMatchingOrder(
       restId,
@@ -107,18 +107,16 @@ class OrderService {
         tip: finalTip,
       };
       upsertedOrder = await this.addOpenOrder(signedInUser, cart, costs);
-      // console.log('ADDED NEW ORDER', upsertedOrder.cartUpdatedDate, new Date(upsertedOrder.cartUpdatedDate).toTimeString());
-      // console.log('will update for orders before', new Date(upsertedOrder.cartUpdatedDate + cartUpdateWindowMillis).toTimeString())
+      console.log(`[Order service] added new order '${upsertedOrder._id}'`);
     } else {
       upsertedOrder = await this.updateOrderCart(upsertedOrder._id, items, finalTip);
-      // console.log('UPDATED ORDER', upsertedOrder.cartUpdatedDate);
-      // console.log('will update for orders before', new Date(upsertedOrder.cartUpdatedDate + cartUpdateWindowMillis).toTimeString());
+      console.log(`[Order service] updated order '${upsertedOrder._id}'`);
     }
 
     setTimeout(async () => {
       const success = await this.setOrderPendingTip(upsertedOrder._id);
       if (!success) return;
-      // console.log('order set to pending tip');
+      const millisTillPayment = PENDING_TIP_HOLDING_TIME + SCHEDULING_BUFFER_MILLIS;
       setTimeout(() => {
         this.completeOrderAndPay(
           upsertedOrder._id,
@@ -130,9 +128,10 @@ class OrderService {
         // console.log('paid');
       // add 1 minute to the PENDING_TIP_HOLDING_TIME to avoid any issues with timing and async. for example, what
       // the user updated the tip at the last minute such that when we try to pay, elastic doesn't pick up the new tip.
-      }, PENDING_TIP_HOLDING_TIME + SCHEDULING_BUFFER_MILLIS);
-      // console.log('payment scheduled');
+      }, millisTillPayment);
+      console.log(`[Order service] order '${upsertedOrder._id}' scheduled for payment '${millisTillPayment / MS_IN_MINUTE}' mins`);
     }, cartUpdateWindowMillis);
+    console.log(`[Order service] order '${upsertedOrder._id}' scheduled for tip status update in '${cartUpdateWindowMillis / MS_IN_MINUTE}' mins`);
     return true;
   }
 
@@ -176,18 +175,21 @@ class OrderService {
   }
 
   async setOrderPendingTip(orderId) {
+    const ORDER_COMPLETED_MSG = 'Order is already completed';
+    const ORDER_RETURNED_MSG = 'Order is already returned';
+    const ORDER_PENDING_TIP_CHANGE_MSG = 'Order is already pending tip change'
     try {
       await callElasticWithErrorHandler(options => this.elastic.update(options), getOrderUpdateOptions(
         orderId,
         `
           if (ctx._source.status.equals("${OrderStatus.COMPLETED}")) {
-            throw new Exception("Order is already completed");
+            throw new Exception("${ORDER_COMPLETED_MSG}");
           }
           if (ctx._source.status.equals("${OrderStatus.RETURNED}")) {
-            throw new Exception("Order is already returned");
+            throw new Exception("${ORDER_RETURNED_MSG}");
           }
           if (ctx._source.status.equals("${OrderStatus.PENDING_TIP_CHANGE}")) {
-            throw new Exception("Order is already pending tip change");
+            throw new Exception("${ORDER_PENDING_TIP_CHANGE_MSG}");
           }
           ctx._source.status=params.status;
         `,
@@ -195,11 +197,18 @@ class OrderService {
           status: OrderStatus.PENDING_TIP_CHANGE,
         }
       ));
+      console.log(`[Order service] updated order '${orderId}' to status '${OrderStatus.PENDING_TIP_CHANGE}'`)
       return true;
     } catch(e) {
-      // this is exected when a customer updates an order
-      if (e.message === 'Order is already pending tip change') return false;
-      console.error(e);
+      const reason = e.message;
+      const logMsg = `[Order service] setOrderPendingTip could not update order '${orderId}' to status '${OrderStatus.PENDING_TIP_CHANGE}'. '${reason}'`;
+      // this is exected when a manager returns an order. or when a customer updates an order. or manager manually updates
+      // tip status
+      if (reason === ORDER_RETURNED_MSG || reason === ORDER_PENDING_TIP_CHANGE_MSG) {
+        console.log(logMsg);
+      } else {
+        console.error(logMsg);
+      }
       return false;
     }
   }
@@ -482,6 +491,7 @@ class OrderService {
   }
 
   updateOrderCart = async(orderId, extraItems, extraTip) => {
+    const extraItemTotal = extraItems.reduce((sum, item) => sum + item.selectedPrice.value * item.quantity, 0)
     const orderRes = await callElasticWithErrorHandler(options => this.elastic.update(options), {
       index: ORDERS_INDEX,
       type: ORDER_TYPE,
@@ -491,12 +501,14 @@ class OrderService {
         script: {
           source: `
             ctx._source.costs.tip = ctx._source.costs.tip + params.extraTip;
+            ctx._source.costs.itemTotal = ctx._source.costs.itemTotal + params.extraItemTotal;
             ctx._source.items.addAll(params.extraItems);
             ctx._source.cartUpdatedDate = params.now;
           `,
           params: {
             extraItems,
             extraTip,
+            extraItemTotal,
             now: Date.now(),
           }
         }
@@ -531,16 +543,20 @@ class OrderService {
   }
 
   getMatchingOrder = async(restId, signedInUserId, orderType, tableNumber, phone, cardTok, cartUpdateWindowMillis) => {
-    const orders = await this.getOrders([
+    const fields = [
       { term: { status: OrderStatus.OPEN } },
       { term: { 'customer.userId': signedInUserId } },
       { term: { restId } },
       { term: { orderType } },
       { term: { cardTok } },
-      { term: { tableNumber } },
       { term: { 'phone.keyword': phone } },
       { range: { cartUpdatedDate: { gt: Date.now() - cartUpdateWindowMillis } } },
-    ]);
+    ];
+
+    if (tableNumber) fields.push({ term: { tableNumber } });
+
+    const orders = await this.getOrders(fields);
+  
     if (orders.length > 1) {
       console.error('Found multiple matching orders');
       return null;;
@@ -552,33 +568,37 @@ class OrderService {
   }
 
   getOrders = async fields => {
-    const res = await callElasticWithErrorHandler(options => this.elastic.search(options), {
-      index: ORDERS_INDEX,
-      size: QUERY_SIZE,
-      body: {
-        sort: [
-          {
-            cartUpdatedDate: {
-              order: 'desc',
-            }
-          }
-        ],
-        query: {
-          bool: {
-            filter: {
-              bool: {
-                must: fields
+    try {
+      const res = await callElasticWithErrorHandler(options => this.elastic.search(options), {
+        index: ORDERS_INDEX,
+        size: QUERY_SIZE,
+        body: {
+          sort: [
+            {
+              cartUpdatedDate: {
+                order: 'desc',
               }
             }
-          }
-        },
-      }
-    });
-
-    return res.hits.hits.map(({ _source, _id }) => {
-      _source._id = _id;
-      return _source;
-    });
+          ],
+          query: {
+            bool: {
+              filter: {
+                bool: {
+                  must: fields
+                }
+              }
+            }
+          },
+        }
+      });
+      return res.hits.hits.map(({ _source, _id }) => {
+        _source._id = _id;
+        return _source;
+      });
+    } catch (e) {
+      console.error(`[Order service] could not get orders. '${e.message}'`);
+      throw e;
+    }
   }
 
   getCompletedOrders = async (signedInUser, restId) => {
