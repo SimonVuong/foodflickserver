@@ -66,7 +66,7 @@ GHvfjzAiLDRjG8pWVA==
   },
   twilio: {
     //test accountSID and phone
-    accountSid: 'AC049b2876bcf1f6e12ee8cf74bb2cc6b4',
+    accountSid: 'AC049b2876bcf1f6e12ee8cf74bb2cc6b4', //from foodflick-dev
     phone: '+15005550006',
   },
 };
@@ -119,8 +119,8 @@ CAXO0dg=
     cardPath: '/endpoints/prodCard.html',
   },
   twilio: {
-    accountSid: 'ACe31cd8b705c2a9bf21c1b5c6db8900b7',
-    phone: '+16096164938', //will have to grab phoneNUmbers from prod
+    accountSid: 'ACe31cd8b705c2a9bf21c1b5c6db8900b7', //from foodflick
+    phone: '+13476944589',
   }
 };
 
