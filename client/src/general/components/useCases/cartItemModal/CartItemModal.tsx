@@ -128,12 +128,15 @@ const CartItemModal: React.FC<props> = ({
       <Grow in={open}>
         <div className={classes.paper} style={paperStyle}>
           <Close onClick={onClose} className={classes.pointer} />
-          <img
-            src={item.Flick}
-            alt={item.Name}
-            className={classes.img}
-            style={imgStyle}
-          />
+          {
+            item.Flick &&
+            <img
+              src={item.Flick}
+              alt={item.Name}
+              className={classes.img}
+              style={imgStyle}
+            />
+          }
           <div className={classes.name}>
             <Typography variant='h5'>{item.Name}</Typography>
             {/* <div>{item.likes.count}</div> */}

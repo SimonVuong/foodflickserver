@@ -172,10 +172,13 @@ const MenuBrowserPage: React.FC<props & RouteComponentProps<routeParams>> = ({ r
                 <Anchor id={category.Name} variant='h6' />
                 {category.Name}
               </Typography>
+              <Typography variant='body1'>
+                {category.Description}
+              </Typography>
             </GridListTile>
             {category.Items.map((item, itemIndex) => (
               <GridListTile key={itemIndex} className={classes.item} onClick={() => onClickItem(itemIndex, categoryIndex)}>
-                <img src={item.Flick} alt={item.Name} />
+                {item.Flick ? <img src={item.Flick} alt={item.Name} /> : <Typography>{item.Description}</Typography>}
                 <GridListTileBar
                   title={item.Name}
                   subtitle={item.Prices[0].valueLabelString}
