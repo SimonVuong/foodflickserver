@@ -33,6 +33,8 @@ const useStyles = makeStyles((theme: Theme) => ({
   },
   content: {
     paddingLeft: theme.spacing(3),
+    // necessary for safari, otherwise auto height is too short as it doesn't equal height of content in safari
+    height: 'max-content',
   },
   categoryTitle: {
     // !importants necessary to override inline styles used by mui
@@ -162,30 +164,32 @@ const MenuBrowserPage: React.FC<props & RouteComponentProps<routeParams>> = ({ r
       }
       <MobileDrawer isMobileDrawerOpen={isMobileDrawerOpen} toggleMobileDrawer={toggleMobileDrawer} />
       <DesktopDrawer />
-        <Grid container direction='column' className={classes.content}>
+      <Grid container direction='column' className={classes.content}>
         <Details rest={rest} />
         {rest.Menu.map((category, categoryIndex) => (
           category.Items.length > 0 &&
-          <GridList cellHeight='auto' cols={cols} key={categoryIndex} className={classes.gridList}>
-            <GridListTile cols={cols} className={classes.categoryTitle}>
-              <Typography variant='h6'>
-                <Anchor id={category.Name} variant='h6' />
-                {category.Name}
-              </Typography>
-              <Typography variant='body1'>
-                {category.Description}
-              </Typography>
-            </GridListTile>
-            {category.Items.map((item, itemIndex) => (
-              <GridListTile key={itemIndex} className={classes.item} onClick={() => onClickItem(itemIndex, categoryIndex)}>
-                {item.Flick ? <img src={item.Flick} alt={item.Name} /> : <Typography>{item.Description}</Typography>}
-                <GridListTileBar
-                  title={item.Name}
-                  subtitle={item.Prices[0].valueLabelString}
-                />
+          // <div>
+            <GridList cellHeight='auto' cols={cols} key={categoryIndex} className={classes.gridList}>
+              <GridListTile cols={cols} className={classes.categoryTitle}>
+                <Typography variant='h6'>
+                  <Anchor id={category.Name} variant='h6' />
+                  {category.Name}
+                </Typography>
+                <Typography variant='body1'>
+                  {category.Description}
+                </Typography>
               </GridListTile>
-            ))}
-          </GridList>
+              {category.Items.map((item, itemIndex) => (
+                <GridListTile key={itemIndex} className={classes.item} onClick={() => onClickItem(itemIndex, categoryIndex)}>
+                  {item.Flick ? <img src={item.Flick} alt={item.Name} /> : <Typography>{item.Description}</Typography>}
+                  <GridListTileBar
+                    title={item.Name}
+                    subtitle={item.Prices[0].valueLabelString}
+                  />
+                </GridListTile>
+              ))}
+            </GridList>
+          // </div>
         ))}
       </Grid>
     </Container>
