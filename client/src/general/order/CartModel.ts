@@ -7,6 +7,7 @@ import { OrderType } from './OrderModel';
 export interface ICart {
   readonly restId: string,
   readonly restMenu: ICustomerCategory[];
+  readonly restUrl: string,
   readonly restName: string;
   readonly items: ICartItem[],
   readonly tableNumber?: string,
@@ -24,6 +25,7 @@ export interface IAllCartFields extends ICart {
 export class Cart implements ICart {
   readonly restId: string;
   readonly restMenu: CustomerCategory[];
+  readonly restUrl: string;
   readonly restName: string;
   readonly items: CartItem[];
   readonly tableNumber?: string;
@@ -36,6 +38,7 @@ export class Cart implements ICart {
     this.restId = cart.restId;
     this.restMenu = cart.restMenu.map(category => new CustomerCategory(category));
     this.restName = cart.restName;
+    this.restUrl = cart.restUrl;
     this.items = cart.items.map(item => new CartItem(item));
     this.tableNumber = cart.tableNumber;
     this.phone = cart.phone;
@@ -59,8 +62,13 @@ export class Cart implements ICart {
   public get RestId() { return this.restId }
   public get RestMenu() { return this.restMenu }
   public get RestName() { return this.restName }
+  public get RestUrl() { return this.restUrl }
   public get Items() { return this.items }
-  public get ItemTotal() { return this.items.reduce((sum, item) => (sum + item.SelectedPrice.Value * item.Quantity), 0) }
+  public get ItemTotal() {
+    return this.items.reduce(
+      (sum, item) => (sum + (item.SelectedPrice.Value + item.SelectedAddonsTotal) * item.Quantity),
+    0);
+  }
   public get TableNumber() { return this.tableNumber }
   public get Phone() { return this.phone }
   public get CardTok() { return this.cardTok }

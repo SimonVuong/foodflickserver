@@ -17,6 +17,7 @@ const CartItem = `
     flick: String,
     selectedPrice: Price!
     selectedOptions: [Option!]!
+    selectedAddons: [Price!]!
     quantity: Int!
     specialRequests: String
   }
@@ -27,6 +28,7 @@ const _Cart = `
     restId: ID!
     restName: String!
     restMenu: [Category!]!
+    restUrl: String!
     items: [CartItem!]!
     orderType: OrderType!
     tableNumber: String

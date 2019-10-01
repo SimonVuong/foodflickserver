@@ -4,6 +4,7 @@ export interface IBaseItem {
   _id: string;
   name: string;
   prices: IPrice[];
+  addons: IAddon[];
   description?: string;
   flick?: string;
   likes: IBaseLikes;
@@ -41,6 +42,35 @@ export class Price implements IPrice{
 }
 
 export const clonePrice = (price: IPrice): Price => new Price(price);
+
+export interface IAddon {
+  value: number
+  label: string
+};
+
+export class Addon implements IAddon{
+  readonly value: number
+  readonly label: string
+
+  constructor(price: IAddon) {
+    this.value = price.value;
+    this.label = price.label;
+  }
+
+  public get Label() { return this.label }
+  public get Value() { return this.value }
+
+  public get valueLabelString() {
+    return `${this.Value}${this.Label ? ' ' + this.Label : ''}`;
+  }
+  
+  public isEqual(price: Addon) {
+    if (this.value === price.Value && this.label === price.Label) return true;
+    return false;
+  }
+}
+
+export const cloneAddon = (addon: IAddon): Addon => new Addon(addon);
 
 export interface IOption {
   name: string

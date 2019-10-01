@@ -18,6 +18,10 @@ export const orderFragment = gql`
       name
       quantity
       flick
+      selectedAddons {
+        label
+        value
+      }
       selectedPrice {
         label
         value

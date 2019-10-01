@@ -4,6 +4,7 @@ const CartItemInput = `
     itemId: ID!
     selectedPrice: PriceInput!
     selectedOptions: [OptionInput!]!
+    selectedAddons: [PriceInput!]!
     quantity: Int!
     specialRequests: String
   }

@@ -1,4 +1,4 @@
-import { Price } from 'general/menu/models/BaseItemModel';
+import { Price, cloneAddon, Addon } from 'general/menu/models/BaseItemModel';
 import { IBaseCategory } from 'general/menu/models/BaseCategoryModel';
 import { IBaseLikes, IBaseItem, clonePrice, cloneOptionGroups, OptionGroup } from "./BaseItemModel";
 
@@ -29,6 +29,7 @@ export class CustomerItem implements ICustomerItem {
   readonly _id: string;
   readonly name: string;
   readonly prices: Price[];
+  readonly addons: Addon[];
   readonly description?: string;
   readonly flick?: string;
   readonly likes: CustomerLikes;
@@ -40,12 +41,14 @@ export class CustomerItem implements ICustomerItem {
     this.description = item.description;
     this.flick = item.flick;
     this.prices = item.prices.map(clonePrice);
+    this.addons = item.addons.map(cloneAddon);
     this.likes = cloneLike(item.likes);
     this.optionGroups = cloneOptionGroups(item.optionGroups);
   }
 
   public get _Id() { return this._id }
   public get Name() { return this.name }
+  public get Addons() { return this.addons }
   public get Prices() { return this.prices }
   public get Description() { return this.description }
   public get Flick() { return this.flick }

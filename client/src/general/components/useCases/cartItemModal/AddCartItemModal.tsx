@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import { RootActions, RootState } from 'general/redux/rootReducer';
 import { ThunkDispatch } from 'redux-thunk';
 import { CustomerItem } from 'general/menu/models/CustomerItemModel';
-import { Price, Option } from 'general/menu/models/BaseItemModel';
+import { Price, Option, Addon } from 'general/menu/models/BaseItemModel';
 import { addCartItemAction } from 'general/order/redux/cartActions';
 import CartItemModal from './CartItemModal';
 
@@ -13,6 +13,7 @@ type props = {
     itemIndex: number,
     selectedPrice: Price,
     selectedOptions: Option[],
+    selectedAddons: Addon[],
     quantity: number,
     specialRequests?: string
   ) => void,
@@ -24,16 +25,17 @@ type props = {
 }
 
 const AddCartItemModal: React.FC<props> = ({
-addToCart,
-open,
-onClose,
-categoryIndex,
-customerItem,
-itemIndex,
+  addToCart,
+  open,
+  onClose,
+  categoryIndex,
+  customerItem,
+  itemIndex,
 }) => {
   const onConfirm = (
     selectedPrice: Price,
     selectedOptions: Option[],
+    selectedAddons: Addon[],
     quantity: number,
     specialRequests: string | undefined
   ) => addToCart(
@@ -41,6 +43,7 @@ itemIndex,
     itemIndex,
     selectedPrice,
     selectedOptions,
+    selectedAddons,
     quantity,
     specialRequests
   )
@@ -62,6 +65,7 @@ const mapDispatchToProps = (dispatch: ThunkDispatch<RootState, null, RootActions
     itemIndex: number,
     selectedPrice: Price,
     selectedOptions: Option[],
+    selectedAddons: Addon[],
     quantity: number,
     specialRequests?: string
   ) => dispatch(addCartItemAction(
@@ -69,6 +73,7 @@ const mapDispatchToProps = (dispatch: ThunkDispatch<RootState, null, RootActions
     itemIndex,
     selectedPrice,
     selectedOptions,
+    selectedAddons,
     quantity,
     specialRequests,
   ))

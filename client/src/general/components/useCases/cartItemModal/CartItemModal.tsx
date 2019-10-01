@@ -4,14 +4,19 @@ import Modal from '@material-ui/core/Modal';
 import Close from '@material-ui/icons/Close';
 import Add from '@material-ui/icons/AddCircleOutline';
 import Remove from '@material-ui/icons/RemoveCircleOutline';
-import { Grow, Typography, useMediaQuery, Theme, FormControl, FormLabel, RadioGroup, Radio, FormControlLabel, TextField, Button } from '@material-ui/core';
+import { Grow, Typography, useMediaQuery, Theme, FormControl, FormLabel, RadioGroup, Radio, FormControlLabel, TextField, Button, FormGroup, Checkbox } from '@material-ui/core';
 import { CustomerItem } from 'general/menu/models/CustomerItemModel';
 import { useTheme } from '@material-ui/styles';
-import { Price, Option } from 'general/menu/models/BaseItemModel';
+import { Price, Option, Addon } from 'general/menu/models/BaseItemModel';
+
+type selectedAddons = {
+  [key: string]: boolean
+};
 
 type props = {
   confirmText: string,
   item: CustomerItem,
+  defaultAddons?: selectedAddons,
   defaultQuantity?: number,
   defaultSelectedPriceIndex?: number,
   defaultSelectedOptionIndexes?: number[],
@@ -19,6 +24,7 @@ type props = {
   onConfirm: (
     selectedPrice: Price,
     selectedOptions: Option[],
+    selectedAddons: Addon[],
     quantity: number,
     specialRequests?: string,
   ) => void,
@@ -86,6 +92,7 @@ const useStyles = makeStyles(theme => ({
 const CartItemModal: React.FC<props> = ({
   confirmText,
   item,
+  defaultAddons,
   defaultSelectedPriceIndex,
   defaultQuantity,
   defaultSelectedOptionIndexes,
@@ -98,6 +105,7 @@ const CartItemModal: React.FC<props> = ({
   const theme: Theme = useTheme();
   const [selectedPriceIndex, setSelectedPriceIndex] = useState(defaultSelectedPriceIndex || 0);
   const [quantity, setQuantity] = useState(defaultQuantity || 1);
+  const [selectedAddons, setSelectedAddons] = useState<selectedAddons>(defaultAddons || {});
   const [selectedGroupIndexes, setSelectedGroupIndexes ] = useState(
     defaultSelectedOptionIndexes || Array(item.OptionGroups.length).fill(0)
   );
@@ -116,9 +124,14 @@ const CartItemModal: React.FC<props> = ({
   };
   const onClickConfirm = () => {
     onClose();
+    const addons: Addon[] = [];
+    Object.entries(selectedAddons).forEach(([addonIndex, shouldIncludeAddon]) => {
+      if (shouldIncludeAddon) addons.push(item.addons[parseFloat(addonIndex)]);
+    });
     onConfirm(
       item.Prices[selectedPriceIndex],
       item.OptionGroups.map((group, index) => group.Options[selectedGroupIndexes[index]]),
+      addons,
       quantity,
       specialRequests
     )
@@ -180,6 +193,29 @@ const CartItemModal: React.FC<props> = ({
               ))}
             </RadioGroup>
           </FormControl>}
+          {
+            item.Addons.length > 0 &&
+            <FormControl className={classes.formControl}>
+              <FormLabel>Addons</FormLabel>
+              <FormGroup>
+                {item.Addons.map((price, index) => (
+                  <FormControlLabel
+                    key={index}
+                    control={
+                      <Checkbox
+                        checked={selectedAddons[index] || false}
+                        onChange={e => setSelectedAddons({
+                          ...selectedAddons,
+                          [index]: e.target.checked
+                        })}
+                      />
+                    }
+                    label={`$${price.Value} ${price.Label}`}
+                  />
+                ))}
+              </FormGroup>
+            </FormControl>
+          }
           {item.OptionGroups.map((group, index) => (
             <FormControl key={index} className={classes.formControl}>
               <FormLabel>Options {index + 1}</FormLabel>

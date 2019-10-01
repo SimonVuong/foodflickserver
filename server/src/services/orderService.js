@@ -29,7 +29,25 @@ const containsPrice = ({ label, value }, prices) => {
   return false;
 }
 
-const getItemTotal = items => round2(items.reduce((sum, item) => sum + item.selectedPrice.value * item.quantity, 0));
+const containsAddons = (selectedAddons, addons) => {
+  for (let i = 0; i < selectedAddons.length; i++) {
+    const selectedAddonLabel = selectedAddons[i].label;
+    const selectedAddonValue = selectedAddons[i].value;
+    for (let j = 0; j < addons.length; j++) {
+      const dbValue = addons[j].value;
+      const dbLabel = addons[j].label;
+      if (selectedAddonLabel === dbLabel && selectedAddonValue === dbValue) return true;
+    }
+  }
+  return false;
+}
+
+const getItemTotal = items => round2(
+  items.reduce((sum, item) => {
+    const itemTotal = item.selectedPrice.value + item.selectedAddons.reduce((addonsTotal, addon) => addonsTotal + addon.value, 0);
+    return sum + itemTotal * item.quantity
+  }, 0)
+);
 
 //https://stackoverflow.com/questions/11832914/round-to-at-most-2-decimal-places-only-if-necessary
 const round2 = num => +(Math.round(num + "e+2") + "e-2");
@@ -57,13 +75,30 @@ class OrderService {
     }
   }
 
+  validateAddons(items, rest) {
+    for (let i = 0; i < items.length; i++) {
+      const orderItem = items[i];
+      const { itemId, selectedAddons } = orderItem;
+      if (selectedAddons.length === 0) return;
+      try {
+        const dbItem = getMenuItemById(itemId, rest.menu);
+        if (!dbItem) throw new Error(`Item ${itemId} not found`);
+        if (!containsAddons(selectedAddons, dbItem.addons)) throw new Error(`Invalid addons ${JSON.stringify(orderItem.selectedAddons)}`);
+      } catch (e) {
+        console.error(e, JSON.stringify(orderItem));
+        throw e;
+      }
+    }
+  }
+
   async placeOrder(signedInUser, cart) {
     const { items, tableNumber, phone, orderType, cardTok, restId, tip } = cart;
     if (!tableNumber && orderType === OrderType.SIT_DOWN) throw new Error(getCannotBeEmptyError(`Table number`));
     if (!phone) throw new Error(getCannotBeEmptyError(`Phone Number`));
     const rest = await getRestService().getRest(restId);
     this.validatePrices(items, rest);
-
+    this.validateAddons(items, rest);
+  
     getPrinterService().printTickets(
       signedInUser.name,
       cart.tableNumber,
@@ -125,7 +160,6 @@ class OrderService {
           rest.profile.name,
           rest.receiver,
         )
-        // console.log('paid');
       // add 1 minute to the PENDING_TIP_HOLDING_TIME to avoid any issues with timing and async. for example, what
       // the user updated the tip at the last minute such that when we try to pay, elastic doesn't pick up the new tip.
       }, millisTillPayment);
@@ -162,7 +196,6 @@ class OrderService {
           rest.profile.name,
           rest.receiver,
         )
-        // console.log('paid');
       // add 1 minute to the PENDING_TIP_HOLDING_TIME to avoid any issues with timing and async. for example, what
       // the user updated the tip at the last minute such that when we try to pay, elastic doesn't pick up the new tip.
       }, PENDING_TIP_HOLDING_TIME + SCHEDULING_BUFFER_MILLIS);
@@ -436,8 +469,8 @@ class OrderService {
     }
     return true;
   }
-  sendReturnOrderText = (orderPhone, orderId, reason) => {
 
+  sendReturnOrderText = (orderPhone, orderId, reason) => {
     this.textClient.messages
       .create({
         body: 'Your order has been returned for the following reason: ' + reason + '.' + '\n' + 'Please redo order here: https://www.foodflick.co/cart/' + orderId,
@@ -447,6 +480,7 @@ class OrderService {
       .then(message => console.log(message.sid))
       .catch((e) => { console.error(e) });
   }
+
   addOpenOrder = async (signedInUser, cart, costs) => {
     const customer = {
       userId: signedInUser._id,
@@ -491,7 +525,10 @@ class OrderService {
   }
 
   updateOrderCart = async(orderId, extraItems, extraTip) => {
-    const extraItemTotal = extraItems.reduce((sum, item) => sum + item.selectedPrice.value * item.quantity, 0)
+    const extraItemTotal = extraItems.reduce((sum, item) => {
+      const itemTotal = item.selectedPrice.value + item.selectedAddons.reduce((addonsTotal, addon) => addonsTotal + addon.value, 0);
+      return sum + itemTotal * item.quantity
+    }, 0);
     const orderRes = await callElasticWithErrorHandler(options => this.elastic.update(options), {
       index: ORDERS_INDEX,
       type: ORDER_TYPE,
@@ -528,13 +565,14 @@ class OrderService {
         _source: ['items', 'restId', 'orderType', 'tableNumber'],
       });
       order._id = orderId;
-      const rest = await getRestService().getRest(order.restId, ['menu', 'profile.name']);
+      const rest = await getRestService().getRest(order.restId, ['menu', 'profile.name', 'url']);
       order.items.forEach(item => {
         const restItem = getMenuItemById(item.itemId, rest.menu);
         item.flick = restItem ? restItem.flick : null;
       })
       order.restName = rest.profile.name;
       order.restMenu = rest.menu;
+      order.restUrl = rest.url;
       return order;
     } catch (e) {
       console.error(`failed to get order for order ${orderId}`, e);

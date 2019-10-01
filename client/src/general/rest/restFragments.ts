@@ -32,6 +32,10 @@ const customerRestFragment = gql`
           value
           label
         }
+        addons {
+          value
+          label
+        }
         description
         flick
         likes {

@@ -18,6 +18,7 @@ export const cartReducer = (state: CartStateReducer = null, action: CartActions)
           orderType: OrderType.SIT_DOWN,
           restMenu: action.rest.Menu,
           restName: action.rest.Name,
+          restUrl: action.rest.Url,
           phone,
           cardTok,
         })

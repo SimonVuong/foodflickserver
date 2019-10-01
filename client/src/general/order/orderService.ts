@@ -48,9 +48,7 @@ const useGetCartFromOrderId = (): [
       getStore().dispatch(notificationErrorAction(queryRes.error.message));
     }
   }, [cart, queryRes.error]);
-  if (queryRes.error) {
-
-  }
+  console.log(cart);
   return [
     (orderId: string) => query({ variables: { orderId }}),
     {

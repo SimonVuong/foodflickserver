@@ -63,7 +63,10 @@ const CartItemList: React.FC<props> = props => {
           <div className={classes.section}>
             <CardContent className={classes.cardContent}>
               <Typography variant='subtitle1' style={textStyle}>{item.Name}</Typography>
-              <Typography variant='subtitle2'>{item.SelectedPrice.valueLabelString}</Typography>
+              <Typography variant='subtitle2'>
+                {item.SelectedPrice.valueLabelString}
+                {item.SelectedAddons.map(addon => `, ${addon.valueLabelString}`)}
+              </Typography>
               <Typography variant='body2' color='textSecondary'>Qty: {item.Quantity}</Typography>
               {onRemoveCartItem &&
                 <Button

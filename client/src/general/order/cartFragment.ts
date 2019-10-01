@@ -4,12 +4,17 @@ const cartFragment = gql`
   fragment cartFragment on Cart {
     restId
     restName,
+    restUrl,
     restMenu {
       name
       description
       items {
         _id
         name
+        addons {
+          value
+          label
+        }
         prices {
           value
           label
@@ -32,6 +37,10 @@ const cartFragment = gql`
       name
       itemId
       flick
+      selectedAddons {
+        value
+        label
+      }
       selectedPrice {
         value
         label

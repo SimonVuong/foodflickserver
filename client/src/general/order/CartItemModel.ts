@@ -1,7 +1,7 @@
 import { Cart } from 'general/order/CartModel';
 import { CustomerItem } from 'general/menu/models/CustomerItemModel';
 import { ICustomerItem, cloneCustomerItem } from 'general/menu/models/CustomerItemModel';
-import { Price, Option, IPrice, IOption, clonePrice, cloneOption } from "general/menu/models/BaseItemModel";
+import { Price, Option, IPrice, IOption, clonePrice, cloneOption, IAddon, Addon, cloneAddon } from "general/menu/models/BaseItemModel";
 
 export interface ICartItem {
   readonly name: string;
@@ -9,6 +9,7 @@ export interface ICartItem {
   readonly itemId: string;
   readonly selectedPrice: IPrice;
   readonly selectedOptions: IOption[];
+  readonly selectedAddons: IAddon[];
   readonly quantity: number;
   readonly specialRequests?: string;
 }
@@ -17,6 +18,7 @@ export const getNewCartItem = (
   customerItem: ICustomerItem,
   selectedPrice: Price,
   selectedOptions: IOption[],
+  selectedAddons: Addon[],
   quantity: number,
   specialRequests?: string): CartItem => {
   const item  = cloneCustomerItem(customerItem);
@@ -26,6 +28,7 @@ export const getNewCartItem = (
     itemId: item._Id,
     selectedPrice: selectedPrice || item.Prices[0],
     selectedOptions: selectedOptions || [],
+    selectedAddons: selectedAddons || [],
     quantity: quantity,
     specialRequests: specialRequests,
   })
@@ -33,6 +36,7 @@ export const getNewCartItem = (
 
 export const cloneCartItem = (item: ICartItem): CartItem => {
   const newSelectedPrice = clonePrice(item.selectedPrice);
+  const newSelectedAddons = item.selectedAddons.map(cloneAddon);
   // or should this be null?
   const newSelectedOptions = item.selectedOptions.map(cloneOption);
   return new CartItem({
@@ -41,6 +45,7 @@ export const cloneCartItem = (item: ICartItem): CartItem => {
     itemId: item.itemId,
     selectedPrice: newSelectedPrice,
     selectedOptions: newSelectedOptions,
+    selectedAddons: newSelectedAddons,
     quantity: item.quantity,
     specialRequests: item.specialRequests,
   });
@@ -61,6 +66,7 @@ export class CartItem implements ICartItem {
   readonly itemId: string;
   readonly selectedPrice: Price;
   readonly selectedOptions: Option[];
+  readonly selectedAddons: Addon[];
   readonly quantity: number;
   readonly specialRequests?: string;
 
@@ -70,6 +76,7 @@ export class CartItem implements ICartItem {
     this.itemId = cartItem.itemId;
     this.selectedPrice = new Price(cartItem.selectedPrice);
     this.selectedOptions = cartItem.selectedOptions.map(cloneOption);
+    this.selectedAddons = cartItem.selectedAddons.map(cloneAddon)
     this.quantity = cartItem.quantity;
     this.specialRequests = cartItem.specialRequests;
   }
@@ -79,6 +86,12 @@ export class CartItem implements ICartItem {
   public get Flick() { return this.flick }
 
   public get ItemId() { return this.itemId }
+
+  public get SelectedAddons() { return this.selectedAddons }
+
+  public get SelectedAddonsTotal() {
+    return this.selectedAddons.reduce((sum, addon) => (sum + addon.Value), 0);
+  }
 
   public get SelectedPrice () { return this.selectedPrice }
 

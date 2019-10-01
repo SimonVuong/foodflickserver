@@ -3,7 +3,7 @@ import { AsyncAction } from 'general/redux/store';
 import { CustomerRest } from 'general/rest/models/CustomerRestModel';
 import { getNewCartItem, CartItem } from 'general/order/CartItemModel';
 import { ORDERING_FLOW } from 'general/redux/flows/ordering/orderingReducer';
-import { Price, Option } from 'general/menu/models/BaseItemModel';
+import { Price, Option, Addon } from 'general/menu/models/BaseItemModel';
 import { notificationSuccessAction } from 'general/redux/ui/notification/notificationActions';
 import { SignedInUser } from 'general/account/SignedInUserModel';
 
@@ -59,6 +59,7 @@ export const addCartItemAction = (
   itemIndex: number,
   selectedPrice: Price,
   selectedOptions: Option[],
+  selectedAddons: Addon[],
   quantity: number,
   specialRequests?: string
 ): AsyncAction => (dispatch, getState) => {
@@ -71,6 +72,7 @@ export const addCartItemAction = (
       rest.Menu[categoryIndex].Items[itemIndex],
       selectedPrice,
       selectedOptions,
+      selectedAddons,
       quantity,
       specialRequests,
     ),
@@ -97,6 +99,7 @@ export const removeCartItemAction = (cartIndex: number): AsyncAction => dispatch
 export const updateCartItemAction = (
   selectedPrice: Price,
   selectedOptions: Option[],
+  selectedAddons: Addon[],
   quantity: number,
   specialRequests: string | undefined,
   targetIndex: number,
@@ -106,10 +109,11 @@ export const updateCartItemAction = (
     name: item.Name,
     flick: item.Flick,
     itemId: item.itemId,
-    selectedPrice: selectedPrice,
-    selectedOptions: selectedOptions,
-    quantity: quantity,
-    specialRequests: specialRequests,
+    selectedPrice,
+    selectedOptions,
+    selectedAddons,
+    quantity,
+    specialRequests,
   });
   dispatch({
     type: CartActionTypes.UPDATE_CART_ITEM,

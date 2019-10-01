@@ -4,6 +4,7 @@ const _OrderItem = `
     quantity: Int!
     selectedPrice: Price!
     flick: String
+    selectedAddons: [Price!]!
     selectedOptions: [Option!]!
     specialRequests: String
     #refund: Refund
