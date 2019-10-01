@@ -266,6 +266,8 @@ GET /_cat/indices?v
 
 GET /rests/rest/eVpbBmcBu4xW7khTaw6n
 
+GET /orders/order/fmtpa20Bj-yoYGRR9DM5
+
 GET /rests/_search?
 {
     "query" : {
@@ -476,6 +478,30 @@ POST rests/_update_by_query?conflicts=proceed
 {
     "script": {
       "source": """
+        def menu = ctx._source.menu;
+        if (menu != null) {
+          for (int i = 0 ; i < menu.length; i++) {
+            def items = menu[i].items;
+            if (items != null) {
+              for (int j = 0; j < items.length; j++) {
+                def item = items[j];
+                item.addons = []
+              } 
+            }
+          }
+        }
+      """,
+      "lang": "painless"
+    },
+    "query" : {
+        "match_all" : {}
+    }
+}
+
+POST rests/_update_by_query?conflicts=proceed
+{
+    "script": {
+      "source": """
         ctx._source.url = params.url
       """,
       "params": {
@@ -539,6 +565,18 @@ POST rests/_update_by_query?conflicts=proceed
     "script": {
       "source": """
         ctx._source.receiver.receiverId = null;
+      """
+    },
+    "query" : {
+        "match_all" : {}
+    }
+}
+
+POST rests/_update_by_query?conflicts=proceed
+{
+    "script": {
+      "source": """
+        ctx._source.minsToUpdateCart = 1.5;
       """
     },
     "query" : {
@@ -622,6 +660,20 @@ POST /rests/rest/D71rFmwB0QaGhfaOS2Jp/_update
   },
   "_source": true
 }
+
+
+POST orders/_update_by_query?conflicts=proceed
+{
+    "script": {
+      "source": """
+        ctx._source.status = 'PENDING_TIP_CHANGE';
+      """
+    },
+    "query" : {
+        "match_all" : {}
+    }
+}
+
 ########## end write ##########
 
 
@@ -754,6 +806,15 @@ PUT rests/_mapping/rest
 PUT rests/_mapping/rest
 {
   "properties": {
+    "minsToUpdateCart": {
+      "type": "float"
+    }
+  }
+}
+
+PUT rests/_mapping/rest
+{
+  "properties": {
     "banking": {
       "properties": {
         "stripeId": {
@@ -779,8 +840,21 @@ PUT rests/_mapping/rest
       "properties": {
         "items": {
           "properties": {
-            "_id":  {
-              "type": "keyword"
+            "addons":  {
+              "properties": {
+                "label": {
+                  "type": "text",
+                  "fields": {
+                    "keyword": {
+                      "type": "keyword",
+                      "ignore_above": 256
+                    }
+                  }
+                },
+                "value": {
+                  "type": "float"
+                }
+              }
             }
           }
         }
@@ -971,6 +1045,22 @@ PUT rests
                 "_id": {
                   "type": "keyword"
                 },
+                "addons": {
+                  "properties": {
+                    "label": {
+                      "type": "text",
+                      "fields": {
+                        "keyword": {
+                          "type": "keyword",
+                          "ignore_above": 256
+                        }
+                      }
+                    },
+                    "value": {
+                      "type": "float"
+                    }
+                  }
+                },
                 "description": {
                   "type": "text",
                   "fields": {
@@ -1144,6 +1234,9 @@ PUT rests
             }
           }
         },
+        "minsToUpdateCart": {
+          "type": "float"
+        },
         "owner": {
           "properties": {
             "email": {
@@ -1294,6 +1387,36 @@ PUT rests
               }
             }
           }
+        },
+        "url": {
+          "type": "keyword"
+        }
+      }
+    }
+  }
+}
+
+
+PUT orders/_mapping/order
+{
+  "properties": {
+    "items": {
+      "properties": {
+        "addons":  {
+          "properties": {
+            "label": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "value": {
+              "type": "float"
+            }
+          }
         }
       }
     }
@@ -1358,6 +1481,10 @@ PUT orders
         "tableNumber": {
           "type": "keyword"
         },
+        "cartUpdatedDate": {
+          "type": "date",
+          "format": "epoch_millis"
+        },
         "createdDate": {
           "type": "date",
           "format": "epoch_millis"
@@ -1378,6 +1505,22 @@ PUT orders
             },
             "quantity": {
               "type": "integer"
+            },
+            "addons":  {
+              "properties": {
+                "label": {
+                  "type": "text",
+                  "fields": {
+                    "keyword": {
+                      "type": "keyword",
+                      "ignore_above": 256
+                    }
+                  }
+                },
+                "value": {
+                  "type": "float"
+                }
+              }
             },
             "price": {
               "properties": {
