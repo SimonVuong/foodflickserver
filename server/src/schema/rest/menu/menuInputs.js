@@ -31,6 +31,7 @@ const _NewItemInput = `
   input NewItemInput {
     name: String!
     prices: [PriceInput!]!
+    addons: [PriceInput!]!
     printers: [ItemPrinterInput!]!
     description: String
     #todo 1: not actually sure what type to make this yet...

@@ -285,6 +285,7 @@ class MenuService {
               }
               def dbItem = menu[i].items[updatedItem.index];
               dbItem.prices = updatedItem.item.prices;
+              dbItem.addons = updatedItem.item.addons;
               dbItem.name = updatedItem.item.name;
               dbItem.description = updatedItem.item.description;
               dbItem.printers = updatedItem.item.printers;

@@ -8,6 +8,7 @@ const Item = `
     _id: String!
     name: String!
     prices: [Price!]!
+    addons: [Price!]!
     description: String
     printers: [ItemPrinter!]!
     #todo 1: not actually sure what type to make this yet...
