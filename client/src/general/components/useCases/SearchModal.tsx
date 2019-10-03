@@ -91,7 +91,7 @@ const SearchModal: React.FC<props> = ({ open, onClose, selectRest }) => {
             value={displayQuery}
             onChange={e => setDisplayQuery(e.target.value)}
             margin='normal'
-            placeholder='What are you hungry for?'
+            placeholder='Restaurant name?'
             InputProps={{
               endAdornment: (
                 <InputAdornment position='end'>

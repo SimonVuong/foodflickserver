@@ -47,7 +47,7 @@ const HomePage: React.FC<RouteComponentProps> = () => {
         <TextField
           hiddenLabel
           margin='normal'
-          placeholder='Which restaurant are you looking for?'
+          placeholder='Restaurant name?'
           variant='filled'
           onClick={() => setOpen(true)}
           className={classes.input}
