@@ -183,6 +183,7 @@ const ReviewCartPage: React.FC<props & ReactStripeElements.InjectedStripeProps> 
   if (orderType === OrderType.SIT_DOWN) {
     tip = staticTip ? round2((cart.ItemTotal * staticTip)) : round2(parseFloat(customTip));
   }
+  if (isNaN(tip)) tip = 0;
   const total = round2(itemTotal + estimatedTax + tip);
 
   const onPlaceOrder = async () => {

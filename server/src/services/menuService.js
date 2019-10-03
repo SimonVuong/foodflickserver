@@ -240,7 +240,6 @@ class MenuService {
 
     items.forEach(item => {
       if (!item.item.name) throw new Error(getCannotBeEmptyError(`Item name for index ${item.index}`));
-      if (!item.item.flick) throw new Error(getCannotBeEmptyError(`Item flick for index ${item.index}`));
     });
 
     const res = await callElasticWithErrorHandler(options => this.elastic.update(options), getRestUpdateOptions(
@@ -343,7 +342,6 @@ class MenuService {
       `,
       { categoryName, newOrder }
     ));
-    console.log('updated item order', getUpdatedRestWithId(res, restId));
     return getUpdatedRestWithId(res, restId);
   }
 
