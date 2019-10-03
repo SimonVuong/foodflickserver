@@ -41,8 +41,11 @@ const useStyles = makeStyles(theme => ({
   container: {
     padding: 0,
   },
-  menuLabel: {
+  menuIconButton: {
     flexDirection: 'column',
+  },
+  menuLabel: {
+    fontWeight: 700,
   },
   menuButton: {
     marginRight: theme.spacing(2),
@@ -75,14 +78,14 @@ const Navbar: React.FC<props> = ({ cartItemCount, signedInUser, toggleMobileDraw
                   <IconButton
                     edge='start'
                     classes={{
-                      label: classes.menuLabel
+                      label: classes.menuIconButton
                     }}
                     className={classes.menuButton}
                     color='inherit'
                     onClick={() => toggleMobileDrawer()}
                   >
                     <MenuIcon />
-                    <Typography variant='caption'>Menu</Typography>
+                    <Typography variant='button' className={classes.menuLabel}>Menu</Typography>
                   </IconButton>
                 </Hidden>}
               </>
