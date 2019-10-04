@@ -62,7 +62,7 @@ export const signUpAction = (
   firstName: string,
   lastName: string,
   phone: string
-): AsyncAction => async dispatch => {
+): AsyncAction<Promise<boolean>> => async dispatch => {
   const isRestManager = false;
   const cardToken = '';
   try {
@@ -95,16 +95,17 @@ export const signUpAction = (
     const json = await res.json();
     if (!res.ok) throw json;
     dispatch(signInWithBasicAction(email, password));
+    return true;
   } catch(e) {
-    console.error(e);
-    dispatch(notificationErrorAction(`Sign up failed ${e}`));
+    dispatch(notificationErrorAction(`Sign up failed: ${e.error || e.description}`));
+    return false;
   }
 }
 
 export const signInWithBasicAction = (
   signInEmail: string,
   password: string
-): AsyncAction => async dispatch => {
+): AsyncAction<Promise<boolean>> => async dispatch => {
   try {
     const authRes = await fetch(auth0Domain + 'oauth/token', {
       method: 'POST',
@@ -134,10 +135,11 @@ export const signInWithBasicAction = (
     dispatch({
       type: AccountActionTypes.SIGN_IN,
       signedInUser: getSignedInUser(authJson),
-    });    
+    });   
+    return true; 
   } catch (e) {
-    console.error(e);
-    dispatch(notificationErrorAction(`Sign in failed ${e.error_description}`));
+    dispatch(notificationErrorAction(`Sign in failed: ${e.error_description}`));
+    return false;
   }
 };
 

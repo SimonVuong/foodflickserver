@@ -26,7 +26,7 @@ const useStyles = makeStyles(theme => ({
 
 type props = {
   onSignIn?: () => void
-  signIn: (email: string, password: string) => Promise<void>,
+  signIn: (email: string, password: string) => Promise<boolean>,
   onCreateAccountLink: () => void
 }
 
@@ -35,8 +35,8 @@ const SignIn: React.FC<props> = ({ onSignIn, signIn, onCreateAccountLink }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const onClick = async () => {
-    await signIn(email, password);
-    if (onSignIn) onSignIn();
+    const signedIn = await signIn(email, password);
+    if (signedIn && onSignIn) onSignIn();
   }
   return (
     <div className={classes.paper}>
@@ -75,7 +75,7 @@ const SignIn: React.FC<props> = ({ onSignIn, signIn, onCreateAccountLink }) => {
 }
 
 const mapDispatchToProps = (dispatch: ThunkDispatch<RootState, null, RootActions>) => ({
-  signIn: async (email: string, password: string) => dispatch(signInWithBasicAction(email, password))
+  signIn: (email: string, password: string): Promise<boolean> => dispatch(signInWithBasicAction(email, password))
 })
 
 export default connect(null, mapDispatchToProps)(SignIn);
