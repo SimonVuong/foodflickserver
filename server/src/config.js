@@ -66,7 +66,7 @@ GHvfjzAiLDRjG8pWVA==
   },
   twilio: {
     //test accountSID and phone
-    accountSid: 'AC049b2876bcf1f6e12ee8cf74bb2cc6b4',
+    accountSid: 'ACf4f1305a17d0a6d2f8e6a478f8e56fba',
     phone: '+15005550006',
   },
 };
@@ -119,8 +119,8 @@ CAXO0dg=
     cardPath: '/endpoints/prodCard.html',
   },
   twilio: {
-    accountSid: 'ACbce252e67753d063d4d183d97e2c58a0',
-    phone: '+16096164938',
+    accountSid: 'ACe31cd8b705c2a9bf21c1b5c6db8900b7',
+    phone: '+13476944589',
   }
 };
 

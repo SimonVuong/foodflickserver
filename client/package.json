@@ -29,6 +29,7 @@
     "@material-ui/icons": "^4.2.1",
     "@material-ui/lab": "^4.0.0-alpha.24",
     "@reach/router": "^1.2.1",
+    "@types/amplitude-js": "^4.4.4",
     "@types/jest": "24.0.18",
     "@types/jsrsasign": "^8.0.0",
     "@types/lodash": "^4.14.137",
