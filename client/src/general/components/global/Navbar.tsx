@@ -55,6 +55,7 @@ const useStyles = makeStyles(theme => ({
   },
   spacer: {
     height: theme.mixins.navbar.marginBottom,
+    backgroundColor: theme.palette.background.default,
   },
   logo: {
     verticalAlign: 'middle',

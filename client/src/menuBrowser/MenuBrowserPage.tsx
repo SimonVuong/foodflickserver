@@ -27,18 +27,24 @@ const useStyles = makeStyles((theme: Theme) => ({
   container: {
     display: 'flex',
     paddingLeft: 0,
+    paddingRight: 0,
+    backgroundColor: theme.palette.background.default,
   },
   notFound: {
     textAlign: 'center',
   },
   content: {
-    paddingLeft: theme.spacing(3),
     // necessary for safari, otherwise auto height is too short as it doesn't equal height of content in safari
     height: 'max-content',
   },
   categoryTitle: {
     // !importants necessary to override inline styles used by mui
     padding: `${theme.spacing(spacingPadding)}px 0px !important`,
+  },
+  section: {
+    backgroundColor: theme.palette.common.white,
+    padding: theme.spacing(1, 3),
+    marginBottom: theme.spacing(2),
   },
   item: {
     // !importants necessary to override inline styles used by mui. 25vw chosen by inspection
@@ -71,14 +77,13 @@ type anchorProps = {
 }
 const Anchor: React.FC<anchorProps> = ({ id, variant }) => {
   const theme: Theme = useTheme();
-  return (
-    <a id={id} href={id} style={{
-      position: 'absolute',
-      // 2 * for paddingBottom + top. spacePadding + 1 because we want to be slightly above hte category
-      marginTop: `calc(0px - (${2 * theme.spacing(spacingPadding + 1)}px + ${theme.typography[variant].fontSize}))`
-      }}
-    >''</a>
-  );
+  const style: React.CSSProperties = {
+    position: 'absolute',
+    // 2 * for paddingBottom + top. spacePadding + 1 because we want to be slightly above hte category
+    marginTop: `calc(0px - (${2 * theme.spacing(spacingPadding + 1)}px + ${theme.typography[variant].fontSize}))`
+  };
+  // eslint-disable-next-line
+  return <a id={id} href={id} style={style}></a>;
 }
 
 type detailsProp = {
@@ -86,9 +91,9 @@ type detailsProp = {
 };
 const Details: React.FC<detailsProp> = ({ rest }) => {
   return (
-    <>
+    <Section>
       <Grid item>
-        <Typography variant='h5' gutterBottom>
+        <Typography variant='h4' gutterBottom>
           <Anchor id={detailsId} variant='h6' />
           {rest.Name}
         </Typography>
@@ -115,7 +120,16 @@ const Details: React.FC<detailsProp> = ({ rest }) => {
           </Typography>
         </Grid>
       </Grid>
-    </>
+    </Section>
+  )
+}
+
+const Section: React.FC = ({ children }) => {
+  const classes = useStyles();
+  return (
+    <div className={classes.section}>
+      {children}
+    </div>
   )
 }
 
@@ -168,10 +182,10 @@ const MenuBrowserPage: React.FC<props & RouteComponentProps<routeParams>> = ({ r
         <Details rest={rest} />
         {rest.Menu.map((category, categoryIndex) => (
           category.Items.length > 0 &&
-          // <div>
+          <Section>
             <GridList cellHeight='auto' cols={cols} key={categoryIndex} className={classes.gridList}>
               <GridListTile cols={cols} className={classes.categoryTitle}>
-                <Typography variant='h6'>
+                <Typography variant='h5'>
                   <Anchor id={category.Name} variant='h6' />
                   {category.Name}
                 </Typography>
@@ -189,7 +203,7 @@ const MenuBrowserPage: React.FC<props & RouteComponentProps<routeParams>> = ({ r
                 </GridListTile>
               ))}
             </GridList>
-          // </div>
+          </Section>
         ))}
       </Grid>
     </Container>
