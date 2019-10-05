@@ -36,6 +36,8 @@ const useStyles = makeStyles((theme: Theme) => ({
   content: {
     // necessary for safari, otherwise auto height is too short as it doesn't equal height of content in safari
     height: 'max-content',
+    display: 'flex',
+    flexDirection: 'column',
   },
   categoryTitle: {
     // !importants necessary to override inline styles used by mui
@@ -43,7 +45,7 @@ const useStyles = makeStyles((theme: Theme) => ({
   },
   section: {
     backgroundColor: theme.palette.common.white,
-    padding: theme.spacing(1, 3),
+    padding: theme.spacing(1, 2),
     marginBottom: theme.spacing(2),
   },
   item: {
@@ -91,7 +93,7 @@ type detailsProp = {
 };
 const Details: React.FC<detailsProp> = ({ rest }) => {
   return (
-    <Section>
+    <>
       <Grid item>
         <Typography variant='h4' gutterBottom>
           <Anchor id={detailsId} variant='h6' />
@@ -120,16 +122,7 @@ const Details: React.FC<detailsProp> = ({ rest }) => {
           </Typography>
         </Grid>
       </Grid>
-    </Section>
-  )
-}
-
-const Section: React.FC = ({ children }) => {
-  const classes = useStyles();
-  return (
-    <div className={classes.section}>
-      {children}
-    </div>
+    </>
   )
 }
 
@@ -178,12 +171,14 @@ const MenuBrowserPage: React.FC<props & RouteComponentProps<routeParams>> = ({ r
       }
       <MobileDrawer isMobileDrawerOpen={isMobileDrawerOpen} toggleMobileDrawer={toggleMobileDrawer} />
       <DesktopDrawer />
-      <Grid container direction='column' className={classes.content}>
-        <Details rest={rest} />
+      <div className={classes.content}>
+        <Grid container direction='column' className={classes.section}>
+          <Details rest={rest} />
+        </Grid>
         {rest.Menu.map((category, categoryIndex) => (
           category.Items.length > 0 &&
-          <Section>
-            <GridList cellHeight='auto' cols={cols} key={categoryIndex} className={classes.gridList}>
+          <div key={categoryIndex} className={classes.section}>
+            <GridList cellHeight='auto' cols={cols} className={`${classes.gridList}`}>
               <GridListTile cols={cols} className={classes.categoryTitle}>
                 <Typography variant='h5'>
                   <Anchor id={category.Name} variant='h6' />
@@ -203,9 +198,9 @@ const MenuBrowserPage: React.FC<props & RouteComponentProps<routeParams>> = ({ r
                 </GridListTile>
               ))}
             </GridList>
-          </Section>
+          </div>
         ))}
-      </Grid>
+      </div>
     </Container>
   );
 }
