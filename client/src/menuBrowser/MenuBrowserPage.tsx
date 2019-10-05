@@ -38,6 +38,7 @@ const useStyles = makeStyles((theme: Theme) => ({
     height: 'max-content',
     display: 'flex',
     flexDirection: 'column',
+    width: '100%',
   },
   categoryTitle: {
     // !importants necessary to override inline styles used by mui
