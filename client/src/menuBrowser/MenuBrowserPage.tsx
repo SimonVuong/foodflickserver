@@ -29,6 +29,8 @@ const useStyles = makeStyles((theme: Theme) => ({
     paddingLeft: 0,
     paddingRight: 0,
     backgroundColor: theme.palette.background.default,
+    // necessary for safari, otherwise auto height is too short as it doesn't equal height of content in safari
+    height: 'max-content',
   },
   notFound: {
     textAlign: 'center',

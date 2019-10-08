@@ -50,7 +50,7 @@ const AddCartItemModal: React.FC<props> = ({
   
   return (
     <CartItemModal
-      confirmText='Add cart item'
+      confirmText='Add to cart'
       item={customerItem}
       onConfirm={onConfirm}
       onClose={onClose}

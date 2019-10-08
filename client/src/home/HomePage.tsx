@@ -50,6 +50,7 @@ const HomePage: React.FC<RouteComponentProps> = () => {
           placeholder='Restaurant name?'
           variant='filled'
           onClick={() => setOpen(true)}
+          onFocus={() => setOpen(true)}
           className={classes.input}
           inputProps={{ className: classes.pointer }} // pointer cusor over input
           InputProps={{

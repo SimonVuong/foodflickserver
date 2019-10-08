@@ -14,12 +14,15 @@ body {
 div[role="group"][tabindex] {
   flex: 1;
   display: flex;
+  /* min-height is a hack for safari. otherwise, div height doesn't equal height of children */
+  min-height: max-content;
 }
 
 #root {
   display: flex;
   flex-direction: column;
   flex: 1;
+  min-height: max-content;
 }
 
 code {

@@ -38,6 +38,9 @@ const useStyles = makeStyles(theme => ({
   pointer: {
     cursor: 'pointer',
   },
+  close: {
+    alignSelf: 'flex-end',
+  },
   img: {
     objectFit: 'cover',
     width: '100%',
@@ -46,8 +49,8 @@ const useStyles = makeStyles(theme => ({
   },
   modal: {
     display: 'flex',
-    alignItems: 'center',
     justifyContent: 'center',
+    overflowY: 'scroll',
   },
   name: {
     display: 'flex',
@@ -79,13 +82,13 @@ const useStyles = makeStyles(theme => ({
     fontWeight: theme.typography.fontWeightBold,
   },
   paper: {
-    height: '80%',
     display: 'flex',
     flexDirection: 'column',
     backgroundColor: theme.palette.background.paper,
     boxShadow: theme.shadows[5],
     padding: theme.spacing(2),
-    overflowY: 'scroll',
+    minHeight: '100vh',
+    height: 'max-content',
   },
 }));
 
@@ -137,10 +140,15 @@ const CartItemModal: React.FC<props> = ({
     )
   }
   return (
-    <Modal className={classes.modal} open={open} onClose={onClose}>
+    <Modal
+      className={classes.modal}
+      open={open}
+      onClose={onClose}
+      disableRestoreFocus
+    >
       <Grow in={open}>
         <div className={classes.paper} style={paperStyle}>
-          <Close onClick={onClose} className={classes.pointer} />
+          <Close onClick={onClose} fontSize='large' className={`${classes.pointer} ${classes.close}`} />
           {
             item.Flick &&
             <img
