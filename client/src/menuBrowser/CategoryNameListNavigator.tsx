@@ -5,7 +5,11 @@ import { CustomerCategory } from 'general/menu/models/CustomerItemModel';
 import { RootState } from 'general/redux/rootReducer';
 import { detailsId } from './MenuBrowserPage';
 
-const CategoryNameListNavigator: React.FC<stateProps & {}> = ({ menu }) => (
+type props = {
+  onClickCategory?: () => void
+}
+
+const CategoryNameListNavigator: React.FC<stateProps & props> = ({ menu, onClickCategory }) => (
   <List>
     <ListItem>
       <Typography variant='h6'>
@@ -13,14 +17,24 @@ const CategoryNameListNavigator: React.FC<stateProps & {}> = ({ menu }) => (
       </Typography>
     </ListItem>
     <ListItem>
-      <Link href={`#${detailsId}`} variant='subtitle1' color='textPrimary'>
+      <Link
+        onClick={onClickCategory}
+        href={`#${detailsId}`}
+        variant='subtitle1'
+        color='textPrimary'
+      >
         Back to top
       </Link>
     </ListItem>
     {menu.map((category, index) => (
       category.Items.length > 0 &&
       <ListItem key={index}>
-        <Link href={`#${category.Name}`} variant='subtitle1' color='textPrimary'>
+        <Link
+          onClick={onClickCategory}
+          href={`#${category.Name}`}
+          variant='subtitle1'
+          color='textPrimary'
+        >
           {category.Name}
         </Link>
       </ListItem>
