@@ -28,7 +28,7 @@ const MobileDrawer: React.FC<props> = ({ isMobileDrawerOpen, toggleMobileDrawer 
         }}
         ModalProps={{ keepMounted: true }}  // Better open performance on mobile.
       >
-        <CategoryNameListNavigator />
+        <CategoryNameListNavigator onClickCategory={() => toggleMobileDrawer()}/>
       </Drawer>
     </Hidden>
   );

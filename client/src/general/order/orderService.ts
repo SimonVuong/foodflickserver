@@ -14,6 +14,7 @@ const getCartInput = (cart: Cart) => {
   const newCart: any = new Cart(cart);
   delete newCart.restName;
   delete newCart.restMenu;
+  delete newCart.restUrl;
   for (let i = 0; i < newCart.items.length; i++) {
     delete newCart.items[i].flick;
   }

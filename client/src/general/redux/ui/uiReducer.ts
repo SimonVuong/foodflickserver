@@ -24,7 +24,7 @@ export class UiState {
 };
 
 const initialState: UiState = new UiState({
-  isMobileDrawerOpen: false,
+  isMobileDrawerOpen: true,
   notification: undefined,
 });
 

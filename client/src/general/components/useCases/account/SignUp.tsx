@@ -35,7 +35,7 @@ type props = {
     firstName: string,
     lastName: string,
     phone: string,
-  ) => Promise<void>,
+  ) => Promise<boolean>,
   onSignInLink: () => void,
   onSignUp?: () => void,
 }
@@ -48,8 +48,8 @@ const SignUp: React.FC<props> = ({ onSignUp, signUp, onSignInLink }) => {
   const [lastName, setLastName] = useState('');
   const [phone, setPhone] = useState('');
   const onClick = async () => {
-    await signUp(email, password, firstName, lastName, phone);
-    if (onSignUp) onSignUp();
+    const signedIn = await signUp(email, password, firstName, lastName, phone);
+    if (signedIn && onSignUp) onSignUp();
   }
   return (
     <div className={classes.paper}>
@@ -109,7 +109,7 @@ const SignUp: React.FC<props> = ({ onSignUp, signUp, onSignInLink }) => {
 }
 
 const mapDispatchToProps = (dispatch: ThunkDispatch<RootState, null, RootActions>) => ({
-  signUp: async (
+  signUp: (
     email: string,
     password: string,
     firstName: string,
