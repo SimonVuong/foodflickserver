@@ -50,6 +50,7 @@
     "graphql-tag": "^2.10.1",
     "jsrsasign": "^8.0.12",
     "lodash": "^4.17.15",
+    "logrocket": "^1.0.3",
     "moment": "^2.24.0",
     "react": "^16.9.0",
     "react-dom": "^16.9.0",

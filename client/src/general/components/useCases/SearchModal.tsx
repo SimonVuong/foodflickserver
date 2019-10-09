@@ -27,9 +27,6 @@ const useStyles = makeStyles(theme => ({
     boxShadow: theme.shadows[5],
     padding: theme.spacing(2, 4, 3),
   },
-  listItem: {
-    cursor: 'pointer',
-  }
 }));
 
 type props ={
@@ -75,7 +72,6 @@ const SearchModal: React.FC<props> = ({ open, onClose, selectRest }) => {
   // which means useEffect calls a different function on each run which means we never actually delay anything.
   const delayedFetchSuggestions = useRef(getDelayedFn(updateSuggestions));
   useEffect(() => delayedFetchSuggestions.current(displayQuery), [displayQuery]);
-
   return (
     <Modal
       open={open}
@@ -102,7 +98,7 @@ const SearchModal: React.FC<props> = ({ open, onClose, selectRest }) => {
           />
           <List>
             {displayQuery && rests.map(rest => (
-              <ListItem key={rest._Id} className={classes.listItem} onClick={() => {
+              <ListItem key={rest._Id} className={classes.pointer} onClick={() => {
                 selectRest(rest);
                 navigate(routes.menuBrowser.getLink(rest.Url))}
               }>
