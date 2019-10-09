@@ -13,11 +13,17 @@ import { ThemeProvider } from '@material-ui/styles';
 import Router from 'general/routes/router';
 import Notifier from 'general/components/global/Notifier';
 import { signInWithRefreshAction, STORAGE_KEY } from 'general/account/accountActions';
+import AnalyticsService from './analytics/analyticsService';
+
 const store: Store = initStore(getRootReducer());
 const apolloClient: ApolloClient<NormalizedCacheObject> = getApolloClient(store);
 const App: React.FC = () => {
   useEffect(() => {
     const refreshToken = localStorage.getItem(STORAGE_KEY);
+    const analyticsInit = async () => {
+      await AnalyticsService.init();
+    };
+    analyticsInit();
     // @ts-ignore
     if (refreshToken) store.dispatch(signInWithRefreshAction(refreshToken));
   }, [])

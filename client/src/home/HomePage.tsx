@@ -5,6 +5,8 @@ import { makeStyles } from '@material-ui/core/styles';
 import { routes } from 'general/routes/routes';
 import Search from '@material-ui/icons/Search';
 import SearchModal from 'general/components/useCases/SearchModal';
+import AnalyticsService from '../analytics/analyticsService';
+import events from '../analytics/events';
 const background = '/assets/global/background.jpg';
 
 const useStyles = makeStyles(theme => ({
@@ -66,11 +68,12 @@ const HomePage: React.FC<RouteComponentProps> = () => {
           to={routes.about.getLink()}
           className={classes.link}
           color='secondary'
+          onClick={() => AnalyticsService.trackEvent(events.ABOUT_FOODFLICK)}
         >
           About foodflick
         </Link>
       </div>
-    </div>
+    </div >
   )
 }
 

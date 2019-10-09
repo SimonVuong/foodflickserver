@@ -15,6 +15,10 @@ import { RootState } from 'general/redux/rootReducer';
 import { connect } from 'react-redux';
 import { SignedInUser } from 'general/account/SignedInUserModel';
 import { SelectedRestStateReducer } from 'general/rest/redux/restReducer';
+import AnalyticsService from '../../../analytics/analyticsService';
+import events from '../../../analytics/events';
+
+
 const logo = '/assets/logo/foodflick800.png';
 
 type props = {
@@ -71,32 +75,32 @@ const Navbar: React.FC<props> = ({ cartItemCount, signedInUser, toggleMobileDraw
         <Container className={classes.container}>
           <Toolbar>
             <Location>
-            {({ location }) => (
-              <>
-                {selectedRest && location.pathname === routes.menuBrowser.getLink(selectedRest.Url) &&
-                <Hidden mdUp>
-                  <IconButton
-                    edge='start'
-                    classes={{
-                      label: classes.menuIconButton
-                    }}
-                    className={classes.menuButton}
-                    color='inherit'
-                    onClick={() => toggleMobileDrawer()}
-                  >
-                    <MenuIcon />
-                    <Typography variant='button' className={classes.menuLabel}>Menu</Typography>
-                  </IconButton>
-                </Hidden>}
-              </>
-            )}
+              {({ location }) => (
+                <>
+                  {selectedRest && location.pathname === routes.menuBrowser.getLink(selectedRest.Url) &&
+                    <Hidden mdUp>
+                      <IconButton
+                        edge='start'
+                        classes={{
+                          label: classes.menuIconButton
+                        }}
+                        className={classes.menuButton}
+                        color='inherit'
+                        onClick={() => toggleMobileDrawer()}
+                      >
+                        <MenuIcon />
+                        <Typography variant='button' className={classes.menuLabel}>Menu</Typography>
+                      </IconButton>
+                    </Hidden>}
+                </>
+              )}
             </Location>
             <div className={classes.pushLeft}>
               <Link to={routes.home.getLink()}>
-                <img src={logo} alt='logo' className={classes.logo}/>
+                <img src={logo} alt='logo' className={classes.logo} onClick={() => AnalyticsService.trackEvent(events.LOGO)} />
               </Link>
             </div>
-            <Link to={routes.cart.getLink()} style={{ textDecoration: 'none' }}>
+            <Link to={routes.cart.getLink()} style={{ textDecoration: 'none' }} onClick={() => AnalyticsService.trackEvent(events.CART)}>
               <div className={classes.cart}>
                 <IconButton color='inherit'>
                   <ShoppingCartOutlined />
@@ -104,8 +108,8 @@ const Navbar: React.FC<props> = ({ cartItemCount, signedInUser, toggleMobileDraw
                 </IconButton>
               </div>
             </Link>
-            {signedInUser && 
-              <Link to={routes.account.getLink()} style={{ textDecoration: 'none' }}>
+            {signedInUser &&
+              <Link to={routes.account.getLink()} style={{ textDecoration: 'none' }} onClick={() => AnalyticsService.trackEvent(events.PROFILE)}>
                 <IconButton className={classes.account}>
                   <AccountCircle />
                 </IconButton>
@@ -118,7 +122,7 @@ const Navbar: React.FC<props> = ({ cartItemCount, signedInUser, toggleMobileDraw
                 </Button>
               </Link>
             }
-            
+
           </Toolbar>
         </Container>
       </AppBar>
