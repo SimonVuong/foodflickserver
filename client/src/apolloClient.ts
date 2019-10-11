@@ -13,20 +13,22 @@ const getApolloClient = (store?: Store<RootState, RootActions>) => {
   if (apolloClient) return apolloClient;
   const httpLink = new HttpLink({uri: `${activeConfig.app.apiUrl}/graphql`})
   const errorLink = onError(e => {
-    console.log(JSON.stringify(e));
-    // todo 0: handle all apollo errors here
-    const { graphQLErrors, networkError } = e;
+    const { graphQLErrors, networkError, operation } = e;
+    const { variables, operationName } = operation;
+    let msg = '';
     if (graphQLErrors) {
-      graphQLErrors.forEach(({ message, locations, path }) => {
-        console.warn(
-          `[GraphQL error]: Message: ${message}, Location: ${JSON.stringify(locations)}, Path: ${path}`,
-        );
+      graphQLErrors.forEach(({ message, path }) => {
+        msg = msg + '\n' +`[GraphQL error]: Message: '${message}', Path: '${path}', variables: '${JSON.stringify(variables)}'`
       });
     }
 
     if (networkError) {
-      console.warn(`[Network error]: ${networkError}`);
+      msg = `[Network error]: '${networkError}', Operation: '${operationName}', variables: '${JSON.stringify(variables)}`;
     }
+
+    console.error(JSON.stringify(e));
+    // throw error for LogRocket to capture
+    throw new Error(msg);
   });
 
   const authLink = setContext((_, { headers }) => {

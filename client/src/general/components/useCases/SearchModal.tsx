@@ -64,7 +64,7 @@ const SearchModal: React.FC<props> = ({ open, onClose, selectRest }) => {
         // ex: suggestions for 'foo' may come after 'food' so we only set state when suggestions correspond to the
         // most recent query.
         if (fetchQuery === currDisplayQuery.current) setRests(restSuggestions);
-      });
+      })
   }
 
   //https://stackoverflow.com/questions/54666401/how-to-use-throttle-or-debounce-with-react-hook

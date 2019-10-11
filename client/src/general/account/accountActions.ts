@@ -42,7 +42,10 @@ const getSignedInUser = (authJson: any): SignedInUser => {
     [`${namespace}/lastName`]: lastName,
     [`${namespace}/phone`]: phone,
   } = jwtUtil.parse(authJson.id_token).payloadObj as any;
-  LogRocket.identify(email);
+  LogRocket.identify(sub, {
+    email,
+    name: `${firstName} ${lastName}`
+  });
   return new SignedInUser({
     accessToken: {
       token: authJson.access_token,
