@@ -85,7 +85,6 @@ const getConfig = () => {
     return config[production];
   } else {
     console.log('running with default config');
-    LogRocket.init('3qyr20/foodflick');
     return config[development];
   }
 };
