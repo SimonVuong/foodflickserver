@@ -44,7 +44,7 @@ const HomePage: React.FC<RouteComponentProps> = () => {
   const classes = useStyles();
   return (
     <div className={classes.background}>
-      <SearchModal open={open} onClose={() => setOpen(false)} />
+      <SearchModal open={open} onClose={() => setOpen(false)}/>
       <div className={classes.content}>
         <TextField
           hiddenLabel
@@ -52,10 +52,9 @@ const HomePage: React.FC<RouteComponentProps> = () => {
           placeholder='Restaurant name?'
           variant='filled'
           onClick={() => setOpen(true)}
-          onFocus={() => setOpen(true)}
           className={classes.input}
-          inputProps={{ className: classes.pointer }} // pointer cusor over input
           InputProps={{
+            readOnly: true,
             endAdornment: (
               <InputAdornment position='end' variant='standard'>
                 <Search />

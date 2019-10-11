@@ -1,3 +1,5 @@
+import LogRocket from 'logrocket';
+
 const production = 'production';
 const development = 'development';
 
@@ -79,6 +81,7 @@ const config = {
 const getConfig = () => {
   if (process.env.NODE_ENV === production) {
     console.log('running with production config');
+    LogRocket.init('3qyr20/foodflick');
     return config[production];
   } else {
     console.log('running with default config');

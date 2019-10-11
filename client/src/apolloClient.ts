@@ -1,4 +1,3 @@
-import { notificationErrorAction } from './general/redux/ui/notification/notificationActions';
 import { Store } from 'redux';
 import { activeConfig } from './config';
 import { ApolloClient } from 'apollo-client';

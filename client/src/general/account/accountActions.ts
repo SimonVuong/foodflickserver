@@ -5,6 +5,7 @@ import { KJUR } from 'jsrsasign';
 import { AsyncAction } from 'general/redux/store';
 import { AccountService } from './accountService';
 import { Card } from 'general/card/CardModel';
+import LogRocket from 'logrocket';
 
 const jwtUtil = KJUR.jws.JWS
 
@@ -41,6 +42,7 @@ const getSignedInUser = (authJson: any): SignedInUser => {
     [`${namespace}/lastName`]: lastName,
     [`${namespace}/phone`]: phone,
   } = jwtUtil.parse(authJson.id_token).payloadObj as any;
+  LogRocket.identify(email);
   return new SignedInUser({
     accessToken: {
       token: authJson.access_token,
