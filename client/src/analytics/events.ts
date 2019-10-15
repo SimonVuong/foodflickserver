@@ -9,6 +9,7 @@ const events = {
     SEARCH_BAR: 'SEARCH_BAR',
     SEARCH_BAR_ITEM: 'SEARCH_BAR_ITEM',
 
+
 }
 
 export default events;
