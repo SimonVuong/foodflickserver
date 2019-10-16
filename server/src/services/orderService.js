@@ -14,8 +14,8 @@ export const ORDERS_INDEX = 'orders';
 export const ORDER_TYPE = 'order';
 const MS_IN_MINUTE = 60000;
 const SCHEDULING_BUFFER_MILLIS = MS_IN_MINUTE;
-const PENDING_TIP_HOLDING_TIME = 10800000; // 3hr
-// const PENDING_TIP_HOLDING_TIME = 120000; // 2min
+// const PENDING_TIP_HOLDING_TIME = 10800000; // 3hr
+const PENDING_TIP_HOLDING_TIME = 120000; // 2min
 const TAX_RATE = 0.0625;
 const PERCENT_FEE = 2.9
 const FLAT_RATE_FEE = .30;
@@ -338,19 +338,18 @@ class OrderService {
   async makePayment(customer, restStripeId, restName, cents, cardTok) {
     try {
       const foodflickFee = Math.round(cents * round3(PERCENT_FEE / 100) + FLAT_RATE_FEE * 100);
-      return 'testCharge';
-      // return await this.stripe.charges.create({
-      //   amount: cents,
-      //   currency: 'usd',
-      //   customer: customer.stripeId,
-      //   source: cardTok,
-      //   receipt_email: customer.email,
-      //   statement_descriptor_suffix: restName,
-      //   application_fee_amount: foodflickFee,
-      //   transfer_data: {
-      //     destination: restStripeId,
-      //   },
-      // });
+      return await this.stripe.charges.create({
+        amount: cents,
+        currency: 'usd',
+        customer: customer.stripeId,
+        source: cardTok,
+        receipt_email: customer.email,
+        statement_descriptor_suffix: restName,
+        application_fee_amount: foodflickFee,
+        transfer_data: {
+          destination: restStripeId,
+        },
+      });
     } catch (e) {
       throw new Error(`Failed to make payment. ${e.message}`);
     }
@@ -404,7 +403,6 @@ class OrderService {
       amount: Math.round(amount * 100),
       reverse_transfer: true,
     });
-
     const orderRes = await callElasticWithErrorHandler(options => this.elastic.update(options), {
       index: ORDERS_INDEX,
       type: ORDER_TYPE,
