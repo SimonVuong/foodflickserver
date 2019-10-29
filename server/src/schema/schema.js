@@ -5,6 +5,7 @@ import User from './user/user';
 import Card from './user/card';
 import Flick from './user/flick';
 import Rest from './rest/rest';
+import { Subscription } from './subscription/subscription';
 import Tag from './tag/tag';
 import { RestMutationResolvers, RestQueryResolvers } from './rest/restResolvers';
 import { MenuMutationResolvers, MenuQueryResolvers } from './rest/menu/menuResolvers';
@@ -16,6 +17,7 @@ import { OrderMutationResolvers, OrderQueryResolvers } from './order/orderResolv
 import { Order } from './order/order';
 import { CartInput } from './cart/cartInput';
 import { Cart } from './cart/cart';
+import { SubscriptionQueryResolvers } from './subscription/subscriptionResolvers';
 
 
 const mutation = `
@@ -71,6 +73,7 @@ const query = `
     myCompletedOrders: [Order!]!
     myPendingTipOrders: [Order!]!
     pendingTipOrders(restId: ID!): [Order!]!
+    availableSubscriptions: [Subscription!]!
     openOrders(restId: ID!): [Order!]!
     ordersCountThisMonth(restId: ID!): Int!
     restPrinters: [Printer!]!
@@ -85,7 +88,6 @@ const schema = `
   schema {
     query: Query
     mutation: Mutation
-    #subscription: Subscription
   }
 `
 const typeDefs = [
@@ -106,14 +108,27 @@ const typeDefs = [
   UpdatePrinterInput,
   PrinterInput,
   ReceiverInput,
+  Subscription,
   query,
   mutation,
   schema
 ];
 
 const resolvers = {
-  Query: merge(RestQueryResolvers, MenuQueryResolvers, UserQueryResolvers, TagQueryResolvers, OrderQueryResolvers),
-  Mutation: merge(RestMutationResolvers, MenuMutationResolvers, UserMutationResolvers, OrderMutationResolvers),
+  Query: merge(
+    RestQueryResolvers,
+    MenuQueryResolvers,
+    UserQueryResolvers,
+    TagQueryResolvers,
+    OrderQueryResolvers,
+    SubscriptionQueryResolvers
+  ),
+  Mutation: merge(
+    RestMutationResolvers,
+    MenuMutationResolvers,
+    UserMutationResolvers,
+    OrderMutationResolvers
+  ),
 };
 
 export default makeExecutableSchema({
