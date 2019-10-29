@@ -48,6 +48,10 @@ export const OrderQueryResolvers = {
     return await OrderService.getPendingTipOrders(signedInUser, restId)
   },
 
+  ordersCountThisMonth: async (root, { restId }, { signedInUser, OrderService }) => {
+    return await OrderService.getOrdersCountThisMonth(signedInUser, restId)
+  },
+
   openOrders: async (root, { restId }, { signedInUser, OrderService }) => {
     return await OrderService.getOpenOrders(signedInUser, restId)
   },

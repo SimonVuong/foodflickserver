@@ -72,6 +72,7 @@ const query = `
     myPendingTipOrders: [Order!]!
     pendingTipOrders(restId: ID!): [Order!]!
     openOrders(restId: ID!): [Order!]!
+    ordersCountThisMonth(restId: ID!): Int!
     restPrinters: [Printer!]!
     restWithBanking(restId: String!): Rest!
     restByUrl(url: String!): Rest

@@ -225,7 +225,10 @@ class RestService {
     getTagService().incramentAndAddTags(newRest.profile.tags).catch(e => console.error('failed to incramentAndAddTags tags', e));
 
     const { address1, city, state, zip } = address;
-    newRest.location.geo = await getGeoService().getGeocode(address1, city, state, zip);
+    const { geo, timezone } = await getGeoService().getGeocode(address1, city, state, zip);
+    newRest.location.geo = geo;
+    newRest.location.timezone = timezone;
+
     newRest.createdDate = Date.now();
     newRest.menu = [];
     newRest.managers = [];
@@ -446,8 +449,9 @@ class RestService {
     const address = newLocation.address;
     throwIfInvalidAddress(address);
     const { address1, city, state, zip } = address;
-    newLocation.geo = await getGeoService().getGeocode(address1, city, state, zip);
-
+    const { geo, timezone } = await getGeoService().getGeocode(address1, city, state, zip);
+    newLocation.geo = geo;
+    newLocation.timezone = timezone;
     const res = await callElasticWithErrorHandler(options => this.elastic.update(options), getRestUpdateOptions(
       restId,
       signedInUser,
