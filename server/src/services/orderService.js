@@ -3,6 +3,7 @@ import { getPrinterService } from './printerService';
 import { getCannotBeEmptyError, NEEDS_MANAGER_SIGN_IN_ERROR } from '../utils/errors';
 import { OrderStatus } from '../schema/order/order';
 import { MANAGER_PERM, throwIfNotRestOwnerOrManager } from '../utils/auth';
+import { round2, round3 } from '../utils/math';
 import { QUERY_SIZE, callElasticWithErrorHandler, getOrderUpdateOptions } from './utils';
 import { getMenuItemById } from './menuService';
 import { activeConfig } from '../config';
@@ -49,10 +50,6 @@ const getItemTotal = items => round2(
     return sum + itemTotal * item.quantity
   }, 0)
 );
-
-//https://stackoverflow.com/questions/11832914/round-to-at-most-2-decimal-places-only-if-necessary
-const round2 = num => +(Math.round(num + "e+2") + "e-2");
-const round3 = num => +(Math.round(num + "e+3") + "e-3");
 
 class OrderService {
   constructor(stripe, elastic, textClient) {

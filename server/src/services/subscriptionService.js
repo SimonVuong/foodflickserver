@@ -1,8 +1,23 @@
-import { SUBSCRIPTION_INDEX, QUERY_SIZE, callElasticWithErrorHandler } from './utils';
+import { SUBSCRIPTION_INDEX, QUERY_SIZE, callElasticWithErrorHandler, SUBSCRIPTION_TYPE } from './utils';
 
 class SubscriptionService {
   constructor(elastic) {
     this.elastic = elastic;
+  }
+
+  async getSubscription(subscriptionId) {
+    try {
+      const sub = await callElasticWithErrorHandler(options => this.elastic.getSource(options), {
+        index: SUBSCRIPTION_INDEX,
+        type: SUBSCRIPTION_TYPE,
+        id: subscriptionId,
+      });
+      sub._id = subscriptionId;
+      return sub;
+    } catch (e) {
+      console.error(`[Subscription service] failed to get subscription for '${subscriptionId}'`, e);
+      throw e;
+    }
   }
 
   async getAvailableSubscriptions() {

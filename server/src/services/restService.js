@@ -19,6 +19,9 @@ import {
 import { throwIfInvalidPrinter } from '../schema/rest/printer';
 import nanoid from 'nanoid/generate';
 import { getPrinterService } from './printerService';
+import { getSubscriptionService } from './subscriptionService';
+import moment from 'moment-timezone';
+import { round2 } from '../utils/math';
 
 const findDuplicate = list => {
   const seen = new Set();
@@ -357,6 +360,42 @@ class RestService {
     return await this.addRestReceiver(signedInUser, restId, receiverId);
   }
 
+  async updateRestSubscription(signedInUser, restId, subscriptionId) {
+
+    // add check for banking
+    const rest = await this.getRest(restId, ['location.timezone.name', 'owner.userId', 'subscription']);
+    if (rest.owner.userId !== signedInUser._id) {
+      throw new Error('Only restaurant owners can change subscription plans');
+    }
+    const subscription = await getSubscriptionService().getSubscription(subscriptionId);
+    if (subscription.name === 'Custom') throw new Error('Please contact foodflick support to add custom plans.');
+
+    const now = moment().tz(rest.location.timezone.name);
+    const currDay = now.date();
+    const numDays = now.daysInMonth();
+    const daysLeft = numDays - currDay;
+    const newCostPerDay = subscription.monthlyRate / numDays;
+    const activeCostPerDay = rest.subscription.monthlyRate / numDays;
+    const addition = newCostPerDay * daysLeft;
+    const refund = activeCostPerDay * daysLeft;
+    const cost = round2(addition - refund);
+
+    // left off here
+
+    const res = await callElasticWithErrorHandler(options => this.elastic.update(options), getRestUpdateOptions(
+      restId,
+      null,
+      `
+        ctx._source.subscription = params.subscription;
+      `,
+      { 
+        signedInUserId: (signedInUser || {})._id,
+        subscription
+      }
+    ));
+    return getUpdatedRestWithId(res, restId);
+  }
+
   async getRest(restId, fields) {
     try {
       const rest = await callElasticWithErrorHandler(options => this.elastic.getSource(options), getRestReadOptions(
@@ -384,7 +423,7 @@ class RestService {
     return rest.printers;
   }
 
-  async getRestWithBanking (signedInUser, restId) {
+  async getRestBanking (signedInUser, restId) {
     const rest = await this.getRest(restId);
     if (!rest.owner.userId === signedInUser._id) {
       throw new Exception("Only the restaurant owner can see banking info. Please try again as the owner.")
@@ -393,18 +432,19 @@ class RestService {
     const externalAccounts = stripeAccount.external_accounts;
     const totalCount = externalAccounts.total_count;
     if (totalCount === 0) {
-      return rest;
+      return null;
     }
     if (totalCount > 1) {
       throw new Exception(`Found stripe account ${stripeAccount.id} for rest ${restId} with ${totalCount} external accounts. Expected 1`);
     }
-    rest.banking.routingNumber = externalAccounts.data[0].routing_number;
-    rest.banking.accountNumberLast4 = externalAccounts.data[0].last4;
-    return rest;
+    return {
+      routingNumber: externalAccounts.data[0].routing_number,
+      accountNumberLast4: externalAccounts.data[0].last4,
+      stripeId: rest.banking.stripeId,
+    }
   }
   
   async updateRestBanking(signedInUser, restId, newBanking) {
-    if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
     throwIfInvalidBanking(newBanking);
     const rest = await this.getRest(restId);
     if (!rest.owner.userId === signedInUser._id) {

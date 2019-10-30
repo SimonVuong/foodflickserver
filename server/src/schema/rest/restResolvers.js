@@ -61,6 +61,10 @@ export const RestMutationResolvers = {
     return await RestService.updateRestReceiver(signedInUser, restId, receiverId);  
   },
 
+  updateRestSubscription: async (root, { restId, subscriptionId }, { signedInUser, RestService }) => {
+    return await RestService.updateRestSubscription(signedInUser, restId, subscriptionId);  
+  },
+
   updateRestUrl: async (root, { restId, url }, { signedInUser, RestService }) => {
     return await RestService.updateRestUrl(signedInUser, restId, url);  
   },
@@ -87,7 +91,7 @@ export const RestQueryResolvers = {
     return await RestService.getRestSearchSuggestions(signedInUser, query, location);
   },
 
-  restWithBanking: async (root, { restId }, { signedInUser, RestService }) => {
-    return await RestService.getRestWithBanking(signedInUser, restId);
+  restBanking: async (root, { restId }, { signedInUser, RestService }) => {
+    return await RestService.getRestBanking(signedInUser, restId);
   }
 }

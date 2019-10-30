@@ -52,6 +52,7 @@ const mutation = `
     updateRestPrinter(restId: ID!, newPrinter: UpdatePrinterInput!): Rest!
     updateRestProfile(restId: ID!, newProfile: ProfileInput!): Rest!
     updateRestReceiver(restId: ID!, receiverId: ID!): Rest!
+    updateRestSubscription(restId: ID!, subscriptionId: ID!): Rest!
     updateRestUrl(restId: ID!, url: String!): Rest!
     updateTip(orderId: ID!, newTip: Float!): Boolean!
     updateUserCard(cardToken: ID!): Card!
@@ -77,7 +78,7 @@ const query = `
     openOrders(restId: ID!): [Order!]!
     ordersCountThisMonth(restId: ID!): Int!
     restPrinters: [Printer!]!
-    restWithBanking(restId: String!): Rest!
+    restBanking(restId: String!): Banking
     restByUrl(url: String!): Rest
     restSearchSuggestions(query: String!, location: String): [Rest!]
     tagSearchSuggestions(query: String!): [Tag!]
