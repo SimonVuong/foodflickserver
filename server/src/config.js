@@ -65,7 +65,6 @@ GHvfjzAiLDRjG8pWVA==
     cardPath: '/endpoints/devCard.html',
   },
   twilio: {
-    //test accountSID and phone
     accountSid: 'ACf4f1305a17d0a6d2f8e6a478f8e56fba',
     phone: '+15005550006',
   },

@@ -114,6 +114,7 @@ class RestService {
     const suggestionName = 'rests';
     const res = await callElasticWithErrorHandler(options => this.elastic.search(options), {
       index: REST_INDEX,
+      size: QUERY_SIZE,
       body: {
         // _source: { // _sourceExcludes doesn't actually work as api states. so use this instead.
         //   excludes: [ 'menu.items.likes.users' ] // unfortunately, this also removes menu if it's empty
