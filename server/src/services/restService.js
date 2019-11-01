@@ -19,7 +19,7 @@ import {
 import { throwIfInvalidPrinter } from '../schema/rest/printer';
 import nanoid from 'nanoid/generate';
 import { getPrinterService } from './printerService';
-import { getSubscriptionService } from './subscriptionService';
+import { getPlanService } from './planService';
 import moment from 'moment-timezone';
 import { round2 } from '../utils/math';
 
@@ -225,6 +225,14 @@ class RestService {
       throw 'Failed to add rest';
     }
 
+    let sub;
+    try {
+      sub = await getPlanService().addDefaultPlan(signedInUser);
+    } catch (e) {
+      console.error(`[Rest service] Failed to add default subscription for new rest '${newRest.profile.name}'`, e);
+      throw 'Failed to add rest';
+    }
+
     getTagService().incramentAndAddTags(newRest.profile.tags).catch(e => console.error('failed to incramentAndAddTags tags', e));
 
     const { address1, city, state, zip } = address;
@@ -248,6 +256,7 @@ class RestService {
     };
     newRest.url = nanoid(URLCharacters, 10);
     newRest.minsToUpdateCart = 15;
+    newRest.subscription = sub;
   
     try {
       // not specifying an id makes elastic add the doc
@@ -361,13 +370,16 @@ class RestService {
   }
 
   async updateRestSubscription(signedInUser, restId, subscriptionId) {
+    const rest = await this.getRest(restId, ['location.timezone.name', 'banking', 'owner.userId', 'subscription']);
 
-    // add check for banking
-    const rest = await this.getRest(restId, ['location.timezone.name', 'owner.userId', 'subscription']);
+    if (!rest.banking.accountNumberLast4) {
+      throw new Error('Only with banking setup can update subscriptions');
+    }
+    
     if (rest.owner.userId !== signedInUser._id) {
       throw new Error('Only restaurant owners can change subscription plans');
     }
-    const subscription = await getSubscriptionService().getSubscription(subscriptionId);
+    const subscription = await getPlanService().getSubscription(subscriptionId);
     if (subscription.name === 'Custom') throw new Error('Please contact foodflick support to add custom plans.');
 
     const now = moment().tz(rest.location.timezone.name);
@@ -380,7 +392,6 @@ class RestService {
     const refund = activeCostPerDay * daysLeft;
     const cost = round2(addition - refund);
 
-    // left off here
 
     const res = await callElasticWithErrorHandler(options => this.elastic.update(options), getRestUpdateOptions(
       restId,

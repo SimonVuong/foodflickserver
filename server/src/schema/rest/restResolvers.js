@@ -61,8 +61,8 @@ export const RestMutationResolvers = {
     return await RestService.updateRestReceiver(signedInUser, restId, receiverId);  
   },
 
-  updateRestSubscription: async (root, { restId, subscriptionId }, { signedInUser, RestService }) => {
-    return await RestService.updateRestSubscription(signedInUser, restId, subscriptionId);  
+  updateRestSubscription: async (root, { restId, planId }, { signedInUser, RestService }) => {
+    return await RestService.updateRestSubscription(signedInUser, restId, planId);  
   },
 
   updateRestUrl: async (root, { restId, url }, { signedInUser, RestService }) => {

@@ -5,7 +5,7 @@ import User from './user/user';
 import Card from './user/card';
 import Flick from './user/flick';
 import Rest from './rest/rest';
-import { Subscription } from './subscription/subscription';
+import { Plan } from './plan/plan';
 import Tag from './tag/tag';
 import { RestMutationResolvers, RestQueryResolvers } from './rest/restResolvers';
 import { MenuMutationResolvers, MenuQueryResolvers } from './rest/menu/menuResolvers';
@@ -17,7 +17,7 @@ import { OrderMutationResolvers, OrderQueryResolvers } from './order/orderResolv
 import { Order } from './order/order';
 import { CartInput } from './cart/cartInput';
 import { Cart } from './cart/cart';
-import { SubscriptionQueryResolvers } from './subscription/subscriptionResolvers';
+import { PlanQueryResolvers } from './plan/planResolvers';
 
 
 const mutation = `
@@ -52,7 +52,7 @@ const mutation = `
     updateRestPrinter(restId: ID!, newPrinter: UpdatePrinterInput!): Rest!
     updateRestProfile(restId: ID!, newProfile: ProfileInput!): Rest!
     updateRestReceiver(restId: ID!, receiverId: ID!): Rest!
-    updateRestSubscription(restId: ID!, subscriptionId: ID!): Rest!
+    updateRestSubscription(restId: ID!, planId: ID!): Rest!
     updateRestUrl(restId: ID!, url: String!): Rest!
     updateTip(orderId: ID!, newTip: Float!): Boolean!
     updateUserCard(cardToken: ID!): Card!
@@ -74,7 +74,7 @@ const query = `
     myCompletedOrders: [Order!]!
     myPendingTipOrders: [Order!]!
     pendingTipOrders(restId: ID!): [Order!]!
-    availableSubscriptions: [Subscription!]!
+    activePlans: [Plan!]!
     openOrders(restId: ID!): [Order!]!
     ordersCountThisMonth(restId: ID!): Int!
     restPrinters: [Printer!]!
@@ -109,7 +109,7 @@ const typeDefs = [
   UpdatePrinterInput,
   PrinterInput,
   ReceiverInput,
-  Subscription,
+  Plan,
   query,
   mutation,
   schema
@@ -122,7 +122,7 @@ const resolvers = {
     UserQueryResolvers,
     TagQueryResolvers,
     OrderQueryResolvers,
-    SubscriptionQueryResolvers
+    PlanQueryResolvers
   ),
   Mutation: merge(
     RestMutationResolvers,
