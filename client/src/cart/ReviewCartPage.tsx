@@ -25,6 +25,8 @@ import { Card } from 'general/card/CardModel';
 import { usePlaceOrder } from 'general/order/orderService';
 import { routes } from 'general/routes/routes';
 import { Link as RouterLink } from '@reach/router';
+import AnalyticsService from '../analytics/analyticsService';
+import events from '../analytics/events';
 
 import { SelectedRestStateReducer } from 'general/rest/redux/restReducer';
 import { navigate } from '@reach/router'
@@ -160,7 +162,7 @@ const ReviewCartPage: React.FC<props & ReactStripeElements.InjectedStripeProps> 
     setStaticTip(tip);
     setCustomTip('');
   }
-  const customTipChange = (tip: string) =>  {
+  const customTipChange = (tip: string) => {
     setCustomTip(tip);
     setStaticTip(null);
   }
@@ -212,7 +214,7 @@ const ReviewCartPage: React.FC<props & ReactStripeElements.InjectedStripeProps> 
     <Container className={classes.container}>
       <div className={classes.title}>
         <Link color='textPrimary' component={RouterLink} to={routes.cart.getLink()}>
-          <ArrowBack fontSize='large'/>
+          <ArrowBack fontSize='large' />
         </Link>
         <Typography gutterBottom variant='h4'>{cart.RestName} review</Typography>
       </div>
@@ -226,7 +228,7 @@ const ReviewCartPage: React.FC<props & ReactStripeElements.InjectedStripeProps> 
               setHiddenCard(null);
               setCardTok(null);
             }}>
-              <EditIcon fontSize='small'/>
+              <EditIcon fontSize='small' />
             </IconButton>
           </div>
           :
@@ -354,7 +356,7 @@ const ReviewCartPage: React.FC<props & ReactStripeElements.InjectedStripeProps> 
         color='primary'
         variant='contained'
         className={classes.review}
-        onClick={onPlaceOrder}
+        onClick={() => { onPlaceOrder(); AnalyticsService.trackEvent(events.PLACE_ORDER) }}
       >
         Place order
       </Button>

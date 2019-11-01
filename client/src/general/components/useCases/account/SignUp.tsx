@@ -5,6 +5,8 @@ import { connect } from 'react-redux';
 import { RootActions, RootState } from 'general/redux/rootReducer';
 import { ThunkDispatch } from 'redux-thunk';
 import { signUpAction } from 'general/account/accountActions';
+import AnalyticsService from '../../../../analytics/analyticsService';
+import events from '../../../../analytics/events';
 
 const useStyles = makeStyles(theme => ({
   button: {
@@ -90,7 +92,7 @@ const SignUp: React.FC<props> = ({ onSignUp, signUp, onSignInLink }) => {
         margin='normal'
       />
       <Button
-        onClick={onClick}
+        onClick={() => { onClick(); AnalyticsService.trackEvent(events.SIGN_UP) }}
         variant='contained'
         fullWidth
         color='primary'

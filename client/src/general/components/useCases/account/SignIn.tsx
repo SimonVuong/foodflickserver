@@ -5,6 +5,8 @@ import { connect } from 'react-redux';
 import { RootActions, RootState } from 'general/redux/rootReducer';
 import { ThunkDispatch } from 'redux-thunk';
 import { signInWithBasicAction } from 'general/account/accountActions';
+import AnalyticsService from '../../../../analytics/analyticsService';
+import events from '../../../../analytics/events';
 
 const useStyles = makeStyles(theme => ({
   signIn: {
@@ -56,7 +58,7 @@ const SignIn: React.FC<props> = ({ onSignIn, signIn, onCreateAccountLink }) => {
         margin='normal'
       />
       <Button
-        onClick={onClick}
+        onClick={() => { onClick(); AnalyticsService.trackEvent(events.SIGN_IN) }}
         variant='contained'
         fullWidth
         color='primary'
