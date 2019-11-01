@@ -46,12 +46,16 @@ const useStyles = makeStyles((theme: Theme) => ({
     // !importants necessary to override inline styles used by mui
     padding: `${theme.spacing(spacingPadding)}px 0px !important`,
   },
+  tileBar: {
+    background: 'linear-gradient(to bottom,rgba(0,0,0,0), rgba(0,0,0,1))',
+  },
   section: {
     backgroundColor: theme.palette.common.white,
     padding: theme.spacing(1, 2),
     marginBottom: theme.spacing(2),
   },
   item: {
+
     // !importants necessary to override inline styles used by mui. 25vw chosen by inspection
     height: 'calc(25vw) !important',
     // max and min inspired by from instagram
@@ -164,13 +168,13 @@ const MenuBrowserPage: React.FC<props & RouteComponentProps<routeParams>> = ({ r
   return (
     <Container className={classes.container}>
       {categoryIndex !== null && itemIndex !== null &&
-      <AddCartItemModal
-        categoryIndex={categoryIndex}
-        customerItem={rest.Menu[categoryIndex!].Items[itemIndex!]}
-        itemIndex={itemIndex}
-        onClose={onClose}
-        open={open}
-      />
+        <AddCartItemModal
+          categoryIndex={categoryIndex}
+          customerItem={rest.Menu[categoryIndex!].Items[itemIndex!]}
+          itemIndex={itemIndex}
+          onClose={onClose}
+          open={open}
+        />
       }
       <MobileDrawer isMobileDrawerOpen={isMobileDrawerOpen} toggleMobileDrawer={toggleMobileDrawer} />
       <DesktopDrawer />
@@ -195,6 +199,7 @@ const MenuBrowserPage: React.FC<props & RouteComponentProps<routeParams>> = ({ r
                 <GridListTile key={itemIndex} className={classes.item} onClick={() => onClickItem(itemIndex, categoryIndex)}>
                   {item.Flick ? <img src={item.Flick} alt={item.Name} /> : <Typography>{item.Description}</Typography>}
                   <GridListTileBar
+                    classes={{ root: classes.tileBar }}
                     title={item.Name}
                     subtitle={item.Prices[0].valueLabelString}
                   />
