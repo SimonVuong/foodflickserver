@@ -21,6 +21,7 @@ const _Plan = `
     monthlyOrders: Int!
     monthlyRate: Float!
     overagePercentageFee: Float!
+    proration: Float!
   }
 `
 

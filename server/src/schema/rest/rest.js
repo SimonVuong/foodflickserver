@@ -7,6 +7,7 @@ import Favorites from './favorites';
 import Feedback from './feedback';
 import Banking from './banking';
 import Receiver from './receiver';
+import { Subscription } from './subscription';
 
 // todo 1: add dates to rest, and menus and categories?
 
@@ -26,7 +27,7 @@ const Rest = `
     managers: [Manager!]
     minsToUpdateCart: Float
     menu: [Category!]!
-    subscription: Plan!
+    subscription: Subscription!
     url: String!
   }
 `;
@@ -45,4 +46,5 @@ export default () => [
   Favorites,
   Feedback,
   Receiver,
+  Subscription,
 ];

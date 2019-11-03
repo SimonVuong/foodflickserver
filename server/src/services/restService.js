@@ -382,15 +382,26 @@ class RestService {
     const subscription = await getPlanService().getSubscription(subscriptionId);
     if (subscription.name === 'Custom') throw new Error('Please contact foodflick support to add custom plans.');
 
-    const now = moment().tz(rest.location.timezone.name);
-    const currDay = now.date();
-    const numDays = now.daysInMonth();
-    const daysLeft = numDays - currDay;
-    const newCostPerDay = subscription.monthlyRate / numDays;
-    const activeCostPerDay = rest.subscription.monthlyRate / numDays;
-    const addition = newCostPerDay * daysLeft;
-    const refund = activeCostPerDay * daysLeft;
-    const cost = round2(addition - refund);
+    // const now = moment().tz(rest.location.timezone.name);
+    // const currDay = now.date();
+    // const numDays = now.daysInMonth();
+    // const daysLeft = numDays - currDay;
+    // const newCostPerDay = subscription.monthlyRate / numDays;
+    // const activeCostPerDay = rest.subscription.monthlyRate / numDays;
+    // const addition = newCostPerDay * daysLeft;
+    // const refund = activeCostPerDay * daysLeft;
+    // const cost = round2(addition - refund);
+
+    // const subscription = await stripe.subscriptions.retrieve('sub_G6D8E7OQEpO6GQ');
+    // stripe.subscriptions.update(
+    //   'sub_G6D8E7OQEpO6GQ',
+    //   {
+    //     items: [{
+    //       id: subscription.items.data[0].id,
+    //       plan: 'plan_G6Cl5jFbAACVqR'
+    //     }]
+    //   },
+    // );
 
 
     const res = await callElasticWithErrorHandler(options => this.elastic.update(options), getRestUpdateOptions(

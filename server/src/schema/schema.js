@@ -74,7 +74,7 @@ const query = `
     myCompletedOrders: [Order!]!
     myPendingTipOrders: [Order!]!
     pendingTipOrders(restId: ID!): [Order!]!
-    activePlans: [Plan!]!
+    activePlans(subscriptionId: ID!): [Plan!]!
     openOrders(restId: ID!): [Order!]!
     ordersCountThisMonth(restId: ID!): Int!
     restPrinters: [Printer!]!

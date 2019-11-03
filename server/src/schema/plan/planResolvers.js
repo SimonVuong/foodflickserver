@@ -1,5 +1,5 @@
 export const PlanQueryResolvers = {
-  activePlans: async (root, variables, { PlanService }) => {
-    return await PlanService.getActivePlans();
+  activePlans: async (root, { subscriptionId }, { signedInUser, PlanService }) => {
+    return await PlanService.getActivePlans(signedInUser, subscriptionId);
   },
 }
