@@ -6,6 +6,8 @@ import { AsyncAction } from 'general/redux/store';
 import { AccountService } from './accountService';
 import { Card } from 'general/card/CardModel';
 import LogRocket from 'logrocket';
+import AnalyticsService from '../../analytics/analyticsService';
+import events from '../../analytics/events';
 
 const jwtUtil = KJUR.jws.JWS
 
@@ -99,9 +101,10 @@ export const signUpAction = (
     });
     const json = await res.json();
     if (!res.ok) throw json;
+    AnalyticsService.trackEvent(events.SIGN_UP);
     dispatch(signInWithBasicAction(email, password));
     return true;
-  } catch(e) {
+  } catch (e) {
     dispatch(notificationErrorAction(`Sign up failed: ${e.error || e.description}`));
     return false;
   }
@@ -126,22 +129,23 @@ export const signInWithBasicAction = (
         client_id
       }),
     })
-  
+
     const authJson: any = await authRes.json();
-  
+
     if (!authRes.ok) throw authJson;
-  
+
     //todo 1: make it so i dont have to sign in every time by using the refresh token
     // getNewAccessTokenBefore(dispatch, authJson.expires_int);
     // console.log('auth0 res', authJson);
-    
+
     localStorage.setItem(STORAGE_KEY, authJson.refresh_token);
-    
+
     dispatch({
       type: AccountActionTypes.SIGN_IN,
       signedInUser: getSignedInUser(authJson),
-    });   
-    return true; 
+    });
+
+    return true;
   } catch (e) {
     dispatch(notificationErrorAction(`Sign in failed: ${e.error_description}`));
     return false;
@@ -164,7 +168,7 @@ export const signInWithRefreshAction = (refreshToken: string): AsyncAction => as
 
   const authJson = await authRes.json();
 
-  if (!authRes.ok) throw(authJson);
+  if (!authRes.ok) throw (authJson);
 
   // getNewAccessTokenBefore(dispatch, authJson.expires_int);
   // signInToFirebase(authJson.id_token);
@@ -173,6 +177,11 @@ export const signInWithRefreshAction = (refreshToken: string): AsyncAction => as
   dispatch({
     type: AccountActionTypes.SIGN_IN,
     signedInUser,
+  });
+  AnalyticsService.trackEvent(events.LOGIN_WITH_REFRESH);
+  AnalyticsService.setUserId(signedInUser._id);
+  AnalyticsService.setUserProperties({
+    perms: signedInUser.perms
   });
   return signedInUser;
 };

@@ -92,7 +92,7 @@ const SignUp: React.FC<props> = ({ onSignUp, signUp, onSignInLink }) => {
         margin='normal'
       />
       <Button
-        onClick={() => { onClick(); AnalyticsService.trackEvent(events.SIGN_UP) }}
+        onClick={() => onClick}
         variant='contained'
         fullWidth
         color='primary'
