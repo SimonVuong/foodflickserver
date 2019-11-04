@@ -369,53 +369,34 @@ class RestService {
     return await this.addRestReceiver(signedInUser, restId, receiverId);
   }
 
-  async updateRestSubscription(signedInUser, restId, subscriptionId) {
-    const rest = await this.getRest(restId, ['location.timezone.name', 'banking', 'owner.userId', 'subscription']);
+  async updateRestSubscription(signedInUser, restId, planId) {
+    const rest = await this.getRest(restId, ['banking', 'owner.userId', 'subscription.stripeSubscriptionId']);
 
-    if (!rest.banking.accountNumberLast4) {
-      throw new Error('Only with banking setup can update subscriptions');
-    }
+    // if (!rest.banking.accountNumberLast4) {
+    //   throw new Error('Only with banking setup can update subscriptions');
+    // }
     
     if (rest.owner.userId !== signedInUser._id) {
       throw new Error('Only restaurant owners can change subscription plans');
     }
-    const subscription = await getPlanService().getSubscription(subscriptionId);
-    if (subscription.name === 'Custom') throw new Error('Please contact foodflick support to add custom plans.');
 
-    // const now = moment().tz(rest.location.timezone.name);
-    // const currDay = now.date();
-    // const numDays = now.daysInMonth();
-    // const daysLeft = numDays - currDay;
-    // const newCostPerDay = subscription.monthlyRate / numDays;
-    // const activeCostPerDay = rest.subscription.monthlyRate / numDays;
-    // const addition = newCostPerDay * daysLeft;
-    // const refund = activeCostPerDay * daysLeft;
-    // const cost = round2(addition - refund);
-
-    // const subscription = await stripe.subscriptions.retrieve('sub_G6D8E7OQEpO6GQ');
-    // stripe.subscriptions.update(
-    //   'sub_G6D8E7OQEpO6GQ',
-    //   {
-    //     items: [{
-    //       id: subscription.items.data[0].id,
-    //       plan: 'plan_G6Cl5jFbAACVqR'
-    //     }]
-    //   },
-    // );
-
-
-    const res = await callElasticWithErrorHandler(options => this.elastic.update(options), getRestUpdateOptions(
-      restId,
-      null,
-      `
-        ctx._source.subscription = params.subscription;
-      `,
-      { 
-        signedInUserId: (signedInUser || {})._id,
-        subscription
-      }
-    ));
-    return getUpdatedRestWithId(res, restId);
+    try {
+      const sub = await getPlanService().updateSubscription(rest.subscription.stripeSubscriptionId, planId);
+      const res = await callElasticWithErrorHandler(options => this.elastic.update(options), getRestUpdateOptions(
+        restId,
+        null,
+        `
+          ctx._source.subscription = params.sub;
+        `,
+        { 
+          sub
+        }
+      ));
+      return getUpdatedRestWithId(res, restId);
+    } catch (e) {
+      console.error(`[Rest service] could not update rest '${restId}' with plan '${planId}' because '${e.message}'`);
+      throw e;
+    }
   }
 
   async getRest(restId, fields) {

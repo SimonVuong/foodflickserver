@@ -34,19 +34,31 @@ class PlanService {
     }
   }
 
-  async getSubscription(subscriptionId) {
-    // try {
-    //   const sub = await callElasticWithErrorHandler(options => this.elastic.getSource(options), {
-    //     index: SUBSCRIPTION_INDEX,
-    //     type: SUBSCRIPTION_TYPE,
-    //     id: subscriptionId,
-    //   });
-    //   sub._id = subscriptionId;
-    //   return sub;
-    // } catch (e) {
-    //   console.error(`[Subscription service] failed to get subscription for '${subscriptionId}'`, e);
-    //   throw e;
-    // }
+  async updateSubscription(subscriptionId, planId) {
+    try {
+      const subscription = await this.stripe.subscriptions.retrieve(subscriptionId);
+      const sub = await this.stripe.subscriptions.update(
+        subscriptionId,
+        {
+          items: [{
+            id: subscription.items.data[0].id,
+            plan: planId
+          }]
+        },
+      );
+      const plan = sub.plan;
+      return {
+        stripeSubscriptionId: sub.id,
+        stripePlanId: plan.id,
+        monthlyRate: plan.amount / 100,
+        monthlyOrders: plan.metadata.monthlyOrders,
+        name: plan.nickname,
+        overagePercentageFee:  plan.metadata.overagePercentageFee,
+      }
+    } catch (e) {
+      console.error(`[Plan service] could not update subscription '${subscriptionId}' with plan '${planId}' because '${e.message}'`);
+      throw e;
+    }
   }
 
   async getActivePlans(signedInUser, subscriptionId) {
@@ -59,15 +71,14 @@ class PlanService {
 
         const items = [{
           id: restSubscription.items.data[0].id,
-          plan: plan.id, // Switch to new plan
+          plan: plan.id,
         }];
         const invoice = await this.stripe.invoices.retrieveUpcoming(signedInUser.stripeId, subscriptionId, {
           subscription_items: items,
           subscription_proration_date: prorationDate,
         });
-
         const proration = invoice.lines.data.reduce((sum, invoiceItem) => 
-          invoiceItem.period.start == prorationDate ? sum + invoiceItem.amount : sum
+          invoiceItem.period.start === prorationDate ? sum + invoiceItem.amount : sum
         , 0);
   
         return {
