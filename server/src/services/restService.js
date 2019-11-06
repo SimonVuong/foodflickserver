@@ -20,8 +20,7 @@ import { throwIfInvalidPrinter } from '../schema/rest/printer';
 import nanoid from 'nanoid/generate';
 import { getPrinterService } from './printerService';
 import { getPlanService } from './planService';
-import moment from 'moment-timezone';
-import { round2 } from '../utils/math';
+import { getCardService } from './cardService';
 
 const findDuplicate = list => {
   const seen = new Set();
@@ -256,8 +255,8 @@ class RestService {
     };
     newRest.url = nanoid(URLCharacters, 10);
     newRest.minsToUpdateCart = 15;
-    newRest.subscription = sub;
-  
+    newRest.subscription = {};
+    newRest.subscription.plan = sub;
     try {
       // not specifying an id makes elastic add the doc
       const res = await callElasticWithErrorHandler(options => this.elastic.index(options), {
@@ -369,25 +368,23 @@ class RestService {
     return await this.addRestReceiver(signedInUser, restId, receiverId);
   }
 
-  async updateRestSubscription(signedInUser, restId, planId) {
-    const rest = await this.getRest(restId, ['banking', 'owner.userId', 'subscription.stripeSubscriptionId']);
+  async updateRestSubscription(signedInUser, restId, newPlanId) {
+    const rest = await this.getRest(restId, ['owner.userId', 'subscription.card', 'subscription.plan.stripeSubscriptionId']);
 
-    // if (!rest.banking.accountNumberLast4) {
-    //   throw new Error('Only with banking setup can update subscriptions');
-    // }
+    if (!rest.subscription.card) {
+      throw new Error('Only with a card setup can update subscriptions');
+    }
     
     if (rest.owner.userId !== signedInUser._id) {
       throw new Error('Only restaurant owners can change subscription plans');
     }
 
     try {
-      const sub = await getPlanService().updateSubscription(rest.subscription.stripeSubscriptionId, planId);
+      const sub = await getPlanService().updateSubscription(rest.subscription.plan.stripeSubscriptionId, newPlanId);
       const res = await callElasticWithErrorHandler(options => this.elastic.update(options), getRestUpdateOptions(
         restId,
         null,
-        `
-          ctx._source.subscription = params.sub;
-        `,
+        `ctx._source.subscription.plan = params.sub;`,
         { 
           sub
         }
@@ -395,6 +392,31 @@ class RestService {
       return getUpdatedRestWithId(res, restId);
     } catch (e) {
       console.error(`[Rest service] could not update rest '${restId}' with plan '${planId}' because '${e.message}'`);
+      throw e;
+    }
+  }
+
+  async updateRestSubscriptionCard(signedInUser, restId, cardTok) {
+    try {
+      const rest = await this.getRest(restId, ['owner.userId', 'subscription.card']);
+      if (rest.owner.userId !== signedInUser._id) {
+        throw new Error('Only restaurant owners can change subscription plans');
+      }
+
+      if (rest.subscription && rest.subscription.card) {
+        getCardService().removeUserCard(signedInUser.stripeId, rest.subscription.card.cardTok);
+      }
+
+      const card = await getCardService().addUserCard(signedInUser.stripeId, cardTok, { restId })
+      const res = await callElasticWithErrorHandler(options => this.elastic.update(options), getRestUpdateOptions(
+        restId,
+        null,
+        `ctx._source.subscription.card = params.card;`,
+        { card }
+      ));
+      return getUpdatedRestWithId(res, restId);
+    } catch (e) {
+      console.error(`[Rest service] could not add payment card for customer '${signedInUser.stripeId}', rest '${restId}', and cardTok '${cardTok}' because '${e.message}'`);
       throw e;
     }
   }

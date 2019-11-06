@@ -48,10 +48,15 @@ class CardService {
     }
   }
 
-  addUserCard = async (stripeCustomerId, cardToken) => {
+  removeUserCard = (stripeCustomerId, cardToken) => this.stripe.customers.deleteSource(stripeCustomerId, cardToken);
+  
+  addUserCard = async (stripeCustomerId, cardToken, metadata) => {
     const res = await this.stripe.customers.createSource(
       stripeCustomerId,
-      { source: cardToken }
+      {
+        source: cardToken,
+        metadata,
+      }
     );
     if (res.error) throw res.error;
     return getHiddenCard(res);

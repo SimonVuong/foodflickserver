@@ -1,5 +1,5 @@
-const _Subscription = `
-  type Subscription {
+const ActiveSubscription = `
+  type ActiveSubscription {
     stripeSubscriptionId: ID!
     stripePlanId: ID!
     name: PlanName!
@@ -9,4 +9,11 @@ const _Subscription = `
   }
 `
 
-export const Subscription = () => [_Subscription, ];
+const _Subscription = `
+  type Subscription {
+    plan: ActiveSubscription!
+    card: Card
+  }
+`
+
+export const Subscription = () => [_Subscription, ActiveSubscription];

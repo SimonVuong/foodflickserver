@@ -53,6 +53,7 @@ const mutation = `
     updateRestProfile(restId: ID!, newProfile: ProfileInput!): Rest!
     updateRestReceiver(restId: ID!, receiverId: ID!): Rest!
     updateRestSubscription(restId: ID!, planId: ID!): Rest!
+    updateRestSubscriptionCard(restId: ID!, cardTok: ID!): Rest!
     updateRestUrl(restId: ID!, url: String!): Rest!
     updateTip(orderId: ID!, newTip: Float!): Boolean!
     updateUserCard(cardToken: ID!): Card!
