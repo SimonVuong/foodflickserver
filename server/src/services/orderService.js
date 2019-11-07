@@ -336,6 +336,10 @@ class OrderService {
   }
 
   async makePayment(customer, restStripeId, restName, cents, cardTok) {
+    // stripe connected account id of prod demo restaurant
+    if (restStripeId === 'acct_1FcBS0AHmiskJUzH') {
+      return { id: 'demoCharge' };
+    }
     try {
       const foodflickFee = Math.round(cents * round3(PERCENT_FEE / 100) + FLAT_RATE_FEE * 100);
       return await this.stripe.charges.create({
