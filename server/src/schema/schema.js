@@ -5,6 +5,7 @@ import User from './user/user';
 import Card from './user/card';
 import Flick from './user/flick';
 import Rest from './rest/rest';
+import { Plan } from './plan/plan';
 import Tag from './tag/tag';
 import { RestMutationResolvers, RestQueryResolvers } from './rest/restResolvers';
 import { MenuMutationResolvers, MenuQueryResolvers } from './rest/menu/menuResolvers';
@@ -16,6 +17,7 @@ import { OrderMutationResolvers, OrderQueryResolvers } from './order/orderResolv
 import { Order } from './order/order';
 import { CartInput } from './cart/cartInput';
 import { Cart } from './cart/cart';
+import { PlanQueryResolvers } from './plan/planResolvers';
 
 
 const mutation = `
@@ -50,6 +52,8 @@ const mutation = `
     updateRestPrinter(restId: ID!, newPrinter: UpdatePrinterInput!): Rest!
     updateRestProfile(restId: ID!, newProfile: ProfileInput!): Rest!
     updateRestReceiver(restId: ID!, receiverId: ID!): Rest!
+    updateRestSubscription(restId: ID!, planId: ID!): Rest!
+    updateRestSubscriptionCard(restId: ID!, cardTok: ID!): Rest!
     updateRestUrl(restId: ID!, url: String!): Rest!
     updateTip(orderId: ID!, newTip: Float!): Boolean!
     updateUserCard(cardToken: ID!): Card!
@@ -71,9 +75,11 @@ const query = `
     myCompletedOrders: [Order!]!
     myPendingTipOrders: [Order!]!
     pendingTipOrders(restId: ID!): [Order!]!
+    activePlans(subscriptionId: ID!): [Plan!]!
     openOrders(restId: ID!): [Order!]!
+    ordersCountThisMonth(restId: ID!): Int!
     restPrinters: [Printer!]!
-    restWithBanking(restId: String!): Rest!
+    restBanking(restId: String!): Banking
     restByUrl(url: String!): Rest
     restSearchSuggestions(query: String!, location: String): [Rest!]
     tagSearchSuggestions(query: String!): [Tag!]
@@ -84,7 +90,6 @@ const schema = `
   schema {
     query: Query
     mutation: Mutation
-    #subscription: Subscription
   }
 `
 const typeDefs = [
@@ -105,14 +110,27 @@ const typeDefs = [
   UpdatePrinterInput,
   PrinterInput,
   ReceiverInput,
+  Plan,
   query,
   mutation,
   schema
 ];
 
 const resolvers = {
-  Query: merge(RestQueryResolvers, MenuQueryResolvers, UserQueryResolvers, TagQueryResolvers, OrderQueryResolvers),
-  Mutation: merge(RestMutationResolvers, MenuMutationResolvers, UserMutationResolvers, OrderMutationResolvers),
+  Query: merge(
+    RestQueryResolvers,
+    MenuQueryResolvers,
+    UserQueryResolvers,
+    TagQueryResolvers,
+    OrderQueryResolvers,
+    PlanQueryResolvers
+  ),
+  Mutation: merge(
+    RestMutationResolvers,
+    MenuMutationResolvers,
+    UserMutationResolvers,
+    OrderMutationResolvers
+  ),
 };
 
 export default makeExecutableSchema({

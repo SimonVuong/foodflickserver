@@ -19,6 +19,8 @@ import {
 import { throwIfInvalidPrinter } from '../schema/rest/printer';
 import nanoid from 'nanoid/generate';
 import { getPrinterService } from './printerService';
+import { getPlanService } from './planService';
+import { getCardService } from './cardService';
 
 const findDuplicate = list => {
   const seen = new Set();
@@ -222,10 +224,21 @@ class RestService {
       throw 'Failed to add rest';
     }
 
+    let sub;
+    try {
+      sub = await getPlanService().addDefaultPlan(signedInUser);
+    } catch (e) {
+      console.error(`[Rest service] Failed to add default subscription for new rest '${newRest.profile.name}'`, e);
+      throw 'Failed to add rest';
+    }
+
     getTagService().incramentAndAddTags(newRest.profile.tags).catch(e => console.error('failed to incramentAndAddTags tags', e));
 
     const { address1, city, state, zip } = address;
-    newRest.location.geo = await getGeoService().getGeocode(address1, city, state, zip);
+    const { geo, timezone } = await getGeoService().getGeocode(address1, city, state, zip);
+    newRest.location.geo = geo;
+    newRest.location.timezone = timezone;
+
     newRest.createdDate = Date.now();
     newRest.menu = [];
     newRest.managers = [];
@@ -242,7 +255,8 @@ class RestService {
     };
     newRest.url = nanoid(URLCharacters, 10);
     newRest.minsToUpdateCart = 15;
-  
+    newRest.subscription = {};
+    newRest.subscription.plan = sub;
     try {
       // not specifying an id makes elastic add the doc
       const res = await callElasticWithErrorHandler(options => this.elastic.index(options), {
@@ -354,6 +368,59 @@ class RestService {
     return await this.addRestReceiver(signedInUser, restId, receiverId);
   }
 
+  async updateRestSubscription(signedInUser, restId, newPlanId) {
+    const rest = await this.getRest(restId, ['owner.userId', 'subscription.card', 'subscription.plan.stripeSubscriptionId']);
+
+    if (!rest.subscription.card) {
+      throw new Error('Only with a card setup can update subscriptions');
+    }
+    
+    if (rest.owner.userId !== signedInUser._id) {
+      throw new Error('Only restaurant owners can change subscription plans');
+    }
+
+    try {
+      const sub = await getPlanService().updateSubscription(rest.subscription.plan.stripeSubscriptionId, newPlanId);
+      const res = await callElasticWithErrorHandler(options => this.elastic.update(options), getRestUpdateOptions(
+        restId,
+        null,
+        `ctx._source.subscription.plan = params.sub;`,
+        { 
+          sub
+        }
+      ));
+      return getUpdatedRestWithId(res, restId);
+    } catch (e) {
+      console.error(`[Rest service] could not update rest '${restId}' with plan '${planId}' because '${e.message}'`);
+      throw e;
+    }
+  }
+
+  async updateRestSubscriptionCard(signedInUser, restId, cardTok) {
+    try {
+      const rest = await this.getRest(restId, ['owner.userId', 'subscription.card']);
+      if (rest.owner.userId !== signedInUser._id) {
+        throw new Error('Only restaurant owners can change subscription plans');
+      }
+
+      if (rest.subscription && rest.subscription.card) {
+        getCardService().removeUserCard(signedInUser.stripeId, rest.subscription.card.cardTok);
+      }
+
+      const card = await getCardService().addUserCard(signedInUser.stripeId, cardTok, { restId })
+      const res = await callElasticWithErrorHandler(options => this.elastic.update(options), getRestUpdateOptions(
+        restId,
+        null,
+        `ctx._source.subscription.card = params.card;`,
+        { card }
+      ));
+      return getUpdatedRestWithId(res, restId);
+    } catch (e) {
+      console.error(`[Rest service] could not add payment card for customer '${signedInUser.stripeId}', rest '${restId}', and cardTok '${cardTok}' because '${e.message}'`);
+      throw e;
+    }
+  }
+
   async getRest(restId, fields) {
     try {
       const rest = await callElasticWithErrorHandler(options => this.elastic.getSource(options), getRestReadOptions(
@@ -381,7 +448,7 @@ class RestService {
     return rest.printers;
   }
 
-  async getRestWithBanking (signedInUser, restId) {
+  async getRestBanking (signedInUser, restId) {
     const rest = await this.getRest(restId);
     if (!rest.owner.userId === signedInUser._id) {
       throw new Exception("Only the restaurant owner can see banking info. Please try again as the owner.")
@@ -390,18 +457,19 @@ class RestService {
     const externalAccounts = stripeAccount.external_accounts;
     const totalCount = externalAccounts.total_count;
     if (totalCount === 0) {
-      return rest;
+      return null;
     }
     if (totalCount > 1) {
       throw new Exception(`Found stripe account ${stripeAccount.id} for rest ${restId} with ${totalCount} external accounts. Expected 1`);
     }
-    rest.banking.routingNumber = externalAccounts.data[0].routing_number;
-    rest.banking.accountNumberLast4 = externalAccounts.data[0].last4;
-    return rest;
+    return {
+      routingNumber: externalAccounts.data[0].routing_number,
+      accountNumberLast4: externalAccounts.data[0].last4,
+      stripeId: rest.banking.stripeId,
+    }
   }
   
   async updateRestBanking(signedInUser, restId, newBanking) {
-    if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
     throwIfInvalidBanking(newBanking);
     const rest = await this.getRest(restId);
     if (!rest.owner.userId === signedInUser._id) {
@@ -446,8 +514,9 @@ class RestService {
     const address = newLocation.address;
     throwIfInvalidAddress(address);
     const { address1, city, state, zip } = address;
-    newLocation.geo = await getGeoService().getGeocode(address1, city, state, zip);
-
+    const { geo, timezone } = await getGeoService().getGeocode(address1, city, state, zip);
+    newLocation.geo = geo;
+    newLocation.timezone = timezone;
     const res = await callElasticWithErrorHandler(options => this.elastic.update(options), getRestUpdateOptions(
       restId,
       signedInUser,

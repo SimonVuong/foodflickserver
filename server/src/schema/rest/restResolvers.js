@@ -11,7 +11,7 @@ export const RestMutationResolvers = {
   addRestPrinter: async (root, { restId, newPrinter }, { signedInUser, RestService }) => {
     return await RestService.addRestPrinter(signedInUser, restId, newPrinter);  
   },
-  
+
   addRestReceiver: async (root, { restId, receiverId }, { signedInUser, RestService }) => {
     return await RestService.addRestReceiver(signedInUser, restId, receiverId);  
   },
@@ -61,6 +61,14 @@ export const RestMutationResolvers = {
     return await RestService.updateRestReceiver(signedInUser, restId, receiverId);  
   },
 
+  updateRestSubscription: async (root, { restId, planId }, { signedInUser, RestService }) => {
+    return await RestService.updateRestSubscription(signedInUser, restId, planId);  
+  },
+
+  updateRestSubscriptionCard: async (root, { restId, cardTok }, { signedInUser, RestService }) => {
+    return await RestService.updateRestSubscriptionCard(signedInUser, restId, cardTok);  
+  },
+
   updateRestUrl: async (root, { restId, url }, { signedInUser, RestService }) => {
     return await RestService.updateRestUrl(signedInUser, restId, url);  
   },
@@ -87,7 +95,7 @@ export const RestQueryResolvers = {
     return await RestService.getRestSearchSuggestions(signedInUser, query, location);
   },
 
-  restWithBanking: async (root, { restId }, { signedInUser, RestService }) => {
-    return await RestService.getRestWithBanking(signedInUser, restId);
+  restBanking: async (root, { restId }, { signedInUser, RestService }) => {
+    return await RestService.getRestBanking(signedInUser, restId);
   }
 }

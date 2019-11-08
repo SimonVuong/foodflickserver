@@ -21,6 +21,7 @@ import { getOrderService } from './services/orderService';
 import { activeConfig } from './config';
 import { getPrinterService } from './services/printerService';
 import { getBrokerService } from './services/brokerService';
+import { getPlanService } from './services/planService';
 
 const STRIPE_KEY = activeConfig.stripe.STRIPE_KEY;
 const accountSid = activeConfig.twilio.accountSid;
@@ -52,6 +53,7 @@ const start = async () => {
       MenuService: getMenuService(elastic),
       OrderService: getOrderService(stripe, elastic, textClient),
       UserService: getUserService(elastic),
+      PlanService: getPlanService(stripe),
       TagService: getTagService(elastic),
       GeoService: getGeoService(),
     }),
