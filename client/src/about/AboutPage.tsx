@@ -30,16 +30,16 @@ const AboutPage: React.FC<RouteComponentProps> = () => {
           What is foodflick?
         </Typography>
         <Typography variant='body1' paragraph>
-          foodflick is a mobile point of sale for restaurants that lives in the customer's phone. foodflick handles
-          payments, menu management, and more. Customers, use foodflick to browse the menu and place orders. No more waiting for checks. No more splitting bills.
-          Restaurants, improve customer service. Servers focus less on bookkeeping and more on what counts, the customer.
+          foodflick is a mobile point of sale add-on for restaurants that lives in the customer's phone. It does not replace
+          the existing POS. It integrates with your printers. foodflick handles payments, menu management, and more. Sit-down customers use foodflick to browse the menu and place orders. No more waiting for checks. No more splitting bills.
+          This improves customer service by allowing servers focus less on bookkeeping and more on what counts, the customer.
         </Typography>
         <Typography variant='h6' gutterBottom>
           Interested?
         </Typography>
         <Typography variant='body1'>
-          Download foodflick in the playstore to add your restaurant! Contact me (Simon) at <i> 609-513-8166</i> or
-          <i> simonlvuong@gmail.com</i> to request a restaurant addition or just to chat.
+          Download foodflick in the playstore an appstore to add your restaurant! Contact me (Simon) at <i> 609-513-8166</i> or
+          <i> sales.foodflick@gmail.com</i> to request a restaurant addition or just to chat.
         </Typography>
       </div>
     </div>
