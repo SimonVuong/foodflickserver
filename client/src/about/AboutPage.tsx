@@ -53,9 +53,9 @@ const AboutPage: React.FC<RouteComponentProps> = () => {
           Interested?
         </Typography>
         <Typography variant='body1' paragraph>
-          Download foodflick on android or iOS to add your restaurant and start with our free plan! You get 1000 orders
-          a month for free, then foodflick charges 3% per order. Custom pricing available on request. Contact me (Simon)
-          at <i> 609-513-8166</i> or <i> sales.foodflick@gmail.com</i> to request a restaurant addition or just to chat.
+          Download foodflick on android or iOS to add your restaurant and start with our free plan!
+          <b> You get 1000 orders a month for free, then foodflick charges 3% per order. Custom pricing available on
+          request</b>. Contact me (Simon) at <b> 609-513-8166</b> or <b> sales.foodflick@gmail.com</b> to request a restaurant addition or just to chat.
         </Typography>
         <Typography variant='h6' gutterBottom>
           How does it work?
