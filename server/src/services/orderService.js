@@ -99,7 +99,8 @@ class OrderService {
   
     getPrinterService().printTickets(
       signedInUser.name,
-      cart.tableNumber,
+      orderType,
+      tableNumber,
       rest.receiver,
       items.map(({ itemId, ...others }) => ({
         ...others,
@@ -147,7 +148,7 @@ class OrderService {
     }
 
     setTimeout(async () => {
-      const success = await this.setOrderPendingTip(upsertedOrder._id);
+      const success = await this.setOrderPendingTip(signedInUser, upsertedOrder._id, rest.receiver);
       if (!success) return;
       const millisTillPayment = PENDING_TIP_HOLDING_TIME + SCHEDULING_BUFFER_MILLIS;
       setTimeout(() => {
@@ -155,8 +156,7 @@ class OrderService {
           upsertedOrder._id,
           signedInUser,
           rest.banking.stripeId,
-          rest.profile.name,
-          rest.receiver,
+          rest.profile.name
         )
       // add 1 minute to the PENDING_TIP_HOLDING_TIME to avoid any issues with timing and async. for example, what
       // the user updated the tip at the last minute such that when we try to pay, elastic doesn't pick up the new tip.
@@ -180,20 +180,18 @@ class OrderService {
       const rest = await getRestService().getRest(order.restId, ['owner', 'managers', 'profile','banking', 'receiver']);
       throwIfNotRestOwnerOrManager(signedInUser, rest.owner, rest.managers, rest.profile.name);
 
-      await this.setOrderPendingTip(orderId);
+      await this.setOrderPendingTip(signedInUser, orderId, rest.receiver);
       const userRes = await getUserService().getUserById(order.customer.userId, 'email,app_metadata');
       const customer = {
         email: userRes.email,
         stripeId: userRes.app_metadata.stripeId,
       }
-
       setTimeout(() => {
         this.completeOrderAndPay(
           orderId,
           customer,
           rest.banking.stripeId,
           rest.profile.name,
-          rest.receiver,
         )
       // add 1 minute to the PENDING_TIP_HOLDING_TIME to avoid any issues with timing and async. for example, what
       // the user updated the tip at the last minute such that when we try to pay, elastic doesn't pick up the new tip.
@@ -206,12 +204,12 @@ class OrderService {
     }
   }
 
-  async setOrderPendingTip(orderId) {
+  async setOrderPendingTip(signedInUser, orderId, restReceiver) {
     const ORDER_COMPLETED_MSG = 'Order is already completed';
     const ORDER_RETURNED_MSG = 'Order is already returned';
     const ORDER_PENDING_TIP_CHANGE_MSG = 'Order is already pending tip change'
     try {
-      await callElasticWithErrorHandler(options => this.elastic.update(options), getOrderUpdateOptions(
+      const res = await callElasticWithErrorHandler(options => this.elastic.update(options), getOrderUpdateOptions(
         orderId,
         `
           if (ctx._source.status.equals("${OrderStatus.COMPLETED}")) {
@@ -227,8 +225,27 @@ class OrderService {
         `,
         {
           status: OrderStatus.PENDING_TIP_CHANGE,
-        }
+        },
+        true
       ));
+      const order = res.get._source;
+      const { itemTotal, tax, tip } = order.costs;
+      const total = round2(itemTotal + tax + tip);
+      getPrinterService().printReceipts(
+        signedInUser.name,
+        order.tableNumber,
+        restReceiver,
+        order.items.map(({ itemId, ...others }) => ({
+          ...others,
+        })),
+        {
+          itemTotal,
+          tax,
+          tip,
+          total,
+        }
+      );
+
       console.log(`[Order service] updated order '${orderId}' to status '${OrderStatus.PENDING_TIP_CHANGE}'`)
       return true;
     } catch(e) {
@@ -261,14 +278,14 @@ class OrderService {
         email: userRes.email,
         stripeId: userRes.app_metadata.stripeId,
       }
-      this.completeOrderAndPay(orderId, customer, rest.banking.stripeId, rest.profile.name, rest.receiver);
+      this.completeOrderAndPay(orderId, customer, rest.banking.stripeId, rest.profile.name);
       return true;
     } catch (e) {
       throw new Error(`Could not complete order: ${e}`);
     }
   }
 
-  async completeOrderAndPay(orderId, customer, restStripeId, restName, restReceiver) {
+  async completeOrderAndPay(orderId, customer, restStripeId, restName,) {
     let order;
     try {
       const res = await callElasticWithErrorHandler(options => this.elastic.update(options), getOrderUpdateOptions(
@@ -312,21 +329,6 @@ class OrderService {
       ));
       throw(e);
     }
-
-    getPrinterService().printReceipts(
-      customer.name,
-      order.tableNumber,
-      restReceiver,
-      order.items.map(({ itemId, ...others }) => ({
-        ...others,
-      })),
-      {
-        itemTotal,
-        tax,
-        tip,
-        total,
-      }
-    );
 
     callElasticWithErrorHandler(options => this.elastic.update(options), getOrderUpdateOptions(
       orderId,

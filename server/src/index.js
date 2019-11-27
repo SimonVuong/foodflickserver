@@ -43,19 +43,22 @@ const start = async () => {
   const elastic = await getElastic();
   const textClient = twilio(accountSid, authToken);
   const stripe = new Stripe(STRIPE_KEY);
+  const context = {
+    BankingService: getBankingService(stripe),
+    CardService: getCardService(stripe),
+    RestService: getRestService(elastic),
+    MenuService: getMenuService(elastic),
+    OrderService: getOrderService(stripe, elastic, textClient),
+    UserService: getUserService(elastic),
+    PlanService: getPlanService(stripe),
+    TagService: getTagService(elastic),
+    GeoService: getGeoService(),
+  }
   const apolloServer = new ApolloServer({
     schema,
     context: ({ req }) => ({
       signedInUser: getSignedInUser(req),
-      BankingService: getBankingService(stripe),
-      CardService: getCardService(stripe),
-      RestService: getRestService(elastic),
-      MenuService: getMenuService(elastic),
-      OrderService: getOrderService(stripe, elastic, textClient),
-      UserService: getUserService(elastic),
-      PlanService: getPlanService(stripe),
-      TagService: getTagService(elastic),
-      GeoService: getGeoService(),
+      ...context
     }),
   });
 

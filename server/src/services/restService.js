@@ -106,6 +106,29 @@ class RestService {
     return rest;
   }
 
+  async getRestByRecieverId(receiverId) {
+    const res = await callElasticWithErrorHandler(options => this.elastic.search(options), {
+      index: 'rests',
+      size: QUERY_SIZE,
+      body: {
+        query: {
+          bool: {
+            filter: {
+              term: {
+                'receiver.receiverId.keyword': receiverId
+              }
+            }
+          }
+        }
+      }
+    });
+    if (res.hits.total === 0) return null;
+    const dbRest = res.hits.hits[0];
+    const rest = dbRest._source;
+    rest._id = dbRest._id;
+    return rest;
+  }
+
   /**
    * 
    * @param {*} signedInUser 

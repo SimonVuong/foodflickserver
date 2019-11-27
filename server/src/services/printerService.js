@@ -1,5 +1,6 @@
 import io from 'socket.io';
 import parser from 'socket.io-json-parser';
+import { getRestService } from './restService';
 
 const handleBrokerMessage = (socketConn, obj) => socketConn.send(obj);
 
@@ -21,8 +22,17 @@ class PrinterService {
       console.log(`[Socket] connected '${conn.id}'`);
       const receiverId = conn.handshake.query.id;
       let isListening = await this.broker.listen(receiverId, json => handleBrokerMessage(conn, json));
+      const { profile, location } = await getRestService().getRestByRecieverId(receiverId)
       if (isListening) {
         console.log(`[Socket] '${conn.id}' listening for messages to '${receiverId}'`);
+        conn.send({
+          type: 'REST_DETAILS',
+          data: {
+            name: profile.name,
+            address: location.address,
+            phone: profile.phone,
+          }
+        });
       } else {
         console.log(`[Socket] '${conn.id}' failed to listen for message to '${receiverId}'. Trying again in 5 seconds`)
         // necessary because it's possible that upon receiver restart, that the receiver establishes a new socket
@@ -32,6 +42,14 @@ class PrinterService {
           isListening = await this.broker.listen(receiverId, obj => handleBrokerMessage(conn, obj));
           if (isListening) {
             console.log(`[Socket] '${conn.id}' listening for messages to ${receiverId}`);
+            conn.send({
+              type: 'REST_DETAILS',
+              data: {
+                name: profile.name,
+                address: location.address,
+                phone: profile.phone,
+              }
+            });
           } else {
             console.log(`[Socket] '${conn.id}' failed to listen for message to '${receiverId}'`)
           }
@@ -53,11 +71,12 @@ class PrinterService {
     });
   }
 
-  printTickets(signedInUserName, tableNumber, receiver, items) {
+  printTickets(signedInUserName, orderType, tableNumber, receiver, items) {
     this.broker.send(receiver.receiverId,{
       type: 'TICKETS',
       data: {
         customerName: signedInUserName,
+        orderType,
         tableNumber,
         items,
       }
@@ -65,6 +84,7 @@ class PrinterService {
   }
 
   printReceipts(signedInUserName, tableNumber, receiver, items, costs) {
+    console.log('sending receipt request');
     this.broker.send(receiver.receiverId, {
       type: 'RECEIPTS',
       data: {
