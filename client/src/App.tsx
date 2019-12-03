@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ApolloProvider } from '@apollo/react-hooks';
 import { Store } from 'redux';
 import ApolloClient from 'apollo-client';
@@ -18,15 +18,16 @@ import AnalyticsService from './analytics/analyticsService';
 const store: Store = initStore(getRootReducer());
 const apolloClient: ApolloClient<NormalizedCacheObject> = getApolloClient(store);
 const App: React.FC = () => {
+  const [isReady, setIsReady] = useState(false);
   useEffect(() => {
     const refreshToken = localStorage.getItem(STORAGE_KEY);
-    const analyticsInit = async () => {
-      await AnalyticsService.init();
-    };
-    analyticsInit();
+    AnalyticsService.init().then(() => setIsReady(true))
     // @ts-ignore
     if (refreshToken) store.dispatch(signInWithRefreshAction(refreshToken));
-  }, [])
+  }, []);
+
+  if (!isReady) return null;
+
   return (
     <ApolloProvider client={apolloClient}>
       <Provider store={store}>

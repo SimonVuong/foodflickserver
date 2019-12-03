@@ -48,6 +48,10 @@ const getSignedInUser = (authJson: any): SignedInUser => {
     email,
     name: `${firstName} ${lastName}`
   });
+  AnalyticsService.setUserId(sub);
+  AnalyticsService.setUserProperties({
+    perms: null
+  });
   return new SignedInUser({
     accessToken: {
       token: authJson.access_token,
@@ -137,7 +141,7 @@ export const signInWithBasicAction = (
     //todo 1: make it so i dont have to sign in every time by using the refresh token
     // getNewAccessTokenBefore(dispatch, authJson.expires_int);
     // console.log('auth0 res', authJson);
-
+    AnalyticsService.trackEvent(events.LOGIN_WITH_PASSWORD);
     localStorage.setItem(STORAGE_KEY, authJson.refresh_token);
 
     dispatch({
@@ -179,10 +183,6 @@ export const signInWithRefreshAction = (refreshToken: string): AsyncAction => as
     signedInUser,
   });
   AnalyticsService.trackEvent(events.LOGIN_WITH_REFRESH);
-  AnalyticsService.setUserId(signedInUser._id);
-  AnalyticsService.setUserProperties({
-    perms: signedInUser.perms
-  });
   return signedInUser;
 };
 
@@ -193,6 +193,7 @@ export const updateCardAction = (newCardTok: string): AsyncAction => async dispa
       type: AccountActionTypes.UPDATE_HIDDEN_CARD,
       hiddenCard: newHiddenCard,
     });
+    AnalyticsService.trackEvent(events.UPDATED_CARD);
   } catch (e) {
     // todo 2. see what if i can get non-grqphl error
   }

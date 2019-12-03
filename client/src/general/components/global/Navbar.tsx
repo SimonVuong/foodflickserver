@@ -101,7 +101,7 @@ const Navbar: React.FC<props> = ({ cartItemCount, signedInUser, toggleMobileDraw
                 <img src={logo} alt='logo' className={classes.logo} onClick={() => AnalyticsService.trackEvent(events.LOGO)} />
               </Link>
             </div>
-            <Link to={routes.cart.getLink()} style={{ textDecoration: 'none' }} onClick={() => AnalyticsService.trackEvent(events.CART)}>
+            <Link to={routes.cart.getLink()} style={{ textDecoration: 'none' }}>
               <div className={classes.cart}>
                 <IconButton color='inherit'>
                   <ShoppingCartOutlined />
@@ -110,7 +110,7 @@ const Navbar: React.FC<props> = ({ cartItemCount, signedInUser, toggleMobileDraw
               </div>
             </Link>
             {signedInUser &&
-              <Link to={routes.account.getLink()} style={{ textDecoration: 'none' }} onClick={() => AnalyticsService.trackEvent(events.PROFILE)}>
+              <Link to={routes.account.getLink()} style={{ textDecoration: 'none' }}>
                 <IconButton className={classes.account}>
                   <AccountCircle />
                 </IconButton>

@@ -1,16 +1,15 @@
 const events = {
-    ABOUT_FOODFLICK: 'ABOUT_FOOD_FLICK',
-    SIGN_UP: 'SIGN_UP',
-    SIGN_IN: 'SIGN_IN',
-    LOGIN_WITH_REFRESH: 'LOGGED IN WITH REFRESH',
-    PROFILE: 'PROFILE',
-    LOGO: 'LOGO',
-    CLOSE_SEARCH: 'CLOSED SEARCH BAR',
-    REVIEW_CART: 'REVIEW_CART',
-    PLACE_ORDER: 'PLACE_ORDER',
-    CART: 'CHECKED CART',
-    SEARCH_BAR: 'SEARCH_BAR',
-    SEARCH_BAR_ITEM: 'SEARCH_BAR_ITEM',
+    ABOUT_FOODFLICK: 'Clicked About',
+    SIGN_UP: 'Signed up',
+    LOGIN_WITH_PASSWORD: 'Logged in with password',
+    LOGIN_WITH_REFRESH: 'Logged in with refresh token',
+    LOGO: 'Clicked Logo',
+    CLOSE_SEARCH: 'Closed search bar',
+    PLACE_ORDER: 'Clicked place order',
+    SEARCH_BAR: 'Clicked search bar',
+    SEARCH_BAR_ITEM: 'User clicked this item in the search bar',
+    UPDATED_CARD: 'Updated Card',
+    TOGGLE_MOBILE_DRAWER: 'Toggled mobile drawer'
 
 
 }
