@@ -1,17 +1,13 @@
-// @ts-nocheck
 import React from 'react';
 import { Router } from '@reach/router';
 import { routes } from 'general/routes/routes';
 import analyticsService from 'analytics/analyticsService';
-const withTracker: any = (WrappedComponent: any) => {
+import events from 'analytics/events';
+const withTracker = (WrappedComponent: any) => {
   class HOC extends React.Component<any> {
     render() {
-      analyticsService.trackEventWithProperties(`Viewed ${this.props.path}`, { 'actualPath': this.props.location.pathname });
-      return (
-        <WrappedComponent
-          {...this.props}
-        />
-      );
+      analyticsService.trackEventWithProperties(events.VISITED_PATH(this.props.path), { url: this.props.location.pathname });
+      return (<WrappedComponent{...this.props} />);
     }
   }
   return HOC;
@@ -25,6 +21,5 @@ const MyRouter: React.FC = () => (
     })}
   </Router>
 );
-
 
 export default MyRouter;

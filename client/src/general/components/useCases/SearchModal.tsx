@@ -14,8 +14,8 @@ import { RootActions, RootState } from 'general/redux/rootReducer';
 import { ThunkDispatch } from 'redux-thunk';
 import { navigate } from '@reach/router';
 import { routes } from 'general/routes/routes';
-import AnalyticsService from '../../../analytics/analyticsService';
-import events from '../../../analytics/events';
+import AnalyticsService from 'analytics/analyticsService';
+import events from 'analytics/events';
 
 const useStyles = makeStyles(theme => ({
   pointer: {
@@ -102,7 +102,7 @@ const SearchModal: React.FC<props> = ({ open, onClose, selectRest }) => {
             {displayQuery && rests.map(rest => (
               <ListItem key={rest._Id} className={classes.pointer} onClick={() => {
                 selectRest(rest);
-                AnalyticsService.trackEventWithProperties(events.SEARCH_BAR_ITEM, rest);
+                AnalyticsService.trackEventWithProperties(events.CLICKED_SEARCH_BAR_ITEM, rest);
                 navigate(routes.menuBrowser.getLink(rest.Url))
               }
               }>

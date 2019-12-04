@@ -195,6 +195,7 @@ const ReviewCartPage: React.FC<props & ReactStripeElements.InjectedStripeProps> 
       const res = await stripe!.createToken({ name: (signedInUser && signedInUser.FullName) ? signedInUser.FullName : '' });
       if (res.error) return;
       orderCardTok = res.token!.id;
+      AnalyticsService.trackEvent(events.CLICKED_PLACE_ORDER)
     }
 
     const isOrderValid = doesPassRequirements();
@@ -356,7 +357,7 @@ const ReviewCartPage: React.FC<props & ReactStripeElements.InjectedStripeProps> 
         color='primary'
         variant='contained'
         className={classes.review}
-        onClick={() => { onPlaceOrder(); AnalyticsService.trackEvent(events.PLACE_ORDER) }}
+        onClick={onPlaceOrder}
       >
         Place order
       </Button>

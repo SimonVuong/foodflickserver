@@ -105,7 +105,7 @@ export const signUpAction = (
     });
     const json = await res.json();
     if (!res.ok) throw json;
-    AnalyticsService.trackEvent(events.SIGN_UP);
+    AnalyticsService.trackEvent(events.SIGNED_UP);
     dispatch(signInWithBasicAction(email, password));
     return true;
   } catch (e) {
@@ -141,7 +141,7 @@ export const signInWithBasicAction = (
     //todo 1: make it so i dont have to sign in every time by using the refresh token
     // getNewAccessTokenBefore(dispatch, authJson.expires_int);
     // console.log('auth0 res', authJson);
-    AnalyticsService.trackEvent(events.LOGIN_WITH_PASSWORD);
+    AnalyticsService.trackEvent(events.LOGGED_IN_WITH_PASSWORD);
     localStorage.setItem(STORAGE_KEY, authJson.refresh_token);
 
     dispatch({
@@ -182,7 +182,7 @@ export const signInWithRefreshAction = (refreshToken: string): AsyncAction => as
     type: AccountActionTypes.SIGN_IN,
     signedInUser,
   });
-  AnalyticsService.trackEvent(events.LOGIN_WITH_REFRESH);
+  AnalyticsService.trackEvent(events.LOGGED_IN_WITH_REFRESH);
   return signedInUser;
 };
 

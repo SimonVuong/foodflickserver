@@ -15,8 +15,8 @@ import { RootState } from 'general/redux/rootReducer';
 import { connect } from 'react-redux';
 import { SignedInUser } from 'general/account/SignedInUserModel';
 import { SelectedRestStateReducer } from 'general/rest/redux/restReducer';
-import AnalyticsService from '../../../analytics/analyticsService';
-import events from '../../../analytics/events';
+import AnalyticsService from 'analytics/analyticsService';
+import events from 'analytics/events';
 
 
 const logo = '/assets/logo/foodflick800.png';
@@ -123,7 +123,6 @@ const Navbar: React.FC<props> = ({ cartItemCount, signedInUser, toggleMobileDraw
                 </Button>
               </Link>
             }
-
           </Toolbar>
         </Container>
       </AppBar>

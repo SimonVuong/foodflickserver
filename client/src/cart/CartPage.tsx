@@ -22,7 +22,7 @@ const useStyles = makeStyles((theme: Theme) => ({
     margin: theme.spacing(2, 0),
   },
   empty: {
-    color: 'lightgrey',
+    color: theme.palette.grey[400],
     width: '100%',
     textAlign: 'center',
     paddingTop: '20%',

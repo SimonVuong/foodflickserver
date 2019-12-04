@@ -12,6 +12,6 @@ export interface ToggleMobileDrawerAction {
 export type UiActions = ToggleMobileDrawerAction | NotificationActions
 
 export const toggleMobileDrawerAction = (): ToggleMobileDrawerAction => {
-  AnalyticsService.trackEvent(events.TOGGLE_MOBILE_DRAWER);
+  AnalyticsService.trackEvent(events.TOGGLED_MOBILE_DRAWER);
   return { type: UiActionTypes.TOGGLE_MOBILE_DRAWER, }
 }

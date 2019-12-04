@@ -5,8 +5,6 @@ import SignUp from 'general/components/useCases/account/SignUp';
 import { RouteComponentProps } from '@reach/router';
 import { routes } from 'general/routes/routes';
 
-
-
 const useStyles = makeStyles(theme => ({
   container: {
     paddingTop: theme.spacing(2),
