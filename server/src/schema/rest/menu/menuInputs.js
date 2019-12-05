@@ -8,6 +8,7 @@ export const _PriceInput = `
 export const ItemPrinterInput = `
   input ItemPrinterInput {
     name: String!
+    itemName: String!
     ip: String!
     port: String!
     type: PrinterTypeInput!
@@ -30,6 +31,7 @@ const OptionGroupInput = `
 const _NewItemInput = `
   input NewItemInput {
     name: String!
+    privateNames: [String!]!
     prices: [PriceInput!]!
     addons: [PriceInput!]!
     printers: [ItemPrinterInput!]!

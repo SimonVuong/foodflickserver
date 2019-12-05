@@ -83,13 +83,13 @@ class PrinterService {
     });
   }
 
-  printReceipts(signedInUserName, tableNumber, receiver, items, costs) {
-    console.log('sending receipt request');
+  printReceipts(signedInUserName, orderType, tableNumber, receiver, items, costs) {
     this.broker.send(receiver.receiverId, {
       type: 'RECEIPTS',
       data: {
         receiptPrinters: receiver.printers.filter(printer => printer.isReceipt),
         customerName: signedInUserName,
+        orderType,
         tableNumber,
         items,
         costs,

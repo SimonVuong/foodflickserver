@@ -51,9 +51,9 @@ class PlanService {
         stripeSubscriptionId: sub.id,
         stripePlanId: plan.id,
         monthlyRate: plan.amount / 100,
-        monthlyOrders: plan.metadata.monthlyOrders,
+        monthlyOrders: parseFloat(plan.metadata.monthlyOrders),
         name: plan.nickname,
-        overagePercentageFee:  plan.metadata.overagePercentageFee,
+        overagePercentageFee: parseFloat(plan.metadata.overagePercentageFee),
       }
     } catch (e) {
       console.error(`[Plan service] could not update subscription '${subscriptionId}' with plan '${planId}' because '${e.message}'`);

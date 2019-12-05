@@ -96,7 +96,6 @@ class OrderService {
     const rest = await getRestService().getRest(restId);
     this.validatePrices(items, rest);
     this.validateAddons(items, rest);
-  
     getPrinterService().printTickets(
       signedInUser.name,
       orderType,
@@ -233,6 +232,7 @@ class OrderService {
       const total = round2(itemTotal + tax + tip);
       getPrinterService().printReceipts(
         signedInUser.name,
+        order.orderType,
         order.tableNumber,
         restReceiver,
         order.items.map(({ itemId, ...others }) => ({

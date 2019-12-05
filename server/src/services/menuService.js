@@ -24,6 +24,19 @@ const throwIfInvalidReorder = newOrder => {
   }
 }
 
+const throwIfContainsDupePrivateName = item => {
+  for(let i = 0; i < item.privateNames.length; i++) {
+    const targetName = item.privateNames[i];
+    for(let j = 0; j < item.privateNames.length; j++) {
+      if (j === i) continue;
+      if (targetName === item.privateNames[j]) {
+        throw new Error(`Name ${targetName} already exists. Please try again with a new private name`);
+      }
+    }
+  }
+  return;
+}
+
 export const getMenuItemById = (itemId, menu) => {
   for (const category of menu) {
     for (const item of category.items) {
@@ -148,7 +161,7 @@ class MenuService {
 
     items = items.map((item, index) => {
       if (!item.name) throw new Error(getCannotBeEmptyError(`Item name for index ${index}`));
-
+      throwIfContainsDupePrivateName(item);
       return {
         ...item,
         _id: nanoid(URLCharacters, 10),
@@ -236,73 +249,80 @@ class MenuService {
 
   //todo 1: surround item details in details object for graphql and elastic
   async updateItems(signedInUser, restId, categoryName, items) {
-    if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
+    try {
+      if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
 
-    items.forEach(item => {
-      if (!item.item.name) throw new Error(getCannotBeEmptyError(`Item name for index ${item.index}`));
-    });
-
-    const res = await callElasticWithErrorHandler(options => this.elastic.update(options), getRestUpdateOptions(
-      restId,
-      signedInUser,
-      `
-        def menu = ctx._source.menu;
-        boolean foundCategory = false;
-        for (int i = 0; i < menu.length; i++) {
-          if (menu[i].name.equals(params.categoryName)) {
-            foundCategory = true;
-            for (def updatedItem : params.items) { 
-              if (updatedItem.index < 0 || updatedItem.index >= menu[i].items.length) {
-                throw new Exception("Can't update index " + updatedItem.index + " for category of length " + menu[i].items.length);
-              }
-              throwIfItemNameIsDuplicate(updatedItem.item.name, updatedItem.index, menu[i].items);
-              for (def itemPrinter : updatedItem.item.printers) {
-                boolean foundStoredPrinter = false;
-
-                def itemPrinterName = itemPrinter.name;
-                def itemPrinterIp = itemPrinter.ip;
-                def itemPrinterPort = itemPrinter.port;
-                def itemPrinterType = itemPrinter.type;
-
-                def storedPrinters = ctx._source.receiver.printers;
-                for (int j = 0; j < storedPrinters.length; j++) {
-                  def storedPrinter = storedPrinters[j];
-                  def storedName = storedPrinter.name;
-                  def storedIp = storedPrinter.ip;
-                  def storedPort = storedPrinter.port;
-                  def storedType = storedPrinter.type;
-
-                  if (itemPrinterName.equals(storedName) && itemPrinterIp.equals(storedIp) && itemPrinterPort.equals(storedPort) && itemPrinterType.equals(storedType)) {
-                    foundStoredPrinter = true;
-                    break;
+      items.forEach(item => {
+        if (!item.item.name) throw new Error(getCannotBeEmptyError(`Item name for index ${item.index}`));
+        throwIfContainsDupePrivateName(item.item);
+      });
+  
+      const res = await callElasticWithErrorHandler(options => this.elastic.update(options), getRestUpdateOptions(
+        restId,
+        signedInUser,
+        `
+          def menu = ctx._source.menu;
+          boolean foundCategory = false;
+          for (int i = 0; i < menu.length; i++) {
+            if (menu[i].name.equals(params.categoryName)) {
+              foundCategory = true;
+              for (def updatedItem : params.items) { 
+                if (updatedItem.index < 0 || updatedItem.index >= menu[i].items.length) {
+                  throw new Exception("Can't update index " + updatedItem.index + " for category of length " + menu[i].items.length);
+                }
+                throwIfItemNameIsDuplicate(updatedItem.item.name, updatedItem.index, menu[i].items);
+                for (def itemPrinter : updatedItem.item.printers) {
+                  boolean foundStoredPrinter = false;
+  
+                  def itemPrinterName = itemPrinter.name;
+                  def itemPrinterIp = itemPrinter.ip;
+                  def itemPrinterPort = itemPrinter.port;
+                  def itemPrinterType = itemPrinter.type;
+  
+                  def storedPrinters = ctx._source.receiver.printers;
+                  for (int j = 0; j < storedPrinters.length; j++) {
+                    def storedPrinter = storedPrinters[j];
+                    def storedName = storedPrinter.name;
+                    def storedIp = storedPrinter.ip;
+                    def storedPort = storedPrinter.port;
+                    def storedType = storedPrinter.type;
+  
+                    if (itemPrinterName.equals(storedName) && itemPrinterIp.equals(storedIp) && itemPrinterPort.equals(storedPort) && itemPrinterType.equals(storedType)) {
+                      foundStoredPrinter = true;
+                      break;
+                    }
+                  }
+                  if (!foundStoredPrinter) {
+                    throw new Exception("Printer with name '" + itemPrinterName + "' doesn't exist. If name is correct "
+                    + "then ip, port, or type may be wrong. Please choose an existing printer or add it to the restaurant's list of printers");
                   }
                 }
-                if (!foundStoredPrinter) {
-                  throw new Exception("Printer with name '" + itemPrinterName + "' doesn't exist. If name is correct "
-                  + "then ip, port, or type may be wrong. Please choose an existing printer or add it to the restaurant's list of printers");
-                }
+                def dbItem = menu[i].items[updatedItem.index];
+                dbItem.prices = updatedItem.item.prices;
+                dbItem.addons = updatedItem.item.addons;
+                dbItem.name = updatedItem.item.name;
+                dbItem.privateNames = updatedItem.item.privateNames;
+                dbItem.description = updatedItem.item.description;
+                dbItem.printers = updatedItem.item.printers;
+                dbItem.flick = updatedItem.item.flick;
+                dbItem.optionGroups = updatedItem.item.optionGroups;
               }
-              def dbItem = menu[i].items[updatedItem.index];
-              dbItem.prices = updatedItem.item.prices;
-              dbItem.addons = updatedItem.item.addons;
-              dbItem.name = updatedItem.item.name;
-              dbItem.description = updatedItem.item.description;
-              dbItem.printers = updatedItem.item.printers;
-              dbItem.flick = updatedItem.item.flick;
-              dbItem.optionGroups = updatedItem.item.optionGroups;
+              break;
             }
-            break;
           }
-        }
-
-        if (!foundCategory) {
-          throwCategoryNotFoundException(params.categoryName); 
-        }
-      `,
-      { categoryName, items }
-    ));
-
-    return getUpdatedRestWithId(res, restId);
+  
+          if (!foundCategory) {
+            throwCategoryNotFoundException(params.categoryName); 
+          }
+        `,
+        { categoryName, items }
+      ));
+  
+      return getUpdatedRestWithId(res, restId);
+    } catch (e) {
+      console.error('[Menu service] could not update item', e.message);
+      throw e;
+    }
   }
 
   /**
