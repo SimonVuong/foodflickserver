@@ -72,7 +72,7 @@ class PrinterService {
   }
 
   printTickets(signedInUserName, orderType, tableNumber, receiver, items) {
-    this.broker.send(receiver.receiverId,{
+    return this.broker.send(receiver.receiverId,{
       type: 'TICKETS',
       data: {
         customerName: signedInUserName,
@@ -84,7 +84,7 @@ class PrinterService {
   }
 
   printReceipts(signedInUserName, orderType, tableNumber, receiver, items, costs) {
-    this.broker.send(receiver.receiverId, {
+    return this.broker.send(receiver.receiverId, {
       type: 'RECEIPTS',
       data: {
         receiptPrinters: receiver.printers.filter(printer => printer.isReceipt),

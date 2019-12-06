@@ -96,7 +96,7 @@ class OrderService {
     const rest = await getRestService().getRest(restId);
     this.validatePrices(items, rest);
     this.validateAddons(items, rest);
-    getPrinterService().printTickets(
+    const didSend = await getPrinterService().printTickets(
       signedInUser.name,
       orderType,
       tableNumber,
@@ -106,6 +106,11 @@ class OrderService {
         printers: getMenuItemById(itemId, rest.menu).printers,
       })),
     );
+
+    if (!didSend) {
+      console.error(`[Order service] could not print ticket to '${rest.receiver.receiverId}'`);
+      return false;
+    }
 
     // when the customer orders with a default card, cardTok is what we expect, namely a card id in the form of "card_<string>".
     // however if the customer is ordering with a new card, then cardTok is not a card id, but rather a token id of the form

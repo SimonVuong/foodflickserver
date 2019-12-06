@@ -62,10 +62,17 @@ class BrokerService {
     }
   }
 
-  send(receiverId, obj) {
+  async send(receiverId, obj) {
+    try {
+      await this.channels[SENDING_CHANNEL].checkQueue(receiverId);
+    } catch (e) {
+      console.error(`[Broker] enqueue to '${receiverId} failed since queue does not exist.`, e.message);
+      return false;
+    }
     this.channels[SENDING_CHANNEL].sendToQueue(receiverId, Buffer.from(JSON.stringify(obj)), {
       persistent: false,
     });
+    return true;
   }
 
   async listen(receiverId, onReceive) {
