@@ -52,6 +52,7 @@ const useStyles = makeStyles((theme: Theme) => ({
     marginBottom: theme.spacing(2),
   },
   item: {
+
     // !importants necessary to override inline styles used by mui. 25vw chosen by inspection
     height: 'calc(25vw) !important',
     // max and min inspired by from instagram
@@ -164,13 +165,13 @@ const MenuBrowserPage: React.FC<props & RouteComponentProps<routeParams>> = ({ r
   return (
     <Container className={classes.container}>
       {categoryIndex !== null && itemIndex !== null &&
-      <AddCartItemModal
-        categoryIndex={categoryIndex}
-        customerItem={rest.Menu[categoryIndex!].Items[itemIndex!]}
-        itemIndex={itemIndex}
-        onClose={onClose}
-        open={open}
-      />
+        <AddCartItemModal
+          categoryIndex={categoryIndex}
+          customerItem={rest.Menu[categoryIndex!].Items[itemIndex!]}
+          itemIndex={itemIndex}
+          onClose={onClose}
+          open={open}
+        />
       }
       <MobileDrawer isMobileDrawerOpen={isMobileDrawerOpen} toggleMobileDrawer={toggleMobileDrawer} />
       <DesktopDrawer />

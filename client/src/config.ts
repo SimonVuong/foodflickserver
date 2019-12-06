@@ -6,7 +6,7 @@ const development = 'development';
 const config = {
   [development]: {
     app: {
-      apiUrl: 'http://192.168.0.12:8443', // change when joining a different network
+      apiUrl: 'http://192.168.1.156:8443', // change when joining a different network
     },
     auth: {
       clientId: 'DQupUZG50i6pvR7ZeFa6qJ2tB7oGBcLh', // the id of the web server api
@@ -34,7 +34,7 @@ const config = {
       `
     },
     analytics: {
-      key: 'af4f17f91e955ff4a44b8c5b154bb46d', // amplitude key
+      key: 'fb474379f5a69197ef3d2463c97edc57', // amplitude key
     },
     stripe: {
       key: 'pk_test_Ij3KCwOSq0LycG5DEcpvULGp00kyRcst9h'
@@ -70,7 +70,7 @@ const config = {
       `,
     },
     analytics: {
-      key: 'af4f17f91e955ff4a44b8c5b154bb46d',
+      key: '3280a60ccb49aa305b05afd3b6950ccd',
     },
     stripe: {
       key: 'pk_live_ssYCk7PkKuv7b817RsAnJnsZ00dDcwl5JM'

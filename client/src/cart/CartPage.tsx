@@ -98,7 +98,7 @@ const CartPage: React.FC<props & RouteComponentProps<routeParams>> = ({ cart, re
   }
 
   if (!cart) {
-    return <Typography variant='h1'className={classes.empty}>Cart is empty</Typography> 
+    return <Typography variant='h1' className={classes.empty}>Cart is empty</Typography>
   };
 
   return (
@@ -115,7 +115,7 @@ const CartPage: React.FC<props & RouteComponentProps<routeParams>> = ({ cart, re
       {needsSignInModal && <SignInModal onSignUpSignIn={onSignUpSignIn} open={needsSignInModal} onClose={() => setNeedsSignInModal(false)} />}
       <div className={classes.title}>
         <Link color='textPrimary' component={RouterLink} to={routes.menuBrowser.getLink(cart.RestUrl)}>
-          <ArrowBack fontSize='large'/>
+          <ArrowBack fontSize='large' />
         </Link>
         <Typography gutterBottom variant='h4'>{cart.RestName} cart</Typography>
       </div>

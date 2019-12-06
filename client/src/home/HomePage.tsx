@@ -5,6 +5,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import { routes } from 'general/routes/routes';
 import Search from '@material-ui/icons/Search';
 import SearchModal from 'general/components/useCases/SearchModal';
+
 const background = '/assets/global/background.jpg';
 
 const useStyles = makeStyles(theme => ({
@@ -42,7 +43,7 @@ const HomePage: React.FC<RouteComponentProps> = () => {
   const classes = useStyles();
   return (
     <div className={classes.background}>
-      <SearchModal open={open} onClose={() => setOpen(false)}/>
+      <SearchModal open={open} onClose={() => setOpen(false)} />
       <div className={classes.content}>
         <TextField
           hiddenLabel

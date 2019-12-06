@@ -8,6 +8,20 @@ import ReviewCartPage from 'cart/ReviewCartPage';
 import AccountPage from 'account/AccountPage';
 import CompletedOrderSummaryPage from 'account/OrderSummaryPage';
 
+type getLink = (key: string) => string
+type getLink2 = () => string
+
+export interface route {
+  path: string,
+  basePath: string,
+  Component: React.ComponentType,
+  getLink: getLink | getLink2
+};
+
+type routes = {
+  [key: string]: route
+};
+
 const routes = {
   about: {
     path: '/about',
