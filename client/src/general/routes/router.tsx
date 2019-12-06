@@ -7,7 +7,7 @@ const withTracker = (WrappedComponent: React.ComponentType) => {
   class HOC extends React.Component<{ path: string } & RouteComponentProps> {
     render() {
       analyticsService.trackEventWithProperties(events.VISITED_PATH(this.props.path), { url: this.props.location ? this.props.location.pathname : null });
-      return (<WrappedComponent{...this.props} />);
+      return < WrappedComponent{...this.props} />;
     }
   }
   return HOC;
