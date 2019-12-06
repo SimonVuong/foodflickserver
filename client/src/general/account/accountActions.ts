@@ -6,6 +6,8 @@ import { AsyncAction } from 'general/redux/store';
 import { AccountService } from './accountService';
 import { Card } from 'general/card/CardModel';
 import LogRocket from 'logrocket';
+import AnalyticsService from 'analytics/analyticsService';
+import events from 'analytics/events';
 
 const jwtUtil = KJUR.jws.JWS
 
@@ -45,6 +47,10 @@ const getSignedInUser = (authJson: any): SignedInUser => {
   LogRocket.identify(sub, {
     email,
     name: `${firstName} ${lastName}`
+  });
+  AnalyticsService.setUserId(sub);
+  AnalyticsService.setUserProperties({
+    perms: null
   });
   return new SignedInUser({
     accessToken: {
@@ -99,9 +105,10 @@ export const signUpAction = (
     });
     const json = await res.json();
     if (!res.ok) throw json;
+    AnalyticsService.trackEvent(events.SIGNED_UP);
     dispatch(signInWithBasicAction(email, password));
     return true;
-  } catch(e) {
+  } catch (e) {
     dispatch(notificationErrorAction(`Sign up failed: ${e.error || e.description}`));
     return false;
   }
@@ -126,22 +133,23 @@ export const signInWithBasicAction = (
         client_id
       }),
     })
-  
+
     const authJson: any = await authRes.json();
-  
+
     if (!authRes.ok) throw authJson;
-  
+
     //todo 1: make it so i dont have to sign in every time by using the refresh token
     // getNewAccessTokenBefore(dispatch, authJson.expires_int);
     // console.log('auth0 res', authJson);
-    
+    AnalyticsService.trackEvent(events.LOGGED_IN_WITH_PASSWORD);
     localStorage.setItem(STORAGE_KEY, authJson.refresh_token);
-    
+
     dispatch({
       type: AccountActionTypes.SIGN_IN,
       signedInUser: getSignedInUser(authJson),
-    });   
-    return true; 
+    });
+
+    return true;
   } catch (e) {
     dispatch(notificationErrorAction(`Sign in failed: ${e.error_description}`));
     return false;
@@ -164,7 +172,7 @@ export const signInWithRefreshAction = (refreshToken: string): AsyncAction => as
 
   const authJson = await authRes.json();
 
-  if (!authRes.ok) throw(authJson);
+  if (!authRes.ok) throw (authJson);
 
   // getNewAccessTokenBefore(dispatch, authJson.expires_int);
   // signInToFirebase(authJson.id_token);
@@ -174,6 +182,7 @@ export const signInWithRefreshAction = (refreshToken: string): AsyncAction => as
     type: AccountActionTypes.SIGN_IN,
     signedInUser,
   });
+  AnalyticsService.trackEvent(events.LOGGED_IN_WITH_REFRESH);
   return signedInUser;
 };
 
@@ -184,6 +193,7 @@ export const updateCardAction = (newCardTok: string): AsyncAction => async dispa
       type: AccountActionTypes.UPDATE_HIDDEN_CARD,
       hiddenCard: newHiddenCard,
     });
+    AnalyticsService.trackEvent(events.UPDATED_CARD);
   } catch (e) {
     // todo 2. see what if i can get non-grqphl error
   }

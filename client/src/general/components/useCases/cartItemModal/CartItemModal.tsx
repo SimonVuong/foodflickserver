@@ -109,7 +109,7 @@ const CartItemModal: React.FC<props> = ({
   const [selectedPriceIndex, setSelectedPriceIndex] = useState(defaultSelectedPriceIndex || 0);
   const [quantity, setQuantity] = useState(defaultQuantity || 1);
   const [selectedAddons, setSelectedAddons] = useState<selectedAddons>(defaultAddons || {});
-  const [selectedGroupIndexes, setSelectedGroupIndexes ] = useState(
+  const [selectedGroupIndexes, setSelectedGroupIndexes] = useState(
     defaultSelectedOptionIndexes || Array(item.OptionGroups.length).fill(0)
   );
   const [specialRequests, setSpecialRequests] = useState<string | undefined>(defaultSpecialRequests);
@@ -166,41 +166,41 @@ const CartItemModal: React.FC<props> = ({
           <div className={classes.quantityRow}>
             <FormLabel className={classes.howMany}>How many?</FormLabel>
             <Remove className={classes.pointer} color='secondary' onClick={decreaseQuantity} />
-              <TextField
-                inputProps={{
-                  min: 1,
-                }}
-                type='number'
-                className={classes.quantityInput}
-                hiddenLabel
-                value={quantity}
-                onChange={e => setQuantity(parseFloat(e.target.value))}
-              />
+            <TextField
+              inputProps={{
+                min: 1,
+              }}
+              type='number'
+              className={classes.quantityInput}
+              hiddenLabel
+              value={quantity}
+              onChange={e => setQuantity(parseFloat(e.target.value))}
+            />
             <Add className={classes.pointer} color='secondary' onClick={increaseQuantity} />
           </div>
           {item.Prices.length === 1 ?
-          <div className={classes.row}>
-            <FormLabel>Price</FormLabel>
-            <div className={classes.singlePrice}>{item.Prices[0].valueLabelString}</div>
-          </div>
-          :
-          <FormControl className={classes.formControl}>
-            <FormLabel>Prices</FormLabel>
-            <RadioGroup
-              className={classes.row}
-              value={selectedPriceIndex.toString()}
-              onChange={(e, v) => setSelectedPriceIndex(parseFloat(v))}
-            >
-              {item.Prices.map((price, index) => (
-                <FormControlLabel
-                  key={index}
-                  value={index.toString()}
-                  control={<Radio />}
-                  label={price.valueLabelString}
-                />
-              ))}
-            </RadioGroup>
-          </FormControl>}
+            <div className={classes.row}>
+              <FormLabel>Price</FormLabel>
+              <div className={classes.singlePrice}>{item.Prices[0].valueLabelString}</div>
+            </div>
+            :
+            <FormControl className={classes.formControl}>
+              <FormLabel>Prices</FormLabel>
+              <RadioGroup
+                className={classes.row}
+                value={selectedPriceIndex.toString()}
+                onChange={(e, v) => setSelectedPriceIndex(parseFloat(v))}
+              >
+                {item.Prices.map((price, index) => (
+                  <FormControlLabel
+                    key={index}
+                    value={index.toString()}
+                    control={<Radio />}
+                    label={price.valueLabelString}
+                  />
+                ))}
+              </RadioGroup>
+            </FormControl>}
           {
             item.Addons.length > 0 &&
             <FormControl className={classes.formControl}>

@@ -15,6 +15,7 @@ import { RootState } from 'general/redux/rootReducer';
 import { connect } from 'react-redux';
 import { SignedInUser } from 'general/account/SignedInUserModel';
 import { SelectedRestStateReducer } from 'general/rest/redux/restReducer';
+
 const logo = '/assets/logo/foodflick800.png';
 
 type props = {
@@ -72,29 +73,29 @@ const Navbar: React.FC<props> = ({ cartItemCount, signedInUser, toggleMobileDraw
         <Container className={classes.container}>
           <Toolbar>
             <Location>
-            {({ location }) => (
-              <>
-                {selectedRest && location.pathname === routes.menuBrowser.getLink(selectedRest.Url) &&
-                <Hidden mdUp>
-                  <IconButton
-                    edge='start'
-                    classes={{
-                      label: classes.menuIconButton
-                    }}
-                    className={classes.menuButton}
-                    color='inherit'
-                    onClick={() => toggleMobileDrawer()}
-                  >
-                    <MenuIcon />
-                    <Typography variant='button' className={classes.menuLabel}>Menu</Typography>
-                  </IconButton>
-                </Hidden>}
-              </>
-            )}
+              {({ location }) => (
+                <>
+                  {selectedRest && location.pathname === routes.menuBrowser.getLink(selectedRest.Url) &&
+                    <Hidden mdUp>
+                      <IconButton
+                        edge='start'
+                        classes={{
+                          label: classes.menuIconButton
+                        }}
+                        className={classes.menuButton}
+                        color='inherit'
+                        onClick={() => toggleMobileDrawer()}
+                      >
+                        <MenuIcon />
+                        <Typography variant='button' className={classes.menuLabel}>Menu</Typography>
+                      </IconButton>
+                    </Hidden>}
+                </>
+              )}
             </Location>
             <div className={classes.pushLeft}>
               <Link to={routes.home.getLink()}>
-                <img src={logo} alt='logo' className={classes.logo}/>
+                <img src={logo} alt='logo' className={classes.logo} />
               </Link>
             </div>
             <Link to={routes.cart.getLink()} style={{ textDecoration: 'none' }}>
@@ -105,7 +106,7 @@ const Navbar: React.FC<props> = ({ cartItemCount, signedInUser, toggleMobileDraw
                 </IconButton>
               </div>
             </Link>
-            {signedInUser && 
+            {signedInUser &&
               <Link to={routes.account.getLink()} style={{ textDecoration: 'none' }}>
                 <IconButton className={classes.account}>
                   <AccountCircle />
@@ -119,7 +120,6 @@ const Navbar: React.FC<props> = ({ cartItemCount, signedInUser, toggleMobileDraw
                 </Button>
               </Link>
             }
-            
           </Toolbar>
         </Container>
       </AppBar>
