@@ -15,6 +15,7 @@ const brandBase = white;
 const brandPrimary = leafGreen; // used to be scarlet
 const brandPrimaryOpacity = (opacity: number) => `rgba(83, 106, 79, ${opacity})` 
 const brandInfo = blush;
+const brandInfoLightOpacity = (opacity: number) => `rgba(235, 220, 221, ${opacity})`
 const brandInfoDarkOpacity = (opacity: number) => `rgba(109, 58, 61, ${opacity})`
 const brandText = charcoal;
 const brandLoading = '#5E859A';
@@ -103,8 +104,8 @@ const theme: ThemeOptions = {
         color: brandInfo,
         backgroundColor: white,
         '&:hover': {
-          color: white,
-          backgroundColor: brandInfoDarkOpacity(0.87),
+          color: brandInfo,
+          backgroundColor: brandInfoLightOpacity(0.87),
         },
         '&.Mui-selected:hover': {
           backgroundColor: `${brandInfoDarkOpacity(0.87)} !important`,

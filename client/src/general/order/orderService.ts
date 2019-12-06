@@ -165,6 +165,7 @@ const usePlaceOrder = (): [
       getStore().dispatch(notificationErrorAction(`Order failed: ${mutation.error}`));
     } else if (mutation.data && mutation.data.placeOrder) {
       getStore().dispatch(notificationSuccessAction('Order successful'));
+      getStore().dispatch(clearCartAction());
     } else if (mutation.data && !mutation.data.placeOrder) {
       getStore().dispatch(notificationErrorAction(`Sorry. Something went wrong. Please speak with your server`));
     }

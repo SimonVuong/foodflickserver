@@ -6,7 +6,7 @@ const development = 'development';
 const config = {
   [development]: {
     app: {
-      apiUrl: 'http://192.168.1.156:8443', // change when joining a different network
+      apiUrl: 'http://192.168.0.12:8443', // change when joining a different network
     },
     auth: {
       clientId: 'DQupUZG50i6pvR7ZeFa6qJ2tB7oGBcLh', // the id of the web server api
