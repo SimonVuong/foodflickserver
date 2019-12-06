@@ -46,9 +46,6 @@ const useStyles = makeStyles((theme: Theme) => ({
     // !importants necessary to override inline styles used by mui
     padding: `${theme.spacing(spacingPadding)}px 0px !important`,
   },
-  tileBar: {
-    background: 'linear-gradient(to bottom,rgba(0,0,0,0), rgba(0,0,0,1))',
-  },
   section: {
     backgroundColor: theme.palette.common.white,
     padding: theme.spacing(1, 2),
@@ -199,7 +196,6 @@ const MenuBrowserPage: React.FC<props & RouteComponentProps<routeParams>> = ({ r
                 <GridListTile key={itemIndex} className={classes.item} onClick={() => onClickItem(itemIndex, categoryIndex)}>
                   {item.Flick ? <img src={item.Flick} alt={item.Name} /> : <Typography>{item.Description}</Typography>}
                   <GridListTileBar
-                    classes={{ root: classes.tileBar }}
                     title={item.Name}
                     subtitle={item.Prices[0].valueLabelString}
                   />

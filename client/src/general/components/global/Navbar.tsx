@@ -15,9 +15,6 @@ import { RootState } from 'general/redux/rootReducer';
 import { connect } from 'react-redux';
 import { SignedInUser } from 'general/account/SignedInUserModel';
 import { SelectedRestStateReducer } from 'general/rest/redux/restReducer';
-import AnalyticsService from 'analytics/analyticsService';
-import events from 'analytics/events';
-
 
 const logo = '/assets/logo/foodflick800.png';
 
@@ -98,7 +95,7 @@ const Navbar: React.FC<props> = ({ cartItemCount, signedInUser, toggleMobileDraw
             </Location>
             <div className={classes.pushLeft}>
               <Link to={routes.home.getLink()}>
-                <img src={logo} alt='logo' className={classes.logo} onClick={() => AnalyticsService.trackEvent(events.LOGO)} />
+                <img src={logo} alt='logo' className={classes.logo} />
               </Link>
             </div>
             <Link to={routes.cart.getLink()} style={{ textDecoration: 'none' }}>
