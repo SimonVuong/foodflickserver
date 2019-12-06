@@ -25,9 +25,8 @@ import { Card } from 'general/card/CardModel';
 import { usePlaceOrder } from 'general/order/orderService';
 import { routes } from 'general/routes/routes';
 import { Link as RouterLink } from '@reach/router';
-import AnalyticsService from '../analytics/analyticsService';
-import events from '../analytics/events';
-
+import AnalyticsService from 'analytics/analyticsService';
+import events from 'analytics/events';
 import { SelectedRestStateReducer } from 'general/rest/redux/restReducer';
 import { navigate } from '@reach/router'
 

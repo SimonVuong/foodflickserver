@@ -13,7 +13,7 @@ import { ThemeProvider } from '@material-ui/styles';
 import Router from 'general/routes/router';
 import Notifier from 'general/components/global/Notifier';
 import { signInWithRefreshAction, STORAGE_KEY } from 'general/account/accountActions';
-import AnalyticsService from './analytics/analyticsService';
+import AnalyticsService from 'analytics/analyticsService';
 
 const store: Store = initStore(getRootReducer());
 const apolloClient: ApolloClient<NormalizedCacheObject> = getApolloClient(store);

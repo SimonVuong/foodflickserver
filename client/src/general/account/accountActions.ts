@@ -6,8 +6,8 @@ import { AsyncAction } from 'general/redux/store';
 import { AccountService } from './accountService';
 import { Card } from 'general/card/CardModel';
 import LogRocket from 'logrocket';
-import AnalyticsService from '../../analytics/analyticsService';
-import events from '../../analytics/events';
+import AnalyticsService from 'analytics/analyticsService';
+import events from 'analytics/events';
 
 const jwtUtil = KJUR.jws.JWS
 
