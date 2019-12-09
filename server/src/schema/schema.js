@@ -28,12 +28,14 @@ const mutation = `
     addRestManager(restId: ID!, managerEmail: String!): Rest!
     addRestPrinter(restId: ID!, newPrinter: PrinterInput!): Rest!
     addRestReceiver(restId: ID!, receiverId: ID!): Rest!
+    addRestServer(restId: ID!, serverEmail: String!): Rest!
     addUserFlicks(urls: [String!]!): Boolean!
     completeOrder(orderId: ID!): Boolean!
     deleteCategory(restId: ID!, categoryName: String!): Rest!
     deleteItem(restId: ID!, categoryName: String!, itemName: String!): Rest!
     deleteRestManager(restId: ID!, managerEmail: String!): Rest!
     deleteRestPrinter(restId: ID!, printerName: String!): Rest!
+    deleteRestServer(restId: ID!, serverEmail: String!): Rest!
     giveRestFeedback(restId: ID!, feedback: String!): Boolean!
     placeOrder(cart: CartInput!): Boolean!
     refundOrder(restId: ID!, orderId: ID!, stripeChargeId: ID!, amount: Float!): Order!

@@ -1,6 +1,6 @@
 import Location from './location';
 import Profile from './profile';
-import Manager from './manager';
+import UserRef from './userRef';
 import Category from './menu/category';
 import State from './state';
 import Favorites from './favorites';
@@ -20,14 +20,15 @@ const Rest = `
     receiver: Receiver!
     profile: Profile!
     location: Location!
-    owner: Manager
+    owner: UserRef
     #manager is a list of PRIMARY user accounts. #emails go to these users. can only managers can add new managers.
     #if i put in secondary account, then reject and ask if meant to do primary. restaurant references user and not the
     #otherway arround because a restarunt MUST HAVE a manager while user does NOT NEED a restaruant. keeps data cleaner.   
-    managers: [Manager!]
+    managers: [UserRef!]
     minsToUpdateCart: Float
     menu: [Category!]!
     subscription: Subscription!
+    servers: [UserRef!]!
     url: String!
   }
 `;
@@ -39,7 +40,7 @@ export default () => [
   Rest,
   Banking,
   Category,
-  Manager,
+  UserRef,
   State,
   Profile,
   Location,

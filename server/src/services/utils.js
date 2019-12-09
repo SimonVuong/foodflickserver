@@ -195,9 +195,9 @@ export const callElasticWithErrorHandler = async (elasticFn, options) => {
   try {
     return await elasticFn(options);
   } catch (e) {
+    console.error('ERROR', e);
     if (e.status === 404) throw new Error(getRestNotFoundError(options.id));
     if (e.status === 400) throw new Error(e.body.error.caused_by.caused_by.reason);
-    console.error('ERROR', e);
     throw new Error('Internal error');
   }
 }

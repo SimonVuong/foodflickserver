@@ -207,7 +207,8 @@ class RestService {
                   // keyword is a 'field' added by elastic that during auto mapping on indexing a new document
                   // https://www.elastic.co/guide/en/elasticsearch/reference/6.2//multi-fields.html
                   { term: { 'owner.userId.keyword': signedInUser._id } },
-                  { term: { 'managers.userId.keyword': signedInUser._id } }
+                  { term: { 'managers.userId.keyword': signedInUser._id } },
+                  { term: { 'servers.userId': signedInUser._id } }
                 ]
               }
             }
@@ -278,6 +279,7 @@ class RestService {
     };
     newRest.url = nanoid(URLCharacters, 10);
     newRest.minsToUpdateCart = 15;
+    newRest.servers = [];
     newRest.subscription = {};
     newRest.subscription.plan = sub;
     try {
@@ -621,6 +623,72 @@ class RestService {
         }
       `,
       { managerEmail }
+    ));
+
+    return getUpdatedRestWithId(res, restId);
+  }
+
+  async addRestServer(signedInUser, restId, serverEmail) {
+    if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
+    if (!serverEmail) throw new Error(getCannotBeEmptyError(`Server email`));
+    let servers;
+
+    try {
+      servers = await getUserService().getUsersByEmail(serverEmail);
+    } catch (e) {
+      console.error(e);
+      throw new Error(`Internal server error. Could not verify if email already exists in FoodFlick.`);
+    }
+
+    console.log('length', servers.length);
+
+    if (servers.length === 0) throw new Error(`Could not add '${serverEmail}'. Please make sure the email is signed up with FoodFlick and try again`);
+
+    if (servers.length > 1) throw new Error(`Multiple users have this email. Cannot add an email with multiple users 
+     please add another user and file a issue since multiple users should not have the same email in the database.`);
+
+    const newServer = {
+      userId: servers.length === 1 ? servers[0].user_id : null,
+      email: serverEmail
+    }
+
+    const res = await callElasticWithErrorHandler(options => this.elastic.update(options), getRestUpdateOptions(
+      restId,
+      signedInUser,
+      `
+        for (server in ctx._source.servers) {
+          if (server.email.equals(params.newServer.email)) {
+            throw new Exception("'" + params.newServer.email + "' already exists. Please try again with a different email");
+          }
+        }
+        ctx._source.servers.add(params.newServer);
+      `,
+      { newServer }
+    ));
+
+    return getUpdatedRestWithId(res, restId);
+  }
+
+  async deleteRestServer(signedInUser, restId, serverEmail) {
+    if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
+    
+    const res = await callElasticWithErrorHandler(options => this.elastic.update(options), getRestUpdateOptions(
+      restId,
+      signedInUser,
+      `
+        boolean foundServer = false;
+        for (int i = 0; i < ctx._source.servers.length; i++) { 
+          if (ctx._source.servers[i].email.equals(params.serverEmail)) {
+            foundServer = true;
+            ctx._source.servers.remove(i);
+          }
+        }
+        
+        if (!foundServer) {
+          throw new Exception ("Could not find server '" + params.serverEmail + "'. Please try again with an existing server");
+        }
+      `,
+      { serverEmail }
     ));
 
     return getUpdatedRestWithId(res, restId);

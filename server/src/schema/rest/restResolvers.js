@@ -16,12 +16,20 @@ export const RestMutationResolvers = {
     return await RestService.addRestReceiver(signedInUser, restId, receiverId);  
   },
 
+  addRestServer: async (root, { restId, serverEmail }, { signedInUser, RestService }) => {
+    return await RestService.addRestServer(signedInUser, restId, serverEmail);  
+  },
+
   deleteRestManager: async (root, { restId, managerEmail }, { signedInUser, RestService }) => {
     return await RestService.deleteRestManager(signedInUser, restId, managerEmail);  
   },
 
   deleteRestPrinter: async (root, { restId, printerName }, { signedInUser, RestService }) => {
     return await RestService.deleteRestPrinter(signedInUser, restId, printerName);  
+  },
+
+  deleteRestServer: async (root, { restId, serverEmail }, { signedInUser, RestService }) => {
+    return await RestService.deleteRestServer(signedInUser, restId, serverEmail);  
   },
 
   giveRestFeedback: async (root, { restId, feedback }, { signedInUser, RestService }) => {
