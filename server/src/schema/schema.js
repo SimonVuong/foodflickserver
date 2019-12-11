@@ -40,8 +40,9 @@ const mutation = `
     deleteRestTable(restId: ID!, tableId: ID!): Rest!
     giveRestFeedback(restId: ID!, feedback: String!): Boolean!
     placeOrder(cart: CartInput!): Boolean!
-    refundOrder(restId: ID!, orderId: ID!, stripeChargeId: ID!, amount: Float!): Order!
+    refundCompletedOrder(restId: ID!, orderId: ID!, stripeChargeId: ID!, amount: Float!): Order!
     returnOrder(orderId: ID!, reason: String!): Boolean!
+    refundPendingTipOrder(restId: ID!, orderId: ID!, amount: Float!): Order!
     setOrderPendingTip(orderId: ID!): Boolean!
     testPrinter(restId: ID!, printer: TestPrinterInput!): Boolean!
     toggleItemLike(restId: ID!, categoryName: String!, itemName: String!): Rest!

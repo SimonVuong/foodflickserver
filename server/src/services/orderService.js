@@ -319,7 +319,8 @@ class OrderService {
     };
 
     const { itemTotal, tax, tip } = order.costs;
-    const total = round2(itemTotal + tax + tip);
+    const refunds = order.customRefunds.reduce((sum, refund) => sum + refund.amount, 0);
+    const total = round2(itemTotal + tax + tip - refunds);
     const centsTotal = Math.round(total * 100);
     let charge;
     try {
@@ -417,7 +418,47 @@ class OrderService {
     }
   }
 
-  async refundOrder(signedInUser, restId, orderId, stripeChargeId, amount) {
+  async refundPendingTipOrder(signedInUser, restId, orderId, amount) {
+    if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
+    if (amount === 0) throw new Error('Refund amount cannot be 0. Please use a another amount');
+    const rest = await getRestService().getRest(restId, ['owner', 'managers', 'profile']);
+    throwIfNotRestOwnerOrManager(signedInUser, rest.owner, rest.managers, rest.profile.name);
+    const order = await callElasticWithErrorHandler(options => this.elastic.getSource(options), {
+      index: ORDERS_INDEX,
+      type: ORDER_TYPE,
+      id: orderId,
+      _source: ['restId', 'customRefunds', 'costs'],
+    });
+    if (order.restId !== restId) throw new Error("The provided restId doesn't match the restId stored with the order. Please provide the correct restId");
+    const currRefund = round2(order.customRefunds.reduce((sum, refund) => sum + refund.amount, 0));
+    const orderTotal = round2(order.costs.itemTotal + order.costs.tax + order.costs.tip);
+    if (currRefund + amount > orderTotal) throw new Error('The provided amount exceeds the allowed remaining refund of ' + (orderTotal - currRefund) + '. Please reduce the amount');
+
+    const orderRes = await callElasticWithErrorHandler(options => this.elastic.update(options), {
+      index: ORDERS_INDEX,
+      type: ORDER_TYPE,
+      id: orderId,
+      _source: true,
+      refresh: 'wait_for',
+      body: {
+        script: {
+          source: `
+            ctx._source.customRefunds.add(params.refund);
+          `,
+          params: {
+            refund: {
+              amount,
+            },
+          }
+        }
+      }
+    });
+    const newOrder = orderRes.get._source;
+    newOrder._id = orderId;
+    return newOrder;
+  }
+
+  async refundCompletedOrder(signedInUser, restId, orderId, stripeChargeId, amount) {
     if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
     if (amount === 0) throw new Error('Refund amount cannot be 0. Please use a another amount');
     const rest = await getRestService().getRest(restId, ['owner', 'managers', 'profile']);
