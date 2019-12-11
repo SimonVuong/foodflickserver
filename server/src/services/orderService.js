@@ -2,7 +2,7 @@ import { getRestService } from "./restService";
 import { getPrinterService } from './printerService';
 import { getCannotBeEmptyError, NEEDS_MANAGER_SIGN_IN_ERROR } from '../utils/errors';
 import { OrderStatus } from '../schema/order/order';
-import { MANAGER_PERM, throwIfNotRestOwnerOrManager } from '../utils/auth';
+import { MANAGER_PERM, throwIfNotRestOwnerOrManager, throwIfNotRestOwnerManagerServer } from '../utils/auth';
 import { round2, round3 } from '../utils/math';
 import { QUERY_SIZE, callElasticWithErrorHandler, getOrderUpdateOptions } from './utils';
 import { getMenuItemById } from './menuService';
@@ -183,7 +183,6 @@ class OrderService {
       });
       const rest = await getRestService().getRest(order.restId, ['owner', 'managers', 'profile','banking', 'receiver']);
       throwIfNotRestOwnerOrManager(signedInUser, rest.owner, rest.managers, rest.profile.name);
-
       await this.setOrderPendingTip(signedInUser, orderId, rest.receiver);
       const userRes = await getUserService().getUserById(order.customer.userId, 'email,app_metadata');
       const customer = {
@@ -204,7 +203,7 @@ class OrderService {
       return true;
     } catch (e) {
       console.error(e);
-      return false
+      throw e
     }
   }
 
@@ -468,7 +467,6 @@ class OrderService {
   async returnOrder(signedInUser, orderId, reason) {
     if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
     if (!reason) throw new Error(getCannotBeEmptyError('Reason'));
-
     try {
       const order = await callElasticWithErrorHandler(options => this.elastic.getSource(options), {
         index: ORDERS_INDEX,
@@ -476,8 +474,8 @@ class OrderService {
         id: orderId,
         _source: ['restId', 'phone'],
       });
-      const rest = await getRestService().getRest(order.restId, ['owner', 'managers', 'profile']);
-      throwIfNotRestOwnerOrManager(signedInUser, rest.owner, rest.managers, rest.profile.name);
+      const rest = await getRestService().getRest(order.restId, ['owner', 'managers', 'servers', 'profile']);
+      throwIfNotRestOwnerManagerServer(signedInUser, rest.owner, rest.managers, rest.servers, rest.profile.name);
       await callElasticWithErrorHandler(options => this.elastic.update(options), {
         index: ORDERS_INDEX,
         type: ORDER_TYPE,
@@ -498,11 +496,11 @@ class OrderService {
         }
       });
       this.sendReturnOrderText(order.phone, orderId, reason);
+      return true;
     } catch (e) {
       console.error(e);
-      throw (e);
+      throw e;
     }
-    return true;
   }
 
   sendReturnOrderText = (orderPhone, orderId, reason) => {
@@ -676,8 +674,8 @@ class OrderService {
 
   getCompletedOrders = async (signedInUser, restId) => {
     if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
-    const rest = await getRestService().getRest(restId, ['owner', 'managers', 'profile', 'menu']);
-    throwIfNotRestOwnerOrManager(signedInUser, rest.owner, rest.managers, rest.profile.name);
+    const rest = await getRestService().getRest(restId, ['owner', 'managers', 'servers', 'profile', 'menu']);
+    throwIfNotRestOwnerManagerServer(signedInUser, rest.owner, rest.managers, rest.servers, rest.profile.name);
     try {
       const orders = await this.getOrders([
         { term: { restId } },
@@ -700,8 +698,8 @@ class OrderService {
 
   getOpenOrders = async (signedInUser, restId) => {
     if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
-    const rest = await getRestService().getRest(restId, ['owner', 'managers', 'profile', 'menu']);
-    throwIfNotRestOwnerOrManager(signedInUser, rest.owner, rest.managers, rest.profile.name);
+    const rest = await getRestService().getRest(restId, ['owner', 'managers', 'servers', 'profile', 'menu']);
+    throwIfNotRestOwnerManagerServer(signedInUser, rest.owner, rest.managers, rest.servers, rest.profile.name);
     try {
       const orders = await this.getOrders([
         { term: { restId } },
@@ -724,8 +722,8 @@ class OrderService {
 
   getPendingTipOrders = async (signedInUser, restId) => {
     if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
-    const rest = await getRestService().getRest(restId, ['owner', 'managers', 'profile', 'menu']);
-    throwIfNotRestOwnerOrManager(signedInUser, rest.owner, rest.managers, rest.profile.name);
+    const rest = await getRestService().getRest(restId, ['owner', 'managers', 'servers', 'profile', 'menu']);
+    throwIfNotRestOwnerManagerServer(signedInUser, rest.owner, rest.managers, rest.servers, rest.profile.name);
     try {
       const orders = await this.getOrders([
         { term: { restId } },

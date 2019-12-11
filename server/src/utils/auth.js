@@ -48,3 +48,13 @@ export const throwIfNotRestOwnerOrManager = (signedInUser, owner, managers, rest
     throw new Error(`Unauthorized. ${signedInUser.email} is not a owner/manager of ${restName}`);
   }
 }
+
+export const throwIfNotRestOwnerManagerServer = (signedInUser, owner, managers, servers, restName) => {
+  if (
+    owner.userId !== signedInUser._id
+    && (managers.length > 0 && managers.findIndex(manager => manager.userId === signedInUser._id) === -1)
+    && (servers.length > 0 && servers.findIndex(server => server.userId === signedInUser._id) === -1)
+  ) {
+    throw new Error(`Unauthorized. ${signedInUser.email} is not a owner/manager/server of ${restName}`);
+  }
+}
