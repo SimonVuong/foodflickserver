@@ -347,6 +347,36 @@ class RestService {
     return getUpdatedRestWithId(res, restId);
   }
 
+  async deleteRestTable(signedInUser, restId, tableId) {
+    try {
+      if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
+      if (!tableId) throw new Error(getCannotBeEmptyError(`Table #`));
+      const res = await callElasticWithErrorHandler(options => this.elastic.update(options), getRestUpdateOptions(
+        restId,
+        signedInUser,
+        `
+          def tables = ctx._source.tables;
+          boolean foundTable = false;
+          for (int i = 0; i < tables.length; i++) { 
+            if (tables[i]._id.equals(params.tableId)) {
+              foundTable = true;
+              tables.remove(i);
+              break;
+            }
+          }
+          if (!foundTable) {
+            throw new Exception ("Could not find table '" + params.tableId + "'. Please try again with an existing table");
+          }
+        `,
+        { tableId }
+      ));
+      return getUpdatedRestWithId(res, restId);
+    } catch (e) {
+      console.error(`[Rest service] could not delete table '${tableId}'. '${e.stack}'`);
+      throw e;
+    }
+  }
+
   async updateRestPrinter(signedInUser, restId, newPrinter) {
     if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
     throwIfInvalidPrinter(newPrinter.printer);
@@ -385,6 +415,29 @@ class RestService {
         ctx._source.receiver.receiverId = params.receiverId;
       `,
       { receiverId }
+    ));
+    return getUpdatedRestWithId(res, restId);
+  }
+
+  async addRestTable(signedInUser, restId, tableId) {
+    if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
+    if (!tableId) throw new Error(getCannotBeEmptyError(`Table #`));
+    const res = await callElasticWithErrorHandler(options => this.elastic.update(options), getRestUpdateOptions(
+      restId,
+      signedInUser,
+      `
+        for (table in ctx._source.tables) {
+          if (table._id.equals(params.table._id)) {
+            throw new Exception("'" + params.table._id + "' already exists. Please try again with a different #");
+          }
+        }
+        def table = params.table;
+        table.userId = ctx._source.owner.userId;
+        ctx._source.tables.add(params.table);
+      `,
+      { 
+        table: { _id: tableId }
+      }
     ));
     return getUpdatedRestWithId(res, restId);
   }
@@ -562,6 +615,74 @@ class RestService {
       { mins }
     ));
     return getUpdatedRestWithId(res, restId);
+  }
+
+  async updateRestTableCheckIn(signedInUser, restId, tableId) {
+    try {
+      if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
+      const res = await callElasticWithErrorHandler(options => this.elastic.update(options), getRestUpdateOptions(
+        restId,
+        null,
+        `
+          def managers = ctx._source.managers;
+          def servers = ctx._source.servers;
+          def owner = ctx._source.owner;
+          def signedInUserId = params.signedInUserId;
+          throwIfNotOwnerManagerServer(owner, managers, servers, signedInUserId);
+          boolean foundTable = false;
+          def tables = ctx._source.tables;
+          for (int i = 0; i < tables.length; i++) {
+            if (tables[i]._id.equals(params.tableId)) {
+              foundTable = true;
+              tables[i].userId = signedInUserId;
+            }
+          }
+          if (!foundTable) {
+            throwTableNotFoundException(params.tableId); 
+          }
+        `,
+        {
+          tableId,
+          signedInUserId: signedInUser._id
+        }
+      ));
+      return getUpdatedRestWithId(res, restId);
+    } catch (e) {
+      console.error(`[Rest service] could not updateRestTableCheckIn. '${e.stack}'`);
+      throw e;
+    }
+  }
+
+  async updateRestTable(signedInUser, restId, prevId, newId) {
+    try {
+      if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
+      const res = await callElasticWithErrorHandler(options => this.elastic.update(options), getRestUpdateOptions(
+        restId,
+        signedInUser,
+        `
+          boolean foundTable = false;
+          def tables = ctx._source.tables;
+          for (int i = 0; i < tables.length; i++) {
+            if (tables[i]._id.equals(params.prevId)) {
+              foundTable = true;
+              tables[i]._id = params.newId;
+            }
+          }
+          if (!foundTable) {
+            throwTableNotFoundException(params.prevId); 
+          }
+        `,
+        {
+          prevId,
+          newId,
+          signedInUserId: signedInUser._id
+        }
+      ));
+      return getUpdatedRestWithId(res, restId);
+    } catch (e) {
+      console.error(`[Rest service] could not updateRestTable. '${e.stack}'`);
+      throw e;
+    }
   }
 
   async addRestManager(signedInUser, restId, managerEmail) {

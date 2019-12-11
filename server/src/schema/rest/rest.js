@@ -8,6 +8,7 @@ import Feedback from './feedback';
 import Banking from './banking';
 import Receiver from './receiver';
 import { Subscription } from './subscription';
+import Table from './table';
 
 // todo 1: add dates to rest, and menus and categories?
 
@@ -29,6 +30,7 @@ const Rest = `
     menu: [Category!]!
     subscription: Subscription!
     servers: [UserRef!]!
+    tables: [Table!]!
     url: String!
   }
 `;
@@ -48,4 +50,5 @@ export default () => [
   Feedback,
   Receiver,
   Subscription,
+  Table,
 ];

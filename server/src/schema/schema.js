@@ -29,6 +29,7 @@ const mutation = `
     addRestPrinter(restId: ID!, newPrinter: PrinterInput!): Rest!
     addRestReceiver(restId: ID!, receiverId: ID!): Rest!
     addRestServer(restId: ID!, serverEmail: String!): Rest!
+    addRestTable(restId: ID!, tableId: ID!): Rest!
     addUserFlicks(urls: [String!]!): Boolean!
     completeOrder(orderId: ID!): Boolean!
     deleteCategory(restId: ID!, categoryName: String!): Rest!
@@ -36,6 +37,7 @@ const mutation = `
     deleteRestManager(restId: ID!, managerEmail: String!): Rest!
     deleteRestPrinter(restId: ID!, printerName: String!): Rest!
     deleteRestServer(restId: ID!, serverEmail: String!): Rest!
+    deleteRestTable(restId: ID!, tableId: ID!): Rest!
     giveRestFeedback(restId: ID!, feedback: String!): Boolean!
     placeOrder(cart: CartInput!): Boolean!
     refundOrder(restId: ID!, orderId: ID!, stripeChargeId: ID!, amount: Float!): Order!
@@ -58,6 +60,8 @@ const mutation = `
     updateRestSubscriptionCard(restId: ID!, cardTok: ID!): Rest!
     updateRestUrl(restId: ID!, url: String!): Rest!
     updateTip(orderId: ID!, newTip: Float!): Boolean!
+    updateRestTableCheckIn(restId: ID!, tableId: ID!): Rest!
+    updateRestTable(restId: ID!, prevId: ID!, newId: ID!): Rest!
     updateUserCard(cardToken: ID!): Card!
     updateUserEmail(newEmail: String!): Boolean!
   }

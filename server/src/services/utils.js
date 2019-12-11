@@ -72,7 +72,7 @@ export const getRestUpdateOptions = (restId, signedInUser, script, params) => {
   const unauthorizedMsg = `"Unauthorized. '" + params.signedInUserId + "' is not an owner or manager of this restaurant.`
                           + ` Add '"+ params.signedInUserId + "' as a manager and try again."`
   const doScriptIfAllowed = signedInUser ?
-  `if (ctx._source.owner.userId.equals(params.signedInUserId) || containsManager(ctx._source.managers, params.signedInUserId)) {
+  `if (ctx._source.owner.userId.equals(params.signedInUserId) || containsUser(ctx._source.managers, params.signedInUserId)) {
     ${script}
   } else {
     throw new Exception(${unauthorizedMsg});
@@ -91,6 +91,9 @@ export const getRestUpdateOptions = (restId, signedInUser, script, params) => {
         source: `
           void throwCategoryNotFoundException(def categoryName) {
             throw new Exception("Could not find original category '" + categoryName + "'. Please try again with an existing category.")
+          }
+          void throwTableNotFoundException(def tableId) {
+            throw new Exception("Could not find original table '" + tableId + "'. Please try again with an existing table.")
           }
           void throwItemNotFoundException(def itemName) {
             throw new Exception("Could not find original item '" + itemName + "'. Please try again with an existing item.")
@@ -121,9 +124,14 @@ export const getRestUpdateOptions = (restId, signedInUser, script, params) => {
               }
             } 
           }
-          boolean containsManager(def managers, def id) {
-            for (manager in managers) {
-              if (manager.userId.equals(id)) {
+          void throwIfNotOwnerManagerServer(def owner, def managers, def servers, def userId) {
+            if (!owner.userId.equals(userId) && !containsUser(managers, userId) && !containsUser(servers, userId)) {
+              throw new Exception("Unauthorized. '" + userId + "' is not an owner, manager, or server of this restaurant.");
+            }  
+          }
+          boolean containsUser(def users, def id) {
+            for (user in users) {
+              if (user.userId.equals(id)) {
                 return true;
               }
             }

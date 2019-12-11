@@ -19,6 +19,10 @@ export const RestMutationResolvers = {
   addRestServer: async (root, { restId, serverEmail }, { signedInUser, RestService }) => {
     return await RestService.addRestServer(signedInUser, restId, serverEmail);  
   },
+  
+  addRestTable: async (root, { restId, tableId }, { signedInUser, RestService }) => {
+    return await RestService.addRestTable(signedInUser, restId, tableId);  
+  },
 
   deleteRestManager: async (root, { restId, managerEmail }, { signedInUser, RestService }) => {
     return await RestService.deleteRestManager(signedInUser, restId, managerEmail);  
@@ -30,6 +34,10 @@ export const RestMutationResolvers = {
 
   deleteRestServer: async (root, { restId, serverEmail }, { signedInUser, RestService }) => {
     return await RestService.deleteRestServer(signedInUser, restId, serverEmail);  
+  },
+
+  deleteRestTable: async (root, { restId, tableId }, { signedInUser, RestService }) => {
+    return await RestService.deleteRestTable(signedInUser, restId, tableId);  
   },
 
   giveRestFeedback: async (root, { restId, feedback }, { signedInUser, RestService }) => {
@@ -75,6 +83,14 @@ export const RestMutationResolvers = {
 
   updateRestSubscriptionCard: async (root, { restId, cardTok }, { signedInUser, RestService }) => {
     return await RestService.updateRestSubscriptionCard(signedInUser, restId, cardTok);  
+  },
+
+  updateRestTableCheckIn: async (root, { restId, tableId}, { signedInUser, RestService }) => {
+    return await RestService.updateRestTableCheckIn(signedInUser, restId, tableId);  
+  },
+
+  updateRestTable: async (root, { restId, prevId, newId }, { signedInUser, RestService }) => {
+    return await RestService.updateRestTable(signedInUser, restId, prevId, newId);  
   },
 
   updateRestUrl: async (root, { restId, url }, { signedInUser, RestService }) => {
