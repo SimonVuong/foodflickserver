@@ -25,8 +25,8 @@ class PlanService {
         stripePlanId: defaultPlan.id,
         name: DEFAULT_PLAN_NAME,
         monthlyRate: defaultPlan.amount / 100,
-        monthlyOrders: defaultPlan.metadata.monthlyOrders,
-        overagePercentageFee: defaultPlan.metadata.overagePercentageFee,
+        monthlyOrders: parseFloat(defaultPlan.metadata.monthlyOrders),
+        overagePercentageFee: parseFloat(defaultPlan.metadata.overagePercentageFee),
       };
     } catch (e) {
       console.error(`[Plan service] failed to add default plan for '${signedInUser._id}'`, e);

@@ -56,6 +56,16 @@ class RestService {
     this.elastic = elastic;
   }
 
+  getServerFromTable(rest, tableId) {
+    if (!tableId) {
+      return null;
+    }
+    const servers = rest.servers;
+    const tables = rest.tables;
+    const targetTable = tables.find(table => table._id === tableId);
+    return servers.find(server => server.userId === targetTable.userId);
+  }
+
   async getMyFavoriteRests(signedInUser) {
     if (!signedInUser) throw new Error(NEEDS_SIGN_IN_ERROR);
 
@@ -80,6 +90,79 @@ class RestService {
       cleanCustomerRest(signedInUser, _source);
       return _source;
     });    
+  }
+
+  async addUserRef(signedInUser, restId, newEmail, refs) {
+    if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
+    if (!newEmail) throw new Error(getCannotBeEmptyError(`Email`));
+    let users;
+
+    try {
+      users = await getUserService().getUsersByEmail(newEmail);
+    } catch (e) {
+      console.error(e);
+      throw new Error(`Internal server error. Could not verify if email already exists in FoodFlick.`);
+    }
+
+    if (users.length === 0) throw new Error(`Could not add '${newEmail}'. Please make sure the email is signed up with FoodFlick and try again`);
+
+    if (users.length > 1) throw new Error(`Multiple users have this email. Cannot add an email with multiple users 
+     please add another user and file a issue since multiple users should not have the same email in the database.`);
+
+    const user = users[0];
+    const newUser = {
+      userId: user.user_id,
+      email: newEmail,
+      firstName: user.user_metadata.firstName,
+      lastName: user.user_metadata.lastName,
+    }
+
+    const res = await callElasticWithErrorHandler(options => this.elastic.update(options), getRestUpdateOptions(
+      restId,
+      signedInUser,
+      `
+        for (user in ctx._source.${refs}) {
+          if (user.email.equals(params.newUser.email)) {
+            throw new Exception("'" + params.newUser.email + "' already exists. Please try again with a different email");
+          }
+        }
+        ctx._source.${refs}.add(params.newUser);
+      `,
+      { newUser }
+    ));
+
+    return getUpdatedRestWithId(res, restId);
+  }
+
+  async deleteUserRef(signedInUser, restId, userId, refs) {
+    if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
+    
+    const res = await callElasticWithErrorHandler(options => this.elastic.update(options), getRestUpdateOptions(
+      restId,
+      signedInUser,
+      `
+        boolean foundUser = false;
+        for (int i = 0; i < ctx._source.${refs}.length; i++) { 
+          if (ctx._source.${refs}[i].userId.equals(params.userId)) {
+            foundUser = true;
+            ctx._source.${refs}.remove(i);
+          }
+        }
+
+        if (foundUser) {
+          for (int i = 0; i < ctx._source.tables.length; i++) { 
+            if (ctx._source.tables[i].userId.equals(params.userId)) {
+              ctx._source.tables[i].userId = ctx._source.owner.userId;
+            }
+          }
+        } else {
+          throw new Exception ("Could not find user '" + params.userId + "'. Please try again with an existing user");
+        }
+      `,
+      { userId }
+    ));
+
+    return getUpdatedRestWithId(res, restId);
   }
 
   async getRestByUrl(signedInUser, url) {
@@ -229,12 +312,6 @@ class RestService {
     const address = newRest.location.address;
     throwIfInvalidAddress(address);
 
-    const {owner = {}} = newRest;
-    if (owner.userId !== signedInUser._id || owner.email !== signedInUser.email) {
-      throw new Error('Unauthorized. The restaurant owner must be the signed in user when adding a restaurant. Signed '
-                      + `in user: ${JSON.stringify(signedInUser, null, '  ')}. Owner: ${JSON.stringify(owner, null, '  ')}`);
-    }
-
     let stripeRes;
     try {
       stripeRes = await getBankingService().signupRestBanking(
@@ -277,9 +354,17 @@ class RestService {
     newRest.banking = {
       stripeId: stripeRes.id,
     };
+    signedInUser._id || owner.email !== signedInUser.email
+    newRest.owner = {
+      userId: signedInUser._id,
+      email: signedInUser.email,
+      firstName: signedInUser.firstName,
+      lastName: signedInUser.lastName,
+    }
     newRest.url = nanoid(URLCharacters, 10);
     newRest.minsToUpdateCart = 15;
     newRest.servers = [];
+    newRest.tables = [];
     newRest.subscription = {};
     newRest.subscription.plan = sub;
     try {
@@ -419,6 +504,26 @@ class RestService {
     return getUpdatedRestWithId(res, restId);
   }
 
+  async addRestTaxRate(signedInUser, restId, taxRate) {
+    try {
+      if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
+      if (!taxRate) throw new Error(getCannotBeEmptyError(`Sales tax`));
+      if (taxRate < 0) throw new Error(`Sales tax cannot be less than 0`);
+      const res = await callElasticWithErrorHandler(options => this.elastic.update(options), getRestUpdateOptions(
+        restId,
+        signedInUser,
+        `
+          ctx._source.taxRate = params.taxRate;
+        `,
+        { taxRate }
+      ));
+      return getUpdatedRestWithId(res, restId);
+    } catch (e) {
+      console.error(`[Rest service] could not add tax rate '${taxRate}', rest '${restId}'. '${e.stack}'`);
+      throw e;
+    }
+  }
+
   async addRestTable(signedInUser, restId, tableId) {
     if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
     if (!tableId) throw new Error(getCannotBeEmptyError(`Table #`));
@@ -495,6 +600,15 @@ class RestService {
       return getUpdatedRestWithId(res, restId);
     } catch (e) {
       console.error(`[Rest service] could not add payment card for customer '${signedInUser.stripeId}', rest '${restId}', and cardTok '${cardTok}' because '${e.message}'`);
+      throw e;
+    }
+  }
+
+  async updateRestTaxRate(signedInUser, restId, taxRate) {
+    try {
+      return await this.addRestTaxRate(signedInUser, restId, taxRate);
+    } catch (e) {
+      console.error(`[Rest service] could not update tax rate '${taxRate}', rest '${restId}'. '${e.stack}'`);
       throw e;
     }
   }
@@ -686,133 +800,41 @@ class RestService {
   }
 
   async addRestManager(signedInUser, restId, managerEmail) {
-    if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
-    if (!managerEmail) throw new Error(getCannotBeEmptyError(`Manager email`));
-    let managers;
-
     try {
-      managers = await getUserService().getUsersByEmail(managerEmail);
+      return await this.addUserRef(signedInUser, restId, managerEmail, 'managers');
     } catch (e) {
-      console.error(e);
-      throw new Error(`Internal server error. Could not verify if email already exists in FoodFlick.`);
+      console.error(`[Rest service] could not add manager '${managerEmail}'. '${e.stack}'`);
+      throw e;
     }
-
-    if (managers.length === 0) throw new Error(`Could not add '${managerEmail}'. Please make sure the email is signed up with FoodFlick and try again`);
-
-    if (managers.length > 1) throw new Error(`Multiple users have this email. Cannot add an email with multiple users 
-     please add another user and file a issue since multiple users should not have the same email in the database.`);
-
-    const newManager = {
-      userId: managers.length === 1 ? managers[0].user_id : null,
-      email: managerEmail
-    }
-
-    const res = await callElasticWithErrorHandler(options => this.elastic.update(options), getRestUpdateOptions(
-      restId,
-      signedInUser,
-      `
-        for (manager in ctx._source.managers) {
-          if (manager.email.equals(params.newManager.email)) {
-            throw new Exception("'" + params.newManager.email + "' already exists. Please try again with a different email");
-          }
-        }
-        ctx._source.managers.add(params.newManager);
-      `,
-      { newManager }
-    ));
-
-    return getUpdatedRestWithId(res, restId);
   }
 
-  async deleteRestManager(signedInUser, restId, managerEmail) {
-    if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
-    
-    const res = await callElasticWithErrorHandler(options => this.elastic.update(options), getRestUpdateOptions(
-      restId,
-      signedInUser,
-      `
-        boolean foundManager = false;
-        for (int i = 0; i < ctx._source.managers.length; i++) { 
-          if (ctx._source.managers[i].email.equals(params.managerEmail)) {
-            foundManager = true;
-            ctx._source.managers.remove(i);
-          }
-        }
-        
-        if (!foundManager) {
-          throw new Exception ("Could not find manager '" + params.managerEmail + "'. Please try again with an existing manager");
-        }
-      `,
-      { managerEmail }
-    ));
 
-    return getUpdatedRestWithId(res, restId);
+  async deleteRestManager(signedInUser, restId, userId) {
+    try {
+      return await this.deleteUserRef(signedInUser, restId, userId, 'managers');
+    } catch (e) {
+      console.error(`[Rest service] could not delete manager. '${e.stack}'`);
+      throw e;
+    }
   }
 
   async addRestServer(signedInUser, restId, serverEmail) {
-    if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
-    if (!serverEmail) throw new Error(getCannotBeEmptyError(`Server email`));
-    let servers;
-
     try {
-      servers = await getUserService().getUsersByEmail(serverEmail);
+      return await this.addUserRef(signedInUser, restId, serverEmail, 'servers');
     } catch (e) {
-      console.error(e);
-      throw new Error(`Internal server error. Could not verify if email already exists in FoodFlick.`);
+      console.error(`[Rest service] could not add server '${serverEmail}'. '${e.stack}'`);
+      throw e;
     }
-
-    console.log('length', servers.length);
-
-    if (servers.length === 0) throw new Error(`Could not add '${serverEmail}'. Please make sure the email is signed up with FoodFlick and try again`);
-
-    if (servers.length > 1) throw new Error(`Multiple users have this email. Cannot add an email with multiple users 
-     please add another user and file a issue since multiple users should not have the same email in the database.`);
-
-    const newServer = {
-      userId: servers.length === 1 ? servers[0].user_id : null,
-      email: serverEmail
-    }
-
-    const res = await callElasticWithErrorHandler(options => this.elastic.update(options), getRestUpdateOptions(
-      restId,
-      signedInUser,
-      `
-        for (server in ctx._source.servers) {
-          if (server.email.equals(params.newServer.email)) {
-            throw new Exception("'" + params.newServer.email + "' already exists. Please try again with a different email");
-          }
-        }
-        ctx._source.servers.add(params.newServer);
-      `,
-      { newServer }
-    ));
-
-    return getUpdatedRestWithId(res, restId);
   }
 
-  async deleteRestServer(signedInUser, restId, serverEmail) {
-    if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
-    
-    const res = await callElasticWithErrorHandler(options => this.elastic.update(options), getRestUpdateOptions(
-      restId,
-      signedInUser,
-      `
-        boolean foundServer = false;
-        for (int i = 0; i < ctx._source.servers.length; i++) { 
-          if (ctx._source.servers[i].email.equals(params.serverEmail)) {
-            foundServer = true;
-            ctx._source.servers.remove(i);
-          }
-        }
-        
-        if (!foundServer) {
-          throw new Exception ("Could not find server '" + params.serverEmail + "'. Please try again with an existing server");
-        }
-      `,
-      { serverEmail }
-    ));
-
-    return getUpdatedRestWithId(res, restId);
+  async deleteRestServer(signedInUser, restId, userId) {
+    try {
+      console.log(userId);
+      return await this.deleteUserRef(signedInUser, restId, userId, 'servers');
+    } catch (e) {
+      console.error(`[Rest service] could not delete server. '${e.stack}'`);
+      throw e;
+    }
   }
 
   async testPrinter (signedInUser, restId, printer) {

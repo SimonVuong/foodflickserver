@@ -10,6 +10,10 @@ export const OrderMutationResolvers = {
     return await OrderService.placeOrder(signedInUser, cart);
   },
 
+  printReceipts: async (root, { orderId }, { signedInUser, OrderService }) => {
+    return await OrderService.printReceipts(signedInUser, orderId);
+  },
+
   refundCompletedOrder: async (root, { restId, orderId, stripeChargeId, amount }, { signedInUser, OrderService }) => {
     return await OrderService.refundCompletedOrder(signedInUser, restId, orderId, stripeChargeId, amount);
   },
@@ -54,6 +58,10 @@ export const OrderQueryResolvers = {
 
   ordersCountThisMonth: async (root, { restId }, { signedInUser, OrderService }) => {
     return await OrderService.getOrdersCountThisMonth(signedInUser, restId)
+  },
+
+  totalTips: async (root, { restId, userId, since }, { signedInUser, OrderService }) => {
+    return await OrderService.getTotalTips(signedInUser, restId, userId, since)
   },
 
   openOrders: async (root, { restId }, { signedInUser, OrderService }) => {

@@ -7,6 +7,9 @@ const customerRestFragment = gql`
       count
       isFavorite
     }
+    tables {
+      _id
+    }
     profile {
       name
       phone
@@ -50,6 +53,7 @@ const customerRestFragment = gql`
         }
       }
     }
+    taxRate
     url
   }
 `

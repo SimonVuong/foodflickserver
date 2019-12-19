@@ -24,16 +24,20 @@ export const RestMutationResolvers = {
     return await RestService.addRestTable(signedInUser, restId, tableId);  
   },
 
-  deleteRestManager: async (root, { restId, managerEmail }, { signedInUser, RestService }) => {
-    return await RestService.deleteRestManager(signedInUser, restId, managerEmail);  
+  addRestTaxRate: async (root, { restId, taxRate }, { signedInUser, RestService }) => {
+    return await RestService.addRestTaxRate(signedInUser, restId, taxRate);  
+  },
+
+  deleteRestManager: async (root, { restId, userId }, { signedInUser, RestService }) => {
+    return await RestService.deleteRestManager(signedInUser, restId, userId);  
   },
 
   deleteRestPrinter: async (root, { restId, printerName }, { signedInUser, RestService }) => {
     return await RestService.deleteRestPrinter(signedInUser, restId, printerName);  
   },
 
-  deleteRestServer: async (root, { restId, serverEmail }, { signedInUser, RestService }) => {
-    return await RestService.deleteRestServer(signedInUser, restId, serverEmail);  
+  deleteRestServer: async (root, { restId, userId }, { signedInUser, RestService }) => {
+    return await RestService.deleteRestServer(signedInUser, restId, userId);  
   },
 
   deleteRestTable: async (root, { restId, tableId }, { signedInUser, RestService }) => {
@@ -91,6 +95,10 @@ export const RestMutationResolvers = {
 
   updateRestTable: async (root, { restId, prevId, newId }, { signedInUser, RestService }) => {
     return await RestService.updateRestTable(signedInUser, restId, prevId, newId);  
+  },
+
+  updateRestTaxRate: async (root, { restId, taxRate }, { signedInUser, RestService }) => {
+    return await RestService.updateRestTaxRate(signedInUser, restId, taxRate);  
   },
 
   updateRestUrl: async (root, { restId, url }, { signedInUser, RestService }) => {

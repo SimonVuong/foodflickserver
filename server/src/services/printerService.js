@@ -71,25 +71,27 @@ class PrinterService {
     });
   }
 
-  printTickets(signedInUserName, orderType, tableNumber, receiver, items) {
+  printTickets(customerName, orderType, tableNumber, serverName, receiver, items) {
     return this.broker.send(receiver.receiverId,{
       type: 'TICKETS',
       data: {
-        customerName: signedInUserName,
+        customerName,
         orderType,
         tableNumber,
+        serverName,
         items,
       }
     });
   }
 
-  printReceipts(signedInUserName, orderType, tableNumber, receiver, items, costs) {
+  printReceipts(customerName, orderType, tableNumber, serverName, receiver, items, costs) {
     return this.broker.send(receiver.receiverId, {
       type: 'RECEIPTS',
       data: {
         receiptPrinters: receiver.printers.filter(printer => printer.isReceipt),
-        customerName: signedInUserName,
+        customerName,
         orderType,
+        serverName,
         tableNumber,
         items,
         costs,

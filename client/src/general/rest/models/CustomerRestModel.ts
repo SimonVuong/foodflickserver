@@ -1,4 +1,4 @@
-import { IFavoritesBase, IBaseRest, Profile, Location } from "./BaseRestModel";
+import { IFavoritesBase, IBaseRest, Profile, Location, Table } from "./BaseRestModel";
 import { ICustomerCategory, CustomerCategory } from "general/menu/models/CustomerItemModel";
 
 export interface ICustomerFavorite extends IFavoritesBase {
@@ -30,6 +30,8 @@ export class CustomerRest implements ICustomerRest {
   readonly location: Location;
   readonly favorites: CustomerFavorite;
   readonly menu: CustomerCategory[];
+  readonly tables: Table[];
+  readonly taxRate: number;
   readonly url: string;
 
   constructor(rest: ICustomerRest) {
@@ -38,6 +40,8 @@ export class CustomerRest implements ICustomerRest {
     this.menu = rest.menu.map(category => new CustomerCategory(category));
     this.profile = new Profile(rest.profile);
     this.location = new Location(rest.location);
+    this.tables = rest.tables.map(table => new Table(table));
+    this.taxRate = rest.taxRate;
     this.url = rest.url;
   }
   public get Address() { return this.location.address }
@@ -63,6 +67,10 @@ export class CustomerRest implements ICustomerRest {
   public get TagsString() { return this.Profile.Tags.map((tag, index) => `${index === 0 ? '' : ', '}${tag}`) }
 
   public get Tags() { return this.Profile.Tags }
+
+  public get Tables() { return this.tables }
+
+  public get TaxRate() { return this.taxRate }
 
   public get Url() { return this.url }
 }

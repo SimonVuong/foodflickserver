@@ -28,18 +28,20 @@ const mutation = `
     addRestManager(restId: ID!, managerEmail: String!): Rest!
     addRestPrinter(restId: ID!, newPrinter: PrinterInput!): Rest!
     addRestReceiver(restId: ID!, receiverId: ID!): Rest!
+    addRestTaxRate(restId: ID!, taxRate: Float!): Rest!
     addRestServer(restId: ID!, serverEmail: String!): Rest!
     addRestTable(restId: ID!, tableId: ID!): Rest!
     addUserFlicks(urls: [String!]!): Boolean!
     completeOrder(orderId: ID!): Boolean!
     deleteCategory(restId: ID!, categoryName: String!): Rest!
     deleteItem(restId: ID!, categoryName: String!, itemName: String!): Rest!
-    deleteRestManager(restId: ID!, managerEmail: String!): Rest!
+    deleteRestManager(restId: ID!, userId: ID!): Rest!
     deleteRestPrinter(restId: ID!, printerName: String!): Rest!
-    deleteRestServer(restId: ID!, serverEmail: String!): Rest!
+    deleteRestServer(restId: ID!, userId: ID!): Rest!
     deleteRestTable(restId: ID!, tableId: ID!): Rest!
     giveRestFeedback(restId: ID!, feedback: String!): Boolean!
     placeOrder(cart: CartInput!): Boolean!
+    printReceipts(orderId: ID!): Boolean!
     refundCompletedOrder(restId: ID!, orderId: ID!, stripeChargeId: ID!, amount: Float!): Order!
     returnOrder(orderId: ID!, reason: String!): Boolean!
     refundPendingTipOrder(restId: ID!, orderId: ID!, amount: Float!): Order!
@@ -59,6 +61,7 @@ const mutation = `
     updateRestReceiver(restId: ID!, receiverId: ID!): Rest!
     updateRestSubscription(restId: ID!, planId: ID!): Rest!
     updateRestSubscriptionCard(restId: ID!, cardTok: ID!): Rest!
+    updateRestTaxRate(restId: ID!, taxRate: Float!): Rest!
     updateRestUrl(restId: ID!, url: String!): Rest!
     updateTip(orderId: ID!, newTip: Float!): Boolean!
     updateRestTableCheckIn(restId: ID!, tableId: ID!): Rest!
@@ -89,6 +92,7 @@ const query = `
     restBanking(restId: String!): Banking
     restByUrl(url: String!): Rest
     restSearchSuggestions(query: String!, location: String): [Rest!]
+    totalTips(restId: String!, userId: ID!, since: Float!): Float
     tagSearchSuggestions(query: String!): [Tag!]
   }
 `

@@ -27,7 +27,8 @@ export const getSignedInUser = req => {
     user = {
       //remove identity provider because auth0 id does't include it
       _id: claims.sub,
-      name: claims[namespace + 'firstName'] + ' ' + claims[namespace + 'lastName'],
+      firstName: claims[namespace + 'firstName'],
+      lastName: claims[namespace + 'lastName'],
       ip,
       email: claims[namespace + 'email'],
       stripeId: claims[namespace + 'stripeId'],

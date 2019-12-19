@@ -176,10 +176,10 @@ const ReviewCartPage: React.FC<props & ReactStripeElements.InjectedStripeProps> 
     setPhone(phone);
   }
   // should never happen
-  if (!cart) return <Typography variant='h3'>Empty cart</Typography>;
+  if (!cart || !selectedRest) return <Typography variant='h3'>Empty cart</Typography>;
 
   const itemTotal = round2(cart.ItemTotal);
-  const estimatedTax = round2(cart.ItemTotal * 0.0625);
+  const estimatedTax = round2(cart.ItemTotal * selectedRest.TaxRate);
   let tip = 0;
   if (orderType === OrderType.SIT_DOWN) {
     tip = staticTip ? round2((cart.ItemTotal * staticTip)) : round2(parseFloat(customTip));
@@ -194,11 +194,11 @@ const ReviewCartPage: React.FC<props & ReactStripeElements.InjectedStripeProps> 
       const res = await stripe!.createToken({ name: (signedInUser && signedInUser.FullName) ? signedInUser.FullName : '' });
       if (res.error) return;
       orderCardTok = res.token!.id;
-      AnalyticsService.trackEvent(events.CLICKED_PLACE_ORDER)
     }
 
     const isOrderValid = doesPassRequirements();
     if (isOrderValid) {
+      AnalyticsService.trackEvent(events.CLICKED_PLACE_ORDER)
       placeOrder(new Cart({
         ...cart,
         phone,
@@ -209,7 +209,6 @@ const ReviewCartPage: React.FC<props & ReactStripeElements.InjectedStripeProps> 
       }));
     }
   };
-
   return (
     <Container className={classes.container}>
       <div className={classes.title}>

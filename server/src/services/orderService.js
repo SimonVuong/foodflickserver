@@ -18,7 +18,6 @@ const MS_IN_MINUTE = 60000;
 const SCHEDULING_BUFFER_MILLIS = MS_IN_MINUTE;
 const PENDING_TIP_HOLDING_TIME = 10800000; // 3hr
 // const PENDING_TIP_HOLDING_TIME = 120000; // 2min
-const TAX_RATE = 0.0625;
 const PERCENT_FEE = 2.9
 const FLAT_RATE_FEE = .30;
 
@@ -29,6 +28,19 @@ const containsPrice = ({ label, value }, prices) => {
     if ((!dbLabel || label === dbLabel) && value === dbValue) return true;
   }
   return false;
+}
+
+const getOrderCostTotals = order => {
+  const { itemTotal, tax, tip } = order.costs;
+  const refund = order.customRefunds.reduce((sum, refund) => sum + refund.amount, 0);
+  const total = round2(itemTotal + tax + tip - refund);
+  return {
+    itemTotal,
+    refund,
+    tax,
+    tip,
+    total,
+  }
 }
 
 const containsAddons = (selectedAddons, addons) => {
@@ -43,6 +55,7 @@ const containsAddons = (selectedAddons, addons) => {
   }
   return false;
 }
+
 
 const getItemTotal = items => round2(
   items.reduce((sum, item) => {
@@ -96,10 +109,12 @@ class OrderService {
     const rest = await getRestService().getRest(restId);
     this.validatePrices(items, rest);
     this.validateAddons(items, rest);
+    const server = getRestService().getServerFromTable(rest, tableNumber);
     const didSend = await getPrinterService().printTickets(
-      signedInUser.name,
+      `${signedInUser.firstName} ${signedInUser.lastName}`,
       orderType,
       tableNumber,
+      server ? `${server.firstName} ${server.lastName}` : null,
       rest.receiver,
       items.map(({ itemId, ...others }) => ({
         ...others,
@@ -124,8 +139,8 @@ class OrderService {
       finalCardTok = newHiddenCard.cardTok;
       cart.cardTok = finalCardTok;
     }
-    const cartUpdateWindowMillis = rest.minsToUpdateCart * MS_IN_MINUTE;
 
+    const cartUpdateWindowMillis = rest.minsToUpdateCart * MS_IN_MINUTE;
     let upsertedOrder = await this.getMatchingOrder(
       restId,
       signedInUser._id,
@@ -138,13 +153,18 @@ class OrderService {
     const finalTip = round2(tip);
     if (!upsertedOrder) {
       const itemTotal = getItemTotal(items);
-      const tax = round2(itemTotal * TAX_RATE);
+      const tax = round2(itemTotal * rest.taxRate);
       const costs = {
         itemTotal,
         tax,
         tip: finalTip,
       };
-      upsertedOrder = await this.addOpenOrder(signedInUser, cart, costs);
+      upsertedOrder = await this.addOpenOrder(
+        signedInUser,
+        cart,
+        costs,
+        server,
+      );
       console.log(`[Order service] added new order '${upsertedOrder._id}'`);
     } else {
       upsertedOrder = await this.updateOrderCart(upsertedOrder._id, items, finalTip);
@@ -152,7 +172,7 @@ class OrderService {
     }
 
     setTimeout(async () => {
-      const success = await this.setOrderPendingTip(signedInUser, upsertedOrder._id, rest.receiver);
+      const success = await this.setOrderPendingTip(upsertedOrder._id, rest.receiver);
       if (!success) return;
       const millisTillPayment = PENDING_TIP_HOLDING_TIME + SCHEDULING_BUFFER_MILLIS;
       setTimeout(() => {
@@ -171,6 +191,36 @@ class OrderService {
     return true;
   }
 
+  async printReceipts(signedInUser, orderId) {
+    const order = await callElasticWithErrorHandler(options => this.elastic.getSource(options), {
+      index: ORDERS_INDEX,
+      type: ORDER_TYPE,
+      id: orderId,
+      refresh: 'wait_for',
+      _source: ['costs', 'customer', 'customRefunds', 'server', 'restId', 'orderType', 'tableNumber', 'items'],
+    });
+    const rest = await getRestService().getRest(order.restId, ['owner', 'managers', 'servers', 'profile', 'receiver']);
+    throwIfNotRestOwnerManagerServer(signedInUser, rest.owner, rest.managers, rest.servers, rest.profile.name);
+    try {
+      getPrinterService().printReceipts(
+        `${order.customer.firstName} ${order.customer.lastName}`,
+        order.orderType,
+        order.tableNumber,
+        order.server ? `${order.server.firstName} ${order.server.lastName}` : null,
+        rest.receiver,
+        order.items.map(({ itemId, ...others }) => ({
+          ...others,
+        })),
+        getOrderCostTotals(order)
+      );
+      console.log(`[Order service] printReceipts printed order '${orderId}'`);
+      return true;
+    } catch(e) {
+      console.error(`[Order service] printReceipts could not print order '${orderId}. ${e.stack}`);
+      throw e;
+    }
+  }
+
   async setOrderPendingTipNow(signedInUser, orderId) {
     if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
     try {
@@ -183,7 +233,7 @@ class OrderService {
       });
       const rest = await getRestService().getRest(order.restId, ['owner', 'managers', 'profile','banking', 'receiver']);
       throwIfNotRestOwnerOrManager(signedInUser, rest.owner, rest.managers, rest.profile.name);
-      await this.setOrderPendingTip(signedInUser, orderId, rest.receiver);
+      await this.setOrderPendingTip(orderId, rest.receiver);
       const userRes = await getUserService().getUserById(order.customer.userId, 'email,app_metadata');
       const customer = {
         email: userRes.email,
@@ -207,7 +257,7 @@ class OrderService {
     }
   }
 
-  async setOrderPendingTip(signedInUser, orderId, restReceiver) {
+  async setOrderPendingTip(orderId, restReceiver) {
     const ORDER_COMPLETED_MSG = 'Order is already completed';
     const ORDER_RETURNED_MSG = 'Order is already returned';
     const ORDER_PENDING_TIP_CHANGE_MSG = 'Order is already pending tip change'
@@ -232,22 +282,16 @@ class OrderService {
         true
       ));
       const order = res.get._source;
-      const { itemTotal, tax, tip } = order.costs;
-      const total = round2(itemTotal + tax + tip);
       getPrinterService().printReceipts(
-        signedInUser.name,
+        `${order.customer.firstName} ${order.customer.lastName}`,
         order.orderType,
         order.tableNumber,
+        order.server ? `${order.server.firstName} ${order.server.lastName}` : null,
         restReceiver,
         order.items.map(({ itemId, ...others }) => ({
           ...others,
         })),
-        {
-          itemTotal,
-          tax,
-          tip,
-          total,
-        }
+        getOrderCostTotals(order),
       );
 
       console.log(`[Order service] updated order '${orderId}' to status '${OrderStatus.PENDING_TIP_CHANGE}'`)
@@ -318,10 +362,8 @@ class OrderService {
       throw e;
     };
 
-    const { itemTotal, tax, tip } = order.costs;
-    const refunds = order.customRefunds.reduce((sum, refund) => sum + refund.amount, 0);
-    const total = round2(itemTotal + tax + tip - refunds);
-    const centsTotal = Math.round(total * 100);
+    const totals = getOrderCostTotals(order);
+    const centsTotal = Math.round(totals.total * 100);
     let charge;
     try {
       charge = await this.makePayment(customer, restStripeId, restName, centsTotal, order.cardTok);
@@ -392,6 +434,34 @@ class OrderService {
     });
   }
 
+  async getTotalTips(signedInUser, restId, userId, since) {
+    const rest = await getRestService().getRest(restId, ['location.timezone.name', 'owner', 'managers', 'profile.name']);
+    throwIfNotRestOwnerOrManager(signedInUser, rest.owner, rest.managers, rest.profile.name);
+    const startOfMonth = moment().tz(rest.location.timezone.name).startOf('month').valueOf();
+    const orders = await this.elastic.count({
+      index: ORDERS_INDEX,
+      body: {
+        query: {
+          bool: {
+            filter: {
+              bool: {
+                must: {
+                  // left off here. filter also by server.userId keyword
+                  range: {
+                    createdDate: {
+                      gte: startOfMonth
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+      }
+    });
+    return orders.reduce((sum, order) => sum + order.costs.tip, 0)
+  }
+
   async getMyOrders(signedInUser, status) {
     try {
       const orders = await this.getOrders([
@@ -419,6 +489,10 @@ class OrderService {
   }
 
   async refundPendingTipOrder(signedInUser, restId, orderId, amount) {
+    return this.refundOrder(signedInUser, restId, orderId, null, amount);
+  }
+
+  async refundOrder(signedInUser, restId, orderId, stripeChargeId, amount) {
     if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
     if (amount === 0) throw new Error('Refund amount cannot be 0. Please use a another amount');
     const rest = await getRestService().getRest(restId, ['owner', 'managers', 'profile']);
@@ -427,12 +501,22 @@ class OrderService {
       index: ORDERS_INDEX,
       type: ORDER_TYPE,
       id: orderId,
-      _source: ['restId', 'customRefunds', 'costs'],
+      _source: ['restId', 'stripeChargeId', 'customRefunds', 'costs'],
     });
+    const totals = getOrderCostTotals(order);
+    const allowedRefund = round3(totals.total - amount);
+    if (allowedRefund < 0) throw new Error(`The provided amount exceeds the allowed remaining refund of ${allowedRefund}. Please reduce the amount`);
     if (order.restId !== restId) throw new Error("The provided restId doesn't match the restId stored with the order. Please provide the correct restId");
-    const currRefund = round2(order.customRefunds.reduce((sum, refund) => sum + refund.amount, 0));
-    const orderTotal = round2(order.costs.itemTotal + order.costs.tax + order.costs.tip);
-    if (currRefund + amount > orderTotal) throw new Error('The provided amount exceeds the allowed remaining refund of ' + (orderTotal - currRefund) + '. Please reduce the amount');
+    
+    let refundRes;
+    if (order.stripeChargeId) {
+      if (order.stripeChargeId !== stripeChargeId) throw new Error("The provided stripeChargeId doesn't match the stripeChargeId stored with the order. Please provide the correct stripeChargeId");
+      refundRes = await this.stripe.refunds.create({
+        charge: stripeChargeId,
+        amount: Math.round(amount * 100),
+        reverse_transfer: true,
+      });
+    }
 
     const orderRes = await callElasticWithErrorHandler(options => this.elastic.update(options), {
       index: ORDERS_INDEX,
@@ -447,6 +531,7 @@ class OrderService {
           `,
           params: {
             refund: {
+              stripeRefundId: refundRes ? refundRes.id : undefined,
               amount,
             },
           }
@@ -459,50 +544,7 @@ class OrderService {
   }
 
   async refundCompletedOrder(signedInUser, restId, orderId, stripeChargeId, amount) {
-    if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
-    if (amount === 0) throw new Error('Refund amount cannot be 0. Please use a another amount');
-    const rest = await getRestService().getRest(restId, ['owner', 'managers', 'profile']);
-    throwIfNotRestOwnerOrManager(signedInUser, rest.owner, rest.managers, rest.profile.name);
-    const order = await callElasticWithErrorHandler(options => this.elastic.getSource(options), {
-      index: ORDERS_INDEX,
-      type: ORDER_TYPE,
-      id: orderId,
-      _source: ['restId', 'stripeChargeId', 'customRefunds', 'costs'],
-    });
-    if (order.restId !== restId) throw new Error("The provided restId doesn't match the restId stored with the order. Please provide the correct restId");
-    if (order.stripeChargeId !== stripeChargeId) throw new Error("The provided stripeChargeId doesn't match the stripeChargeId stored with the order. Please provide the correct stripeChargeId");
-    const currRefund = round2(order.customRefunds.reduce((sum, refund) => sum + refund.amount, 0));
-    const orderTotal = round2(order.costs.itemTotal + order.costs.tax + order.costs.tip);
-    if (currRefund + amount > orderTotal) throw new Error('The provided amount exceeds the allowed remaining refund of ' + (orderTotal - currRefund) + '. Please reduce the amount');
-
-    const refundRes = await this.stripe.refunds.create({
-      charge: stripeChargeId,
-      amount: Math.round(amount * 100),
-      reverse_transfer: true,
-    });
-    const orderRes = await callElasticWithErrorHandler(options => this.elastic.update(options), {
-      index: ORDERS_INDEX,
-      type: ORDER_TYPE,
-      id: orderId,
-      _source: true,
-      refresh: 'wait_for',
-      body: {
-        script: {
-          source: `
-            ctx._source.customRefunds.add(params.refund);
-          `,
-          params: {
-            refund: {
-              stripeRefundId: refundRes.id,
-              amount,
-            },
-          }
-        }
-      }
-    });
-    const newOrder = orderRes.get._source;
-    newOrder._id = orderId;
-    return newOrder;
+    return this.refundOrder(signedInUser, restId, orderId, stripeChargeId, amount);
   }
 
   async returnOrder(signedInUser, orderId, reason) {
@@ -555,10 +597,11 @@ class OrderService {
       .catch((e) => { console.error(e) });
   }
 
-  addOpenOrder = async (signedInUser, cart, costs) => {
+  addOpenOrder = async (signedInUser, cart, costs, server) => {
     const customer = {
       userId: signedInUser._id,
-      nameDuring: signedInUser.name,
+      firstName: signedInUser.firstName,
+      lastName: signedInUser.lastName
     };
     const customRefunds = [];
     const now = Date.now();
@@ -582,6 +625,14 @@ class OrderService {
       phone,
       orderType,
       tableNumber,
+      server: server ? 
+        {
+          firstName: server.firstName,
+          lastName: server.lastName,
+          userId: server.userId,
+        }
+        :
+        undefined,
       cardTok,
     };
     try {

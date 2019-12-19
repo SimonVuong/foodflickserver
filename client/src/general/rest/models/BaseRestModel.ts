@@ -85,11 +85,29 @@ export class Location implements ILocation {
   public get Address() { return this.address }
 }
 
+export interface ITable {
+  _id: string;
+}
+
+export class Table implements ITable {
+  _id: string
+
+  constructor({
+    _id,
+  }: ITable) {
+    this._id = _id;
+  }
+
+  public get _Id() { return this._id }
+}
+
 export interface IBaseRest {
   _id: string;
   favorites: IFavoritesBase;
   profile: IProfile;
   location: ILocation;
   menu: IBaseCategory[];
+  tables: ITable[];
+  taxRate: number;
   url: string;
 };

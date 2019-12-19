@@ -31,6 +31,7 @@ const Rest = `
     subscription: Subscription!
     servers: [UserRef!]!
     tables: [Table!]!
+    taxRate: Float
     url: String!
   }
 `;

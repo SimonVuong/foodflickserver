@@ -3,7 +3,6 @@ const _NewRestInput = `
     profile: ProfileInput!
     location: LocationInput!
     banking: BankingInput
-    owner: ManagerInput!
   }
 `;
 

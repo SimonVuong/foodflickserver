@@ -146,7 +146,7 @@ class UserService {
       if (users.length === 1) return true;
       if (users.length === 0) return false;
     } catch (e) {
-      console.error(e);
+      console.error(`[User service] could not check doesUserExist '${email}'. '${e.stack}'`);
       throw new Error(`Internal server error. Could not verify if email already exists in FoodFlick.`);
     }
   }
