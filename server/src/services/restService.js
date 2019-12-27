@@ -60,10 +60,11 @@ class RestService {
     if (!tableId) {
       return null;
     }
-    const servers = rest.servers;
+    const possibleServers = [...rest.servers, ...rest.managers, rest.owner];
     const tables = rest.tables;
     const targetTable = tables.find(table => table._id === tableId);
-    return servers.find(server => server.userId === targetTable.userId);
+    if (!targetTable) return null;
+    return possibleServers.find(server => server.userId === targetTable.userId);
   }
 
   async getMyFavoriteRests(signedInUser) {

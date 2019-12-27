@@ -1,4 +1,4 @@
-import { Customer } from './customer';
+import { OrderUserRef } from './orderUserRef';
 import { OrderItem } from './orderItem';
 import { OrderCosts } from './orderCosts';
 import { Refund } from './refund';
@@ -30,7 +30,7 @@ const _Order = `
     tableNumber: String
     stripeChargeId: ID
     status: OrderStatus!
-    customer: Customer!
+    customer: OrderUserRef!
     cartUpdatedDate: Float!
     items: [OrderItem]!
     costs: OrderCosts!
@@ -38,4 +38,4 @@ const _Order = `
   }
 `
 
-export const Order = () => [_Order, _OrderStatus, Customer, OrderItem, OrderCosts, Refund];
+export const Order = () => [_Order, _OrderStatus, OrderUserRef, OrderItem, OrderCosts, Refund];

@@ -52,6 +52,10 @@ export const OrderQueryResolvers = {
     return await OrderService.getMyOrders(signedInUser, OrderStatus.PENDING_TIP_CHANGE);
   },
 
+  myTotalTips: async(root, { restId, since }, { signedInUser, OrderService }) => {
+    return await OrderService.getMyTotalTips(signedInUser, restId, since);
+  },
+
   pendingTipOrders: async (root, { restId }, { signedInUser, OrderService }) => {
     return await OrderService.getPendingTipOrders(signedInUser, restId)
   },
@@ -60,15 +64,15 @@ export const OrderQueryResolvers = {
     return await OrderService.getOrdersCountThisMonth(signedInUser, restId)
   },
 
-  totalTips: async (root, { restId, userId, since }, { signedInUser, OrderService }) => {
-    return await OrderService.getTotalTips(signedInUser, restId, userId, since)
-  },
-
   openOrders: async (root, { restId }, { signedInUser, OrderService }) => {
     return await OrderService.getOpenOrders(signedInUser, restId)
   },
 
   completedOrders: async (root, { restId }, { signedInUser, OrderService }) => {
     return await OrderService.getCompletedOrders(signedInUser, restId)
+  },
+
+  totalTips: async (root, { restId, since }, { signedInUser, OrderService }) => {
+    return await OrderService.getTotalTips(signedInUser, restId, since)
   },
 }

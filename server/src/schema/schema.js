@@ -18,6 +18,7 @@ import { Order } from './order/order';
 import { CartInput } from './cart/cartInput';
 import { Cart } from './cart/cart';
 import { PlanQueryResolvers } from './plan/planResolvers';
+import { TotalTips } from './order/tips';
 
 
 const mutation = `
@@ -84,6 +85,7 @@ const query = `
     myOpenOrders: [Order!]!
     myCompletedOrders: [Order!]!
     myPendingTipOrders: [Order!]!
+    myTotalTips(restId: ID!, since: Float!): TotalTips!
     pendingTipOrders(restId: ID!): [Order!]!
     activePlans(subscriptionId: ID!): [Plan!]!
     openOrders(restId: ID!): [Order!]!
@@ -92,7 +94,7 @@ const query = `
     restBanking(restId: String!): Banking
     restByUrl(url: String!): Rest
     restSearchSuggestions(query: String!, location: String): [Rest!]
-    totalTips(restId: String!, userId: ID!, since: Float!): Float
+    totalTips(restId: ID!, since: Float!): TotalTips!
     tagSearchSuggestions(query: String!): [Tag!]
   }
 `
@@ -122,6 +124,7 @@ const typeDefs = [
   PrinterInput,
   ReceiverInput,
   Plan,
+  TotalTips,
   query,
   mutation,
   schema

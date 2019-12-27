@@ -103,92 +103,100 @@ class OrderService {
   }
 
   async placeOrder(signedInUser, cart) {
-    const { items, tableNumber, phone, orderType, cardTok, restId, tip } = cart;
-    if (!tableNumber && orderType === OrderType.SIT_DOWN) throw new Error(getCannotBeEmptyError(`Table number`));
-    if (!phone) throw new Error(getCannotBeEmptyError(`Phone Number`));
-    const rest = await getRestService().getRest(restId);
-    this.validatePrices(items, rest);
-    this.validateAddons(items, rest);
-    const server = getRestService().getServerFromTable(rest, tableNumber);
-    const didSend = await getPrinterService().printTickets(
-      `${signedInUser.firstName} ${signedInUser.lastName}`,
-      orderType,
-      tableNumber,
-      server ? `${server.firstName} ${server.lastName}` : null,
-      rest.receiver,
-      items.map(({ itemId, ...others }) => ({
-        ...others,
-        printers: getMenuItemById(itemId, rest.menu).printers,
-      })),
-    );
-
-    if (!didSend) {
-      console.error(`[Order service] could not print ticket to '${rest.receiver.receiverId}'`);
+    try {
+      const { items, tableNumber, phone, orderType, cardTok, restId, tip } = cart;
+      if (!tableNumber && orderType === OrderType.SIT_DOWN) throw new Error(getCannotBeEmptyError(`Table number`));
+      if (!phone) throw new Error(getCannotBeEmptyError(`Phone Number`));
+      const rest = await getRestService().getRest(restId);
+      this.validatePrices(items, rest);
+      this.validateAddons(items, rest);
+      const server = getRestService().getServerFromTable(rest, tableNumber);
+      if (tableNumber && !server) {
+        throw new Error('Table number not found. Try a different number or talk to your server');
+      }
+      const didSend = await getPrinterService().printTickets(
+        `${signedInUser.firstName} ${signedInUser.lastName}`,
+        orderType,
+        tableNumber,
+        server ? `${server.firstName} ${server.lastName}` : null,
+        rest.receiver,
+        items.map(({ itemId, ...others }) => ({
+          ...others,
+          printers: getMenuItemById(itemId, rest.menu).printers,
+        })),
+      );
+  
+      if (!didSend) {
+        console.error(`[Order service] could not print ticket to '${rest.receiver.receiverId}'`);
+        return false;
+      }
+  
+      // when the customer orders with a default card, cardTok is what we expect, namely a card id in the form of "card_<string>".
+      // however if the customer is ordering with a new card, then cardTok is not a card id, but rather a token id of the form
+      // tok_<string>. we always want to store card Ids in the db order as it is cardIds that are tied to a customer, not
+      // token ids. in other words we need to store card ids in orders so we can view card data for historical orders.
+      let finalCardTok = cardTok;
+      // when finalCardTok is a token id, then getCustomerCardById will return null
+      const storedCard = await getCardService().getCustomerCardById(signedInUser.stripeId, finalCardTok)
+      if (!storedCard) {
+        const newHiddenCard = await getCardService().addUserCard(signedInUser.stripeId, finalCardTok);
+        finalCardTok = newHiddenCard.cardTok;
+        cart.cardTok = finalCardTok;
+      }
+  
+      const cartUpdateWindowMillis = rest.minsToUpdateCart * MS_IN_MINUTE;
+      let upsertedOrder = await this.getMatchingOrder(
+        restId,
+        signedInUser._id,
+        orderType,
+        tableNumber,
+        phone,
+        finalCardTok,
+        cartUpdateWindowMillis
+      );
+      const finalTip = round2(tip);
+      if (!upsertedOrder) {
+        const itemTotal = getItemTotal(items);
+        const tax = round2(itemTotal * rest.taxRate);
+        const costs = {
+          itemTotal,
+          tax,
+          tip: finalTip,
+        };
+        upsertedOrder = await this.addOpenOrder(
+          signedInUser,
+          cart,
+          costs,
+          server,
+        );
+        console.log(`[Order service] added new order '${upsertedOrder._id}'`);
+      } else {
+        upsertedOrder = await this.updateOrderCart(upsertedOrder._id, items, finalTip);
+        console.log(`[Order service] updated order '${upsertedOrder._id}'`);
+      }
+  
+      setTimeout(async () => {
+        const success = await this.setOrderPendingTip(upsertedOrder._id, rest.receiver);
+        if (!success) return;
+        const millisTillPayment = PENDING_TIP_HOLDING_TIME + SCHEDULING_BUFFER_MILLIS;
+        setTimeout(() => {
+          this.completeOrderAndPay(
+            upsertedOrder._id,
+            signedInUser,
+            rest.banking.stripeId,
+            rest.profile.name
+          )
+        // add 1 minute to the PENDING_TIP_HOLDING_TIME to avoid any issues with timing and async. for example, what
+        // the user updated the tip at the last minute such that when we try to pay, elastic doesn't pick up the new tip.
+        }, millisTillPayment);
+        console.log(`[Order service] order '${upsertedOrder._id}' scheduled for payment '${millisTillPayment / MS_IN_MINUTE}' mins`);
+      }, cartUpdateWindowMillis);
+      console.log(`[Order service] order '${upsertedOrder._id}' scheduled for tip status update in '${cartUpdateWindowMillis / MS_IN_MINUTE}' mins`);
+      return true;
+    } catch (e) {
+      console.error(`[Order service] could not placeOrder. ${e.stack}`)
       return false;
     }
-
-    // when the customer orders with a default card, cardTok is what we expect, namely a card id in the form of "card_<string>".
-    // however if the customer is ordering with a new card, then cardTok is not a card id, but rather a token id of the form
-    // tok_<string>. we always want to store card Ids in the db order as it is cardIds that are tied to a customer, not
-    // token ids. in other words we need to store card ids in orders so we can view card data for historical orders.
-    let finalCardTok = cardTok;
-    // when finalCardTok is a token id, then getCustomerCardById will return null
-    const storedCard = await getCardService().getCustomerCardById(signedInUser.stripeId, finalCardTok)
-    if (!storedCard) {
-      const newHiddenCard = await getCardService().addUserCard(signedInUser.stripeId, finalCardTok);
-      finalCardTok = newHiddenCard.cardTok;
-      cart.cardTok = finalCardTok;
-    }
-
-    const cartUpdateWindowMillis = rest.minsToUpdateCart * MS_IN_MINUTE;
-    let upsertedOrder = await this.getMatchingOrder(
-      restId,
-      signedInUser._id,
-      orderType,
-      tableNumber,
-      phone,
-      finalCardTok,
-      cartUpdateWindowMillis
-    );
-    const finalTip = round2(tip);
-    if (!upsertedOrder) {
-      const itemTotal = getItemTotal(items);
-      const tax = round2(itemTotal * rest.taxRate);
-      const costs = {
-        itemTotal,
-        tax,
-        tip: finalTip,
-      };
-      upsertedOrder = await this.addOpenOrder(
-        signedInUser,
-        cart,
-        costs,
-        server,
-      );
-      console.log(`[Order service] added new order '${upsertedOrder._id}'`);
-    } else {
-      upsertedOrder = await this.updateOrderCart(upsertedOrder._id, items, finalTip);
-      console.log(`[Order service] updated order '${upsertedOrder._id}'`);
-    }
-
-    setTimeout(async () => {
-      const success = await this.setOrderPendingTip(upsertedOrder._id, rest.receiver);
-      if (!success) return;
-      const millisTillPayment = PENDING_TIP_HOLDING_TIME + SCHEDULING_BUFFER_MILLIS;
-      setTimeout(() => {
-        this.completeOrderAndPay(
-          upsertedOrder._id,
-          signedInUser,
-          rest.banking.stripeId,
-          rest.profile.name
-        )
-      // add 1 minute to the PENDING_TIP_HOLDING_TIME to avoid any issues with timing and async. for example, what
-      // the user updated the tip at the last minute such that when we try to pay, elastic doesn't pick up the new tip.
-      }, millisTillPayment);
-      console.log(`[Order service] order '${upsertedOrder._id}' scheduled for payment '${millisTillPayment / MS_IN_MINUTE}' mins`);
-    }, cartUpdateWindowMillis);
-    console.log(`[Order service] order '${upsertedOrder._id}' scheduled for tip status update in '${cartUpdateWindowMillis / MS_IN_MINUTE}' mins`);
-    return true;
   }
 
   async printReceipts(signedInUser, orderId) {
@@ -434,32 +442,120 @@ class OrderService {
     });
   }
 
-  async getTotalTips(signedInUser, restId, userId, since) {
-    const rest = await getRestService().getRest(restId, ['location.timezone.name', 'owner', 'managers', 'profile.name']);
-    throwIfNotRestOwnerOrManager(signedInUser, rest.owner, rest.managers, rest.profile.name);
-    const startOfMonth = moment().tz(rest.location.timezone.name).startOf('month').valueOf();
-    const orders = await this.elastic.count({
-      index: ORDERS_INDEX,
-      body: {
-        query: {
-          bool: {
-            filter: {
-              bool: {
-                must: {
-                  // left off here. filter also by server.userId keyword
-                  range: {
-                    createdDate: {
-                      gte: startOfMonth
+  getTipsResponse(orders) {
+    let userId = null;
+    let userSum = 0;
+    const tips = orders.reduce((arr, {_source: order}) => {
+      const nextUserId = order.server.userId;
+      if (userId !== nextUserId) {
+        userId = nextUserId;
+        userSum = order.costs.tip;
+        arr[0].push(order.server);
+        arr[1].push(userSum);
+      } else {
+        userSum = userSum + order.costs.tip;
+        arr[1][arr[1].length - 1] = userSum
+      }
+      return arr;
+    }, Array.of([],[]));
+    return tips.length > 0 ?
+    {
+      servers: tips[0],
+      tips: tips[1],
+    }
+    :
+    {
+      servers: [],
+      tips: [],
+    };
+  }
+
+  async getTotalTips(signedInUser, restId, since) {
+    try {
+      const rest = await getRestService().getRest(restId, ['owner', 'managers', 'profile.name']);
+      throwIfNotRestOwnerOrManager(signedInUser, rest.owner, rest.managers, rest.profile.name);
+      const res = await callElasticWithErrorHandler(options => this.elastic.search(options), {
+        index: ORDERS_INDEX,
+        size: QUERY_SIZE,
+        body: {
+          sort: [
+            {
+              'server.userId': {
+                order: 'asc',
+              }
+            }
+          ],
+          query: {
+            bool: {
+              filter: {
+                bool: {
+                  must: [
+                    {
+                      range: {
+                        cartUpdatedDate: {
+                          gte: since
+                        }
+                      },
+                    },
+                    {
+                      term: {
+                        'restId': restId
+                      }
                     }
-                  }
+                  ]
                 }
               }
             }
-          }
-        },
-      }
-    });
-    return orders.reduce((sum, order) => sum + order.costs.tip, 0)
+          },
+        }
+      });
+      return this.getTipsResponse(res.hits.hits);
+    } catch (e) {
+      console.error(`[Order service] getTotalTips could not get tips for restId '${restId}' since '${since}'. ${e.stack}`);
+      throw e;
+    }
+  }
+
+  async getMyTotalTips(signedInUser, restId, since) {
+    try {
+      const rest = await getRestService().getRest(restId, ['owner', 'managers', 'profile.name', 'servers']);
+      throwIfNotRestOwnerManagerServer(signedInUser, rest.owner, rest.managers, rest.servers, rest.profile.name)
+      const res = await callElasticWithErrorHandler(options => this.elastic.search(options), {
+        index: ORDERS_INDEX,
+        size: QUERY_SIZE,
+        body: {
+          query: {
+            bool: {
+              filter: {
+                bool: {
+                  must: [
+                    {
+                      range: {
+                        cartUpdatedDate: {
+                          gte: since
+                        }
+                      },
+                    },
+                    {
+                      term: {
+                        'restId': restId
+                      },
+                      term: {
+                        'server.userId': signedInUser._id
+                      },
+                    }
+                  ]
+                }
+              }
+            }
+          },
+        }
+      });
+      return this.getTipsResponse(res.hits.hits);
+    } catch (e) {
+      console.error(`[Order service] getMyTotalTips could not get tips for restId '${restId}' since '${since}'. ${e.stack}`);
+      throw e;
+    }
   }
 
   async getMyOrders(signedInUser, status) {
