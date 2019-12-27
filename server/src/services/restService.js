@@ -830,7 +830,6 @@ class RestService {
 
   async deleteRestServer(signedInUser, restId, userId) {
     try {
-      console.log(userId);
       return await this.deleteUserRef(signedInUser, restId, userId, 'servers');
     } catch (e) {
       console.error(`[Rest service] could not delete server. '${e.stack}'`);
@@ -885,7 +884,6 @@ class RestService {
     if (!signedInUser.perms.includes(MANAGER_PERM)) throw new Error(NEEDS_MANAGER_SIGN_IN_ERROR);
     if (!url) throw new getCannotBeEmptyError('URL');
     const rest = await this.getRestByUrl(signedInUser, url);
-    console.log(rest);
     if (rest) throw new Error('URL already exists. Please try another URL');
     const regex = /^[a-zA-Z0-9_-]*$/
     if(!regex.test(url)) throw new Error('Invalid URL. Please use only letters, numbers, -, _, or ~');
