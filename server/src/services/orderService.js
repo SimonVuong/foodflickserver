@@ -107,6 +107,7 @@ class OrderService {
       const { items, tableNumber, phone, orderType, cardTok, restId, tip } = cart;
       if (!tableNumber && orderType === OrderType.SIT_DOWN) throw new Error(getCannotBeEmptyError(`Table number`));
       if (!phone) throw new Error(getCannotBeEmptyError(`Phone Number`));
+      if (tip < 0) throw new Error('Tip cannot be less than $0');
       const rest = await getRestService().getRest(restId);
       this.validatePrices(items, rest);
       this.validateAddons(items, rest);
@@ -597,11 +598,14 @@ class OrderService {
       index: ORDERS_INDEX,
       type: ORDER_TYPE,
       id: orderId,
-      _source: ['restId', 'stripeChargeId', 'customRefunds', 'costs'],
+      _source: ['restId', 'stripeChargeId', 'customRefunds', 'costs', 'status'],
     });
     const totals = getOrderCostTotals(order);
-    const allowedRefund = round3(totals.total - amount);
-    if (allowedRefund < 0) throw new Error(`The provided amount exceeds the allowed remaining refund of ${allowedRefund}. Please reduce the amount`);
+    const remainingCosts = round3(totals.total - amount);
+    if (order.status === OrderStatus.PENDING_TIP_CHANGE && remainingCosts < 0.50) {
+      throw new Error('Cannot leave amount less than $0.50. Either refund the total remaining amount or leave a minimum of $0.50.')
+    }
+    if (remainingCosts < 0) throw new Error(`The provided amount exceeds the allowed remaining refund of ${allowedRefund}. Please reduce the amount`);
     if (order.restId !== restId) throw new Error("The provided restId doesn't match the restId stored with the order. Please provide the correct restId");
     
     let refundRes;

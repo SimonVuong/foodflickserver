@@ -3,7 +3,7 @@ import { makeStyles, Theme } from '@material-ui/core/styles';
 import { RootState, RootActions } from 'general/redux/rootReducer';
 import { connect } from 'react-redux';
 import { CartStateReducer } from 'general/order/redux/cartReducer';
-import { Typography, Link, Container, Button, TextField, InputAdornment, Grid, Divider, IconButton } from '@material-ui/core';
+import { Typography, Link, Container, Button, TextField, InputAdornment, Grid, Divider, IconButton, FormControl, InputLabel, Select, MenuItem } from '@material-ui/core';
 import { ThunkDispatch } from 'redux-thunk';
 import { removeCartItemAction } from 'general/order/redux/cartActions';
 import ToggleButton from '@material-ui/lab/ToggleButton';
@@ -77,7 +77,7 @@ const useStyles = makeStyles((theme: Theme) => ({
 type props = {
   cart: CartStateReducer,
   notifyCardSaved: () => void,
-  notifyCardSaveError: (reason: string) => void,
+  notifyError: (msg: string) => void,
   selectedRest: SelectedRestStateReducer,
   signedInUser?: SignedInUser,
   updateCard: (newCardTok: string) => Promise<void>,
@@ -88,7 +88,7 @@ type staticTip = 0.15 | 0.20 | 0.25 | 0.30 | null;
 const ReviewCartPage: React.FC<props & ReactStripeElements.InjectedStripeProps> = ({
   cart,
   notifyCardSaved,
-  notifyCardSaveError,
+  notifyError,
   selectedRest,
   signedInUser,
   stripe,
@@ -128,10 +128,17 @@ const ReviewCartPage: React.FC<props & ReactStripeElements.InjectedStripeProps> 
     navigate(routes.menuBrowser.getLink(selectedRest.Url));
     return null;
   }
-  const doesPassRequirements = (): boolean => {
+  const doesPassRequirements = (total: number, tip: number): boolean => {
     let tableErrorMsg = '';
     let phoneErrorMsg = '';
-
+    if (tip < 0) {
+      notifyError('Tip cannot be less than 0');
+      return false;
+    }
+    if (total < 0.50) {
+      notifyError('Total order must be at least $0.50');
+      return false;
+    }
     if (!tableNumber && orderType === OrderType.SIT_DOWN) {
       tableErrorMsg = 'Table # cannot be empty';
     }
@@ -147,7 +154,7 @@ const ReviewCartPage: React.FC<props & ReactStripeElements.InjectedStripeProps> 
     setIsSavingCard(true);
     const res = await stripe!.createToken({ name: (signedInUser && signedInUser.FullName) ? signedInUser.FullName : '' });
     if (res.error) {
-      notifyCardSaveError(res.error.message || 'Reason unknown');
+      notifyError(`Card failed to save: ${res.error.message || 'Reason unknown'}`)
       setIsSavingCard(false);
       return;
     }
@@ -196,7 +203,7 @@ const ReviewCartPage: React.FC<props & ReactStripeElements.InjectedStripeProps> 
       orderCardTok = res.token!.id;
     }
 
-    const isOrderValid = doesPassRequirements();
+    const isOrderValid = doesPassRequirements(total, tip);
     if (isOrderValid) {
       AnalyticsService.trackEvent(events.CLICKED_PLACE_ORDER)
       placeOrder(new Cart({
@@ -279,15 +286,15 @@ const ReviewCartPage: React.FC<props & ReactStripeElements.InjectedStripeProps> 
           </Grid>
           {orderType === OrderType.SIT_DOWN &&
             <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label='Table number'
-                error={!!tableError}
-                helperText={tableError}
-                value={tableNumber}
-                onChange={e => onChangeTable(e.target.value)}
-                margin='normal'
-              />
+              <FormControl required fullWidth>
+                <InputLabel>Table number</InputLabel>
+                <Select
+                  value={tableNumber}
+                  onChange={e => onChangeTable(e.target.value as string)}
+                >
+                  {selectedRest.Tables.map(table => <MenuItem key={table._Id} value={table._Id}>{table._Id}</MenuItem>)}
+                </Select>
+              </FormControl>
             </Grid>
           }
         </Grid>
@@ -371,7 +378,7 @@ const mapStateToProps = (state: RootState) => ({
 
 const mapDispatchToProps = (dispatch: ThunkDispatch<RootState, null, RootActions>) => ({
   removeCartItem: (cartIndex: number) => dispatch(removeCartItemAction(cartIndex)),
-  notifyCardSaveError: (reason: string) => dispatch(notificationErrorAction(`Card failed to save: ${reason}`)),
+  notifyError: (msg: string) => dispatch(notificationErrorAction(msg)),
   notifyCardSaved: () => dispatch(notificationSuccessAction('Card saved')),
   updateCard: async (newCardTok: string) => await dispatch(updateCardAction(newCardTok)),
 })
