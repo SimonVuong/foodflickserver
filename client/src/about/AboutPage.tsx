@@ -36,7 +36,7 @@ const AboutPage: React.FC<RouteComponentProps> = () => {
           What is foodflick?
       </Typography>
         <Typography variant='body1' paragraph>
-          foodflick is a mobile point of sale add-on for restaurants that lives in the customer's phone. It integrates with
+          foodflick is a point of sale add-on for restaurants that lives in the customer's phone. It integrates with
           your POS. foodflick handles payments, menu management, and more. Sit-down customers use foodflick to browse
           the menu and place orders. No more waiting for checks. No more splitting bills. This improves customer service
           by allowing servers focus less on bookkeeping and more on what counts, the customer. Check out our&nbsp;
@@ -49,12 +49,17 @@ const AboutPage: React.FC<RouteComponentProps> = () => {
             demo restaurant.
           </Link>
         </Typography>
+        <Typography variant='body1' gutterBottom paragraph>
+          foodflick is also working to integrate with delivery services like Grubhub or Uber Eats so these orders display
+          or print in your kitchen in real-time. This automatic and hands-free service allows you to process orders faster
+          and without errors. This service is included for free with all subscription plans.
+        </Typography>
         <Typography variant='h6' gutterBottom>
           Interested?
         </Typography>
         <Typography variant='body1' paragraph>
           Download foodflick on android or iOS to add your restaurant and start with our free plan!
-          <b> You get 1000 orders a month for free, then foodflick charges 3% per order. Custom pricing available on
+          <b> You get 1000 orders on a month on foodflick for free, then foodflick charges 3% per order. Custom pricing available on
           request</b>. Contact me (Simon) at <b> 609-513-8166</b> or <b> sales.foodflick@gmail.com</b> to request a restaurant addition or just to chat.
         </Typography>
         <Typography variant='h6' gutterBottom>
