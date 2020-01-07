@@ -1,6 +1,6 @@
 import React from 'react';
 import { RouteComponentProps } from '@reach/router';
-import { Theme, Link, Typography } from '@material-ui/core';
+import { Theme, Link, Typography, List, ListItem, ListItemText } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
 import { Link as RouterLink } from '@reach/router';
 import { routes } from 'general/routes/routes';
@@ -34,7 +34,7 @@ const AboutPage: React.FC<RouteComponentProps> = () => {
       <div className={classes.content}>
         <Typography variant='h6' gutterBottom>
           What is foodflick?
-      </Typography>
+        </Typography>
         <Typography variant='body1' paragraph>
           foodflick is a point of sale add-on for restaurants that lives in the customer's phone. It integrates with
           your POS. foodflick handles payments, menu management, and more. Sit-down customers use foodflick to browse
@@ -49,19 +49,52 @@ const AboutPage: React.FC<RouteComponentProps> = () => {
             demo restaurant.
           </Link>
         </Typography>
+        <Typography variant='h6' gutterBottom>
+          What is foodflick connect?
+        </Typography>
         <Typography variant='body1' gutterBottom paragraph>
-          foodflick is also working to integrate with delivery services like Grubhub or Uber Eats so these orders display
-          or print in your kitchen in real-time. This automatic and hands-free service allows you to process orders faster
-          and without errors. This service is included for free with all subscription plans.
+          foodflick connect integrates with delivery services like Grubhub or Uber Eats so these orders display
+          or print in your kitchen in real-time. Unlike Chowly or ItsaCheckMate, we <b> don't</b> require anyone
+          to press "send" or "print" in your POS because foodflick sends orders to your kitchen automatically. This 100% hands-free
+          service allows you to process orders faster and without errors. <i>This service is included in all foodflick
+          plans for an additional flat rate of $25/month</i>.
         </Typography>
         <Typography variant='h6' gutterBottom>
           Interested?
         </Typography>
         <Typography variant='body1' paragraph>
           Download foodflick on android or iOS to add your restaurant and start with our free plan!
-          <b> You get 1000 orders on a month on foodflick for free, then foodflick charges 3% per order. Custom pricing available on
-          request</b>. Contact me (Simon) at <b> 609-513-8166</b> or <b> sales.foodflick@gmail.com</b> to request a restaurant addition or just to chat.
+          <b> Custom pricing available on request</b>.
         </Typography>
+        <Typography variant='h6' gutterBottom>
+          Pricing
+        </Typography>
+        <List disablePadding>
+          <ListItem dense>
+            <ListItemText
+              primary='Free plan: $0/month - 500 orders/month, followed by 3% per order'
+              primaryTypographyProps={{
+                variant: 'body1'
+              }}
+            />
+          </ListItem>
+          <ListItem dense>
+            <ListItemText
+              primary='Standard plan: $75/month - 2000 orders/month, followed by 3% per order'
+              primaryTypographyProps={{
+                variant: 'body1'
+              }}
+            />
+          </ListItem>
+          <ListItem dense>
+            <ListItemText
+              primary='Unlimited plan: $150/month - unlimited orders/month'
+              primaryTypographyProps={{
+                variant: 'body1'
+              }}
+            />
+          </ListItem>
+        </List>
         <Typography variant='h6' gutterBottom>
           How does it work?
         </Typography>
