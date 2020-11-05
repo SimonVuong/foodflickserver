@@ -1,4 +1,4 @@
-# Demo
+# Mobile Demo
 ![Foodflick demo](server/docs/demo.gif)
 
 video of demo - https://www.youtube.com/watch?v=gOXhAjrQZm8
