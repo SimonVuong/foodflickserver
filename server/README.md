@@ -1,3 +1,10 @@
+# Demo
+![Foodflick demo](../server/docs/demo.gif)
+
+video of demo - https://www.youtube.com/watch?v=gOXhAjrQZm8
+
+# Arch Overview
+![Foodflick demo](../server/docs/arch/arch.png)
 # Getting started
 1) set some environment variables for various api keys
   ```

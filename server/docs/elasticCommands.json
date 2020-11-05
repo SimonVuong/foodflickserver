@@ -83,18 +83,7 @@ POST _reindex
   },
   "script": {
     "source": """
-      def menu = ctx._source.menu;
-      if (menu != null) {
-        for (int i = 0 ; i < menu.length; i++) {
-          def items = menu[i].items;
-          if (items != null) {
-            for (int j = 0; j < items.length; j++) {
-              def item = items[j];
-              item.prices = [];
-            } 
-          }
-        }
-      }
+      
     """
   }
 }
@@ -7959,20 +7948,7 @@ POST /rests/rest/ePpm4WwBZN5f0Ho1_Wp8/_update
             ],
             "name" : "Shrimp Tempura (6)",
             "_id" : "Hbalsfgp-Z",
-            "prices" : [
-              {
-                "label" : "White rice",
-                "value" : 17
-              },
-              {
-                "label" : "Brown rice",
-                "value" : 18.50
-              },
-              {
-                "label" : "Egg fried rice",
-                "value" : 18.50
-              }
-            ],
+            "prices" : 17,
             "addons": [
               {
                 "label" : "Pan fried egg",
@@ -7983,7 +7959,43 @@ POST /rests/rest/ePpm4WwBZN5f0Ho1_Wp8/_update
                 "value" : 3
               }
             ],
-            "optionGroups": [],
+            // YOOO SIMON
+            "optionGroups": [
+              {
+                options: [
+                 {
+                  "label" : "White rice",
+                  "value" : 0
+                 },
+                 {
+                  "label" : "Brown rice",
+                  "value" : 1.50
+
+                 },
+                 {
+                  "label" : "Egg fried rice",
+                  "value" : 2.50
+                 }
+                ]
+              },
+              {
+                options: [
+                  {
+                   "label" : "Chicken",
+                   "value" : 0
+                  },
+                  {
+                   "label" : "Pork",
+                   "value" : 4.50
+ 
+                  },
+                  {
+                   "label" : "Steak",
+                   "value" : 3.50
+                  }
+                ]
+              }
+            ],
             "likes" : {
               "count" : 0,
               "users" : [ ]
@@ -12904,6 +12916,10 @@ PUT rests
                     }
                   }
                 },
+                meal.optionGroups[0].options[0].name
+                meal.optionGroups[0].options[0].price
+                meal.optionGroups[0].options[1].name
+                meal.optionGroups[0].options[1].price
                 "optionGroups": {
                   "properties": {
                     "options": {
